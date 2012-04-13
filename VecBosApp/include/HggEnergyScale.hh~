@@ -1,0 +1,15 @@
+//read the Hgg Energy Scale as a csv using the config reader
+
+#include "ReadConfig.hh"
+#include <string>
+#include <map>
+#include <vector>
+
+class HggEnergyScale{
+public:
+  HggEnergyScale(string);
+private:
+  ReadEnergyScale;
+  map<int,vector<float> >
+
+}

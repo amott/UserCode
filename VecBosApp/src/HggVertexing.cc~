@@ -1,0 +1,347 @@
+// std includes
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+// ROOT includes
+#include <TTree.h>
+#include <TFile.h>
+#include <TH1D.h>
+
+// local includes
+#include "VecbosBase.hh"
+#include "Vecbos.hh"
+#include "Jet.hh"
+#include "CoolTools.hh"
+#include "CaloTower.hh"
+#include "ReadConfig.hh"
+#include "CommonTools/include/Utils.hh"
+#include "CommonTools/include/LeptonIdBits.h"
+#include "CommonTools/include/TriggerMask.hh"
+#include "VecbosEGObject.hh"
+#include "HggVertexing.hh"
+
+HggVertexing::HggVertexing(VecbosBase *b):
+  base(b),
+  vAna(vtxAlgoParams)
+{
+  useConversions = false;
+}
+
+ 
+HggVertexing::~HggVertexing() {}
+
+void HggVertexing::init(){
+  //read the config file to setup TMVA
+  ReadConfig cfg(configFilePath);
+  perVtxMvaWeights = cfg.getParameter("perVtxMvaWeights");
+  perVtxMvaMethod  = cfg.getParameter("perVtxMvaMethod");
+  perEvtMvaWeights = cfg.getParameter("perEvtMvaWeights");
+  perEvtMvaMethod  = cfg.getParameter("perEvtMvaMethod");
+
+  rankmethod.clear();
+  varNameUsed.clear();
+  
+  rankmethod.push_back(1); ///from largest to smallest ( from signal like to background like) 
+  rankmethod.push_back(1);
+  rankmethod.push_back(1);
+  
+  varNameUsed.push_back("ptbal");
+  varNameUsed.push_back("ptasym");
+  varNameUsed.push_back("logsumpt2");
+
+  indvertexSelected_allpairpresel  = new vector<short>;
+  photontrkisoselvtxdr03 = new vector< vector<float> >;
+
+  //configure vertex analyzer
+  vAna.setupWithDefaultOptions(perVtxMvaWeights, perEvtMvaWeights, rankVariables, perVtxReader, perVtxMvaMethod, perEvtReader, perEvtMvaMethod);
+
+}
+
+
+//method to do the vertexing
+int HggVertexing::vertex_tmva(int ipho1, int ipho2){
+  
+  if(base->nPV == 1) return 0; 
+  if(base->nPV == 0) return -1; 
+  
+  VecbosPho pho1(base,ipho1);
+  VecbosPho pho2(base,ipho2);
+
+  int iConvVtx1 = useConversion ? matchPhotonToConversion(indpht1) : -1;
+  int iConvVtx2 = useConversion ? matchPhotonToConversion(indpht2) : -1;
+
+  //general info --- NEED BEAMSPOT IN VECBOS
+  TVector3 beamspot(beamSpotX,beamSpotY,beamSpotZ);
+  //photon1 only info
+  int pho1_iDet = fabs( pho1.SC.eta )<1.48;
+
+  //float pho1_energy = photonenergy[indpht1];
+  float pho1_energy = pho1.energy;
+  
+  
+  TVector3 pho1_conv_vtx;
+  TVector3 pho1_conv_refit_vtx;
+  int pho1_nTracks;
+  bool pho1_conv_vtxvalid;
+  float pho1_conv_vtxchi2;
+  float pho1_Eop;
+
+  
+  //conversion1 dependent info
+  if (iConvVtx1 >=0) {
+    pho1_conv_vtx.SetXYZ(convconversionVertexx[iConvVtx1],convconversionVertexy[iConvVtx1],convconversionVertexz[iConvVtx1]);
+    pho1_conv_refit_vtx.SetXYZ(convrefittedPairMomentumx[iConvVtx1],convrefittedPairMomentumy[iConvVtx1],convrefittedPairMomentumz[iConvVtx1]);
+    pho1_nTracks = convnTracks[iConvVtx1];
+    pho1_conv_vtxvalid = convconversionVertexisValid[iConvVtx1];
+    pho1_conv_vtxchi2 = convconversionVertexChiSquaredProbability[iConvVtx1];
+    pho1_Eop = convEoverPrefittedTracks[iConvVtx1];
+  } else {
+    pho1_conv_vtxvalid = photonconversionVertexisValid[indpht1];
+    
+    if( pho1_conv_vtxvalid==1){
+      pho1_conv_vtx.SetXYZ(photonconversionVertexx[indpht1],photonconversionVertexy[indpht1],photonconversionVertexz[indpht1]);
+      pho1_conv_refit_vtx.SetXYZ(photonconversionrefittedPairMomentumx[indpht1],photonconversionrefittedPairMomentumy[indpht1],photonconversionrefittedPairMomentumz[indpht1]);
+      pho1_nTracks = photonconversionnTracks[indpht1];
+      pho1_conv_vtxchi2 = photonconversionChiSquaredProbability[indpht1];
+      pho1_Eop = photonconversionEoverPrefittedTracks[indpht1];
+    }else{
+      pho1_conv_vtx.SetXYZ(-999,-999,-999);
+      pho1_conv_refit_vtx.SetXYZ(-999,-999,-999);
+      pho1_nTracks = 0; 
+      pho1_conv_vtxchi2 = 0; 
+      pho1_Eop = -999;
+      
+    }
+  }
+  
+
+
+  //photon2 only info                                                                                                                                                  
+  TVector3 pho2_calopos(photoncaloPositionx[indpht2],photoncaloPositiony[indpht2],photoncaloPositionz[indpht2]);
+  int pho2_iDet = fabs( photonsceta[indpht2])<1.48;
+  //float pho2_energy = photonenergy[indpht2];
+  float pho2_energy = photonenergydefault[indpht2];
+
+  TVector3 pho2_conv_vtx;
+  TVector3 pho2_conv_refit_vtx;
+  int pho2_nTracks;
+  bool pho2_conv_vtxvalid;
+  float pho2_conv_vtxchi2;
+  float pho2_Eop;
+
+  //conversion2 dependent info
+  if (iConvVtx2 >=0) {
+    pho2_conv_vtx.SetXYZ(convconversionVertexx[iConvVtx2],convconversionVertexy[iConvVtx2],convconversionVertexz[iConvVtx2]);
+    pho2_conv_refit_vtx.SetXYZ(convrefittedPairMomentumx[iConvVtx2],convrefittedPairMomentumy[iConvVtx2],convrefittedPairMomentumz[iConvVtx2]);
+    pho2_nTracks = convnTracks[iConvVtx2];
+    pho2_conv_vtxvalid = convconversionVertexisValid[iConvVtx2];
+    pho2_conv_vtxchi2 = convconversionVertexChiSquaredProbability[iConvVtx2];
+    pho2_Eop = convEoverPrefittedTracks[iConvVtx2];
+  } else {
+
+    pho2_conv_vtxvalid = photonconversionVertexisValid[indpht2];
+    if( pho2_conv_vtxvalid==1){
+      pho2_conv_vtx.SetXYZ(photonconversionVertexx[indpht2],photonconversionVertexy[indpht2],photonconversionVertexz[indpht2]);
+      pho2_conv_refit_vtx.SetXYZ(photonconversionrefittedPairMomentumx[indpht2],photonconversionrefittedPairMomentumy[indpht2],photonconversionrefittedPairMomentumz[indpht2]);
+      pho2_nTracks = photonconversionnTracks[indpht2];
+      pho2_conv_vtxchi2 = photonconversionChiSquaredProbability[indpht2];
+      pho2_Eop = photonconversionEoverPrefittedTracks[indpht2];
+    }else{
+      pho2_conv_vtx.SetXYZ(-999,-999,-999);
+      pho2_conv_refit_vtx.SetXYZ(-999,-999,-999);
+      pho2_nTracks = 0; 
+      pho2_conv_vtxchi2 = 0; 
+      pho2_Eop = -999;
+    }
+  }
+  
+  
+  //fill photon info adapter classes
+  
+  if( debug_ > 0){
+    cout<<" fill photonInfo1 "<< indpht1 <<endl; 
+    cout<<"calpos " << pho1_calopos.X()<<" "<< pho1_calopos.Y()<<" "<< pho1_calopos.Z()<<endl; 
+    cout<<"bs " << beamspot.X()<<" "<< beamspot.Y()<<" "<< beamspot.Z()<<endl; 
+    cout<<"convtx " << pho1_conv_vtx.X()<<" "<< pho1_conv_vtx.Y()<<" "<< pho1_conv_vtx.Z()<<endl; 
+    cout<<"refmom " << pho1_conv_refit_vtx.X()<<" "<< pho1_conv_refit_vtx.Y()<<" "<< pho1_conv_refit_vtx.Z()<<endl; 
+    cout<<"en/isEB/ntracks/validvtx/chi2prob/eoverp " << pho1_energy <<" "<<  pho1_iDet<<" "<< pho1_nTracks <<" "<<  pho1_conv_vtxvalid<<" "<<
+      pho1_conv_vtxchi2 <<" "<< pho1_Eop<<endl;   
+    
+  }
+  
+  if( debug_ > 0){
+    cout<<" fill photonInfo2 "<< indpht2 <<endl; 
+    cout<<"calpos " << pho2_calopos.X()<<" "<< pho2_calopos.Y()<<" "<< pho2_calopos.Z()<<endl; 
+    cout<<"bs " << beamspot.X()<<" "<< beamspot.Y()<<" "<< beamspot.Z()<<endl; 
+    cout<<"convtx " << pho2_conv_vtx.X()<<" "<< pho2_conv_vtx.Y()<<" "<< pho2_conv_vtx.Z()<<endl; 
+    cout<<"refmom " << pho2_conv_refit_vtx.X()<<" "<< pho2_conv_refit_vtx.Y()<<" "<< pho2_conv_refit_vtx.Z()<<endl; 
+    cout<<"en/isEB/ntracks/validvtx/chi2prob/eoverp " << pho2_energy <<" "<<  pho2_iDet<<" "<< pho2_nTracks <<" "<<  pho2_conv_vtxvalid<<" "<<
+      pho2_conv_vtxchi2 <<" "<< pho2_Eop<<endl;   
+    
+  }
+  
+
+
+
+  PhotonInfo photonInfo1 = PhotonInfo(indpht1,
+				      pho1_calopos,
+				      beamspot,
+				      pho1_conv_vtx,
+				      pho1_conv_refit_vtx,
+				      pho1_energy,
+				      pho1_iDet,
+				      pho1_nTracks,
+				      pho1_conv_vtxvalid,
+				      pho1_conv_vtxchi2,
+				      pho1_Eop
+				      );//fill me
+  
+  PhotonInfo photonInfo2 = PhotonInfo(indpht2,
+				      pho2_calopos,
+				      beamspot,
+				      pho2_conv_vtx,
+				      pho2_conv_refit_vtx,
+				      pho2_energy,
+				      pho2_iDet,
+				      pho2_nTracks,
+				      pho2_conv_vtxvalid,
+				      pho2_conv_vtxchi2,
+				      pho2_Eop
+				      );//fill me
+  
+  //cout<<"fill vertex info\n";
+  //vertex informations
+
+  //   int nvtx = nVertex;
+  //   float * vtxx = vertexx;
+  //   float * vtxy = vertexy;
+  //   float * vtxz = vertexz;
+  //   int ntracks = nTrack;
+  //   float * tkpx = trackpx;
+  //   float * tkpy = trackpy;
+  //   float * tkpz = trackpz;
+  //   float * tkPtErr = trackptError;
+  //temporary section
+  int * trackVtxId = new int [nTrack];
+  float * trackWeight = new float [nTrack];
+  bool * trackIsHighPurity = new bool [nTrack];
+  
+  
+  if( debug_ > 0  ){
+    cout<<"nTrack/nvtx " << nTrack <<" "<< nVertex <<endl; 
+
+   //  for(int n=0 ; n< nVertex; n++){
+//       cout<<" vertexTrackSize  "  << n <<" "<< vertextrackSize[n]<<endl; 
+//       for (int t = 0; t < vertextrackSize[n]; ++t){
+// 	int indtrk = vertex_trkind->at(n)[t];
+// 	cout<<"indtrk " << indtrk <<endl; 
+//       }
+//     }
+  }
+  
+  
+  /// note one fix inside src/HggVertexAnalyzer.cc ( if( vid <0) continue )
+  for (int i = 0; i< nTrack; ++i){
+    trackVtxId[i] = -999; 
+    trackWeight[i] = -999;
+    trackIsHighPurity[i] = false;
+  }
+  
+  for (int i = 0; i< nTrack; ++i){
+    
+    //match the vertex to this track
+    for (int n = 0; n< nVertex; ++n) {
+          
+      //loop over all associated tracks
+      for (int t = 0; t < vertextrackSize[n]; ++t){
+	int indtrk = vertex_trkind->at(n)[t];
+	float tkWeight = vertex_trkWeight->at(n)[t];
+	
+	if (indtrk < 0 || indtrk >= nTrack) {
+	  cout<<"warning indtrk?? " << indtrk <<" "<< nTrack <<" "<< evtNumber<<" "<<runNumber <<" "<<lumiBlock<<endl; 
+	  continue;
+	}
+	
+ 	if (indtrk == i) {
+	  trackVtxId[i] = n;//found matching vertex
+	  trackWeight[i] = tkWeight;//also write track weight
+	}
+	
+      }
+    }
+    
+    
+    //get High Purity bit from quality flag
+    int qua = trackqualityFlagTracks[i];
+    int highPurityFlag = 3;
+    if ( ( qua & 1 << highPurityFlag) > 0) trackIsHighPurity[i] = true;
+  }
+  
+
+  if( debug_ > 0  ){
+    cout<<"fill vertexInfoAdapter " <<endl; 
+  }
+
+  TupleVertexInfo vertexInfoAdapter = TupleVertexInfo( nVertex,
+						       vertexx,
+						       vertexy,
+						       vertexz,
+						       nTrack,
+						       trackpx,
+						       trackpy,
+						       trackpz,
+						       trackptError,
+						       trackVtxId,
+						       trackWeight,
+						       trackd0,
+						       trackd0Error,
+						       trackdz,
+						       trackdzError,
+						       trackIsHighPurity
+						       );//fill me
+  
+  
+  if( debug_ > 0  ){
+    cout<<"run vAna.analyze() " <<endl; 
+  }
+
+  //cout<<"tmva vertex ranking....\n";
+  vAna.analyze(vertexInfoAdapter,photonInfo1,photonInfo2);     
+ 
+  /// rank product vertex selection. Including pre-selection based on conversions information.
+  vector<int> rankprod = vAna.rankprod(rankVariables);
+
+  
+  if( debug_ > 0  ){
+    cout<<"run vAna.rank " <<endl; 
+  }
+
+ //  cout<<runNumber<<" "<<evtNumber<<" "<<lumiBlock<<endl;
+//   cout << "\n\nRanks product" << endl;
+//   cout << "best vertex " << rankprod[0] << endl;
+  
+  /// MVA vertex selection
+  vector<int> vtx_ranked_tmva = vAna.rank(*perVtxReader,perVtxMvaMethod);
+ //  cout << "\n\n TMVA"<< endl;
+//   cout << "best vertex " << vtx_ranked_tmva[0] << endl;
+  //    h2globe_tmva(ipho1,ipho2);
+  //  indvertexSelectedtmva_allpairpresel->push_back(short(vtx_ranked_tmva[0]));
+  //	  indvertexSelectedtmva_allpairpresel->push_back(0);
+  //vAna.clear();
+
+  if( debug_ > 0  ){
+    for(int j=0; j< int(vtx_ranked_tmva.size()); j++){
+      cout<<" vtx_ranked_tmva  "  <<j<<" "<< vtx_ranked_tmva[j]<<endl; 
+    }
+  }
+  
+  
+  return vtx_ranked_tmva[0];
+  
+  
+}
+
+

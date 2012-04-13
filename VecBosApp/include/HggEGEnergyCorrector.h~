@@ -1,0 +1,24 @@
+#include "HggReducer.hh"
+#include "ecalGap.cc"
+#include <string>
+
+class HggEnergyCorrector{
+ public:
+  HggEnergyCorrector(HggReducer*,string);
+ private:
+  //private methods
+  void Init(int);
+  std::pair<double,double> CorrectedEnergyWithError(int j);
+
+  //vars
+  
+  HggReducer *reducer;
+
+  GBRForest *fReadereb;
+  GBRForest *fReaderebvariance;
+  GBRForest *fReaderee;
+  GBRForest *fReadereevariance;
+  Float_t *fVals;
+  
+  ECAL_GEO ecalGeometry;
+};
