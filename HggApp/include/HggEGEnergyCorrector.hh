@@ -1,11 +1,8 @@
 #include "VecbosBase.hh"
 #include <string>
 
-#include "../MitPhysics/Utils/interface/GBRForest.h"
-#include "../MitPhysics/Utils/interface/GBRTree.h"                         
-//#include "h2gglobe/VertexAnalysis/interface/HggVertexAnalyzer.h"
-//#include "h2gglobe/VertexAnalysis/interface/PhotonInfo.h"
-//#include "h2gglobe/VertexAnalysis/interface/VertexAlgoParameters.h"
+#include "GBRForest.h"
+#include "GBRTree.h"
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
