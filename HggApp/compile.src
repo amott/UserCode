@@ -4,7 +4,12 @@ source setup_fastjet_x64.sh
 #source /afs/cern.ch/cms/sw/slc4_ia32_gcc345/cms/cms-cvs-utils/1.0-cms/bin/projch.csh CMSSW
 setenv SCRAM_ARCH slc5_amd64_gcc462
 cvs co -d CommonTools UserCode/emanuele/CommonTools
-cvs co -d EgammaAnalysisTools UserCode/emanuele/EgammaAnalysisTools
+
+## avoid the enormous BDT weights in this dir
+##cvs co -d EgammaAnalysisTools UserCode/emanuele/EgammaAnalysisTools
+cvs co -d EgammaAnalysisTools/src UserCode/emanuele/EgammaAnalysisTools/src 
+cvs co -d EgammaAnalysisTools/include UserCode/emanuele/EgammaAnalysisTools/include 
+cvs co -d EgammaAnalysisTools/lib UserCode/emanuele/EgammaAnalysisTools/lib 
 cmsrel CMSSW_5_2_3
 cd CMSSW_5_2_3/src
 cmsenv
