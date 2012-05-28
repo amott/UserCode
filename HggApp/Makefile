@@ -198,6 +198,9 @@ $(OUTLIB)JetCorrectionUncertainty.o: $(SRCDIR)JetCorrectionUncertainty.cc \
 	$(OUTLIB)SimpleJetCorrectionUncertainty.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)JetCorrectionUncertainty.o $<
 
+$(OUTLIB)Jet.o: $(SRCDIR)Jet.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)Jet.o $<
+
 $(OUTLIB)MET.o: $(SRCDIR)MET.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MET.o $<
 
@@ -237,6 +240,18 @@ $(OUTLIBEGAMMA)LikelihoodPdfProduct.o: $(INCLUDEDIRCOMMON)/EgammaAnalysisTools/s
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIRCOMMON) -o $(OUTLIBEGAMMA)LikelihoodPdfProduct.o $<
 $(OUTLIBEGAMMA)ElectronLikelihood.o: $(INCLUDEDIRCOMMON)/EgammaAnalysisTools/src/ElectronLikelihood.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIRCOMMON) -o $(OUTLIBEGAMMA)ElectronLikelihood.o $<
+
+$(OUTLIB)VecbosBase.o: $(SRCDIR)VecbosBase.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosBase.o $<
+
+
+$(OUTLIB)Vecbos.o: $(SRCDIR)Vecbos.cc \
+		$(OUTLIB)VecbosBase.o \
+		$(OUTLIB)CaloTower.o \
+		$(OUTLIB)Jet.o \
+		$(OUTLIB)JetCorrectionUncertainty.o \
+		$(OUTLIB)MET.o 
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)Vecbos.o $<
 
 # GEN VECBOS STUSY#
 #$(OUTLIB)GenVecbos.o: $(SRCDIR)GenVecbos.C
