@@ -62,7 +62,8 @@ int getCat(float mva,const int nCat,const float* min,const float* max){
   return -1;
 }
 
-void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=180){
+void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=180,bool applyTrigger=true,
+		      TString outputFile="interpolated/BkgWorkSpace.root"){
   
   const int nCat = 4;
   const float CatMin[nCat] = {0.89,0.72,0.55,0.05};
@@ -84,11 +85,12 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
 
   Float_t         mPair;
   Float_t         diPhotonMVA;
-
+  Int_t           trigger;
 
   fChain->SetBranchAddress("mPair", &mPair);
   fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
-  
+  fChain->SetBranchAddress("trigger",&trigger);
+
   RooRealVar *rv_mass = new RooRealVar("mass","mass",100,mMin,mMax);
   //rv_mass->setRange(100,150);
   rv_mass->setRange(mMin,mMax);
@@ -115,6 +117,7 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   int nSelected = 0;
   for(int iEvent=0; iEvent< Nevents; iEvent++){
     fChain->GetEntry(iEvent);
+    if(applyTrigger && !trigger) continue;
     int category = getCat(diPhotonMVA,nCat,CatMin,CatMax);
     if(iEvent%100==0) cout<<"mPair/cat " << mPair << " "<< category << "   nSelected: " << nSelected << endl; 
     if(category==-1) continue; // not a good diPhoton event
@@ -388,8 +391,7 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   
   
 
-  TString filename = TString("BkgWorkSpace.root");
-  TFile *fnew = new TFile(filename,"recreate");
+  TFile *fnew = new TFile(outputFile,"recreate");
   
   
   w->import(datacomb);  
