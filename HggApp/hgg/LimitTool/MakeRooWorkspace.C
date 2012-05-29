@@ -147,6 +147,8 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   float etaPho2;
   float r9Pho1;
   float r9Pho2;
+  vector<float> mPairScale;
+  vector<float> mPairSmear;
   chain->SetBranchAddress("mPair",&mPair);
   chain->SetBranchAddress("diPhotonMVA",&MVA);
   chain->SetBranchAddress("genHiggsPt",&genHiggsPt);
@@ -165,6 +167,9 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   chain->SetBranchAddress("etaPho2",&etaPho2);
   chain->SetBranchAddress("r9Pho1",&r9Pho1);
   chain->SetBranchAddress("r9Pho2",&r9Pho2);
+
+  chain->SetBranchAddress("mPairScale",&mPairScale); //for E_scale systematic
+  chain->SetBranchAddress("mPairSmear",&mPairSmear); //for E_res   systematic
 
   
   branchingRatio XSECS;
@@ -223,7 +228,7 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
       if(debug) cout << "CorrectVtx: " << CorrectVtx << endl;
       efficiencies["kFactor"] = getKFac(&kFacs,genHiggsPt,nSigma);
       if(debug) cout << "kFactor: " << efficiencies["kFactor"].at(nSigma+1) << endl;
-      float XSweight = XSECS.BranchingRatios[massPoint]*XSECS.Proc8TeV[massPoint]*lumi/nEntries;
+      float XSweight = XSECS.BranchingRatios[massPoint]*XSECS.Proc8TeV[massPoint]*lumi*1000./nEntries;
       if(debug) cout << "XSweight: " << XSweight << endl; 
       float puwt=pileupReWeight->GetBinContent( pileupReWeight->FindFixBin(nPU) );
       if(debug) cout << "puwt: " << puwt << endl;
@@ -265,7 +270,11 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
 	for(int iSigma = -nSigma;iSigma<=nSigma;iSigma++){
 	  if(iSigma==0) continue;
 	  if(iSyst<2){ //energy scale/smear
-	    
+	    float thisEvtWeight = evtWeight;  // use the default weighting
+	    float thisMPair = mPair;
+	    if(iSyst==0) thisMPair = mPairSmear.at(iSigma+nSigma);
+	    else         thisMPair = mPairScale.at(iSigma+nSigma);
+	    ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)]))->Fill(thisMPair,thisEvtWeight);	    
 	  }else{ //these are event weight scalings
 	    if(debug){
 	      cout << "this Sigma: " << efficiencies[systs[iSyst]].at(iSigma+nSigma) << endl;
@@ -273,7 +282,7 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
 	    }
 	    float thisEvtWeight = evtWeight*efficiencies[systs[iSyst]].at(iSigma+nSigma)/efficiencies[systs[iSyst]].at(ci);
 	    if(debug) cout << "Filling Histogram: " << nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)] << endl;
-	    ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)]))->Fill(mPair,evtWeight);
+	    ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)]))->Fill(mPair,thisEvtWeight);
 	  }
 	}
       }//for(iSyst...
