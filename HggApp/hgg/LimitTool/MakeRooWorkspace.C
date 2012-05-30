@@ -46,6 +46,7 @@
 #include <fstream>
 #include <TList.h>
 #include <TObjArray.h>
+
 using namespace std;
 using namespace RooFit;               
 
@@ -78,6 +79,7 @@ int getPhotonCat(float eta,float r9){
   return (r9<0.94)+2*(fabs(eta)>1.48);
 }
 
+typedef std::pair<string,std::pair<int,int> > indexType;
 typedef std::map<std::string,std::vector<TGraphAsymmErrors*> > EffMap;
 EffMap* loadEffCor(TFile* f);
 vector<float> effCorrMC(float pt, TString type, int cat, EffMap* map,int shift=0);
@@ -93,23 +95,24 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   TObjArray *outArray = new TObjArray();
   const int    nSysts  = 7;
   const string systs[] = {"E_res","E_scale","idEff","kFactor","r9Eff","triggerEff","vtxEff"};
-  
-  std::map< std::pair<string,int>, int> nameIndexMap;
+
+  std::map< indexType, int> nameIndexMap;
 
   const int nSigma=3;
   int ind=0;
+
   std::map<std::string,std::vector<float> > efficiencies; // map between the efficiency name and the vector of efficiencies
 
   if(!isData){
     for(int iCat=0;iCat<nCat_;iCat++){
       outArray->Add(new TH1F(Form("th1f_sig_%s_mass_m%d_cat%d",process.Data(),massPoint,iCat),"",160,100,180));
-      nameIndexMap[std::pair<string,int>(Form("cat%d",iCat),0)] = ind++;
+      nameIndexMap[indexType(Form("cat%d",iCat),std::pair<int,int>(0,iCat))] = ind++;
       for(int iSyst=0;iSyst<nSysts;iSyst++){
 	for(int iSig= -nSigma; iSig<=nSigma; iSig++){
 	  if(iSig==0) continue;
 	  outArray->Add(new TH1F(Form("th1f_sig_%s_mass_m%d_cat%d_%s%s%02d_sigma",process.Data(),massPoint,iCat,systs[iSyst].c_str(),(iSig>0?"Up":"Down"),abs(iSig)),"",160,100,180));
 	  if(debug) cout << Form("th1f_sig_%s_mass_m%d_cat%d_%s%s%02d_sigma",process.Data(),massPoint,iCat,systs[iSyst].c_str(),(iSig>0?"Up":"Down"),abs(iSig)) << endl;
-	  nameIndexMap[std::pair<string,int>(systs[iSyst],iSig)] = ind++;
+	  nameIndexMap[indexType(systs[iSyst],std::pair<int,int>(iSig,iCat))] = ind++;
 	}
       }
     
@@ -147,8 +150,8 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   float etaPho2;
   float r9Pho1;
   float r9Pho2;
-  vector<float> mPairScale;
-  vector<float> mPairSmear;
+  vector<float> *mPairScale = 0;
+  vector<float> *mPairSmear = 0;
   chain->SetBranchAddress("mPair",&mPair);
   chain->SetBranchAddress("diPhotonMVA",&MVA);
   chain->SetBranchAddress("genHiggsPt",&genHiggsPt);
@@ -261,31 +264,32 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
       if(CorrectVtx) addDataPoint(&vars,Form("sig_%s_mass_rv_m%d_cat%d",process.Data(),massPoint,cat),mPair,evtWeight);
       else addDataPoint(&vars,Form("sig_%s_mass_wv_m%d_cat%d",process.Data(),massPoint,cat),mPair,evtWeight);
 
-      if(debug) cout << "Filling Histogram: data  " << nameIndexMap[std::pair<string,int>(string(Form("cat%d",cat)),0)] 
-		     << "/" << outArray->GetEntries() << endl;
-      ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(string(Form("cat%d",cat)),0)]))->Fill(mPair,evtWeight);
+      ((TH1F*)outArray->At(nameIndexMap[indexType(string(Form("cat%d",cat)),std::pair<int,int>(0.,cat))]))->Fill(mPair,evtWeight);
       if(debug) cout << "Filling Systematics:" << endl;
        //SYSTEMATICS!!!!
       for(int iSyst=0; iSyst < nSysts; iSyst++){
+	if(debug) cout << "This Syst: " << systs[iSyst] << endl;
 	for(int iSigma = -nSigma;iSigma<=nSigma;iSigma++){
 	  if(iSigma==0) continue;
 	  if(iSyst<2){ //energy scale/smear
 	    float thisEvtWeight = evtWeight;  // use the default weighting
 	    float thisMPair = mPair;
-	    if(iSyst==0) thisMPair = mPairSmear.at(iSigma+nSigma);
-	    else         thisMPair = mPairScale.at(iSigma+nSigma);
-	    ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)]))->Fill(thisMPair,thisEvtWeight);	    
+	    if(iSyst==0) thisMPair = mPairSmear->at(iSigma+nSigma);
+	    else         thisMPair = mPairScale->at(iSigma+nSigma);
+	    if(debug) cout << "This EvtWeight: " << thisEvtWeight << endl 
+			   << "thisMass: " << thisMPair << "   default: " << mPair << endl;
+	    ((TH1F*)outArray->At(nameIndexMap[indexType(systs[iSyst],std::pair<int,int>(iSigma,cat))]))->Fill(thisMPair,thisEvtWeight);	    
 	  }else{ //these are event weight scalings
 	    if(debug){
 	      cout << "this Sigma: " << efficiencies[systs[iSyst]].at(iSigma+nSigma) << endl;
 	      cout << "def  Sigma: " << efficiencies[systs[iSyst]].at(ci)     << endl;
 	    }
 	    float thisEvtWeight = evtWeight*efficiencies[systs[iSyst]].at(iSigma+nSigma)/efficiencies[systs[iSyst]].at(ci);
-	    if(debug) cout << "Filling Histogram: " << nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)] << endl;
-	    ((TH1F*)outArray->At(nameIndexMap[std::pair<string,int>(systs[iSyst],iSigma)]))->Fill(mPair,thisEvtWeight);
+	    ((TH1F*)outArray->At(nameIndexMap[indexType(systs[iSyst],std::pair<int,int>(iSigma,cat))]))->Fill(mPair,thisEvtWeight);
 	  }
 	}
       }//for(iSyst...
+      if(mPair > 50 && debug) exit(0);
       
       
     } //!isData
@@ -364,7 +368,7 @@ double getHistVal(TH1D* hist, float x){ // returns the value corresponding to a 
   if(x < hist->GetXaxis()->GetXmin()) return hist->GetBinContent(1);
   int nBins = hist->GetNbinsX();
   if(x > hist->GetXaxis()->GetXmax()) return hist->GetBinContent(nBins);
-  return hist->GetBinContent( hist->FindFixBin(x) ); //FindFixBin is from Yong's code, not sure why we need it ....
+  return hist->GetBinContent( hist->FindFixBin(x) ); 
 }
 
 
@@ -415,8 +419,8 @@ vector<float> effCorrMC(float pt, TString type, int cat, EffMap* map,int shiftRa
       e->GetPoint(selectedBin,x,y);
       if(debug) cout << "\ty: " << y << endl;
       if(iShift==0) out.push_back(y);
-      else if(iShift<0) out.push_back(y-e->GetErrorYlow(selectedBin-1));
-      else out.push_back(y+e->GetErrorYhigh(selectedBin-1));
+      else if(iShift<0) out.push_back(y+iShift*e->GetErrorYlow(selectedBin-1));
+      else out.push_back(y+iShift*e->GetErrorYhigh(selectedBin-1));
     }
   
     double xLow,yLow;

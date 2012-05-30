@@ -17,6 +17,9 @@ class HggEGEnergyCorrector{
   std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithError(int);
   std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithErrorv2(int);
   std::pair<double,double> photonEnergyCorrector_CorrectedEnergyWithErrorv2(int);
+
+  std::pair<double,double> photonEnergyCorrector_May2012(int);
+  std::pair<double,double> electronEnergyCorrector_May2012(int);
  private:
   //private methods
   void Init(int,Bool_t);

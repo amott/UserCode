@@ -646,12 +646,20 @@ void HggSelector::fillMuMuGamma(){
   for(int iMu1=0;iMu1<nMu_;iMu1++){
     VecbosMu mu1 = Muons_->at(iMu1);    
     if(mu1.pt < 10) continue;
+    if(!mu1.isGlobalMuon || !mu1.isTrackerMuon) continue;
+    if(mu1.nTrackHits <= 10 | mu1.nPixelHits==0) continue;
+    if(mu1.trackImpactPar >=0.2) continue;
+    if(mu1.trkIso >= 3) continue;
     int genIndexMu1 = getGenMatchMu(&mu1);
     for(int iMu2=iMu1+1;iMu2<nMu_;iMu2++){
       VecbosMu mu2 = Muons_->at(iMu2);
       if(mu2.pt < 10) continue;
       if(mu1.pt<20 && mu2.pt<20) continue; // 20/10 selection
       if(mu1.charge*mu2.charge >=0) continue; //opposite charge
+      if(!mu2.isGlobalMuon || !mu2.isTrackerMuon) continue;
+      if(mu2.nTrackHits <= 10 | mu2.nPixelHits==0) continue;
+      if(mu2.trackImpactPar >=0.2) continue;
+      if(mu2.trkIso >= 3) continue;
       int genIndexMu2 = getGenMatchMu(&mu2);
       for(int iPho=0; iPho<nPho_;iPho++){
 	VecbosPho pho = Photons_->at(iPho);
@@ -757,7 +765,7 @@ int HggSelector::getGenMatchPho(VecbosPho *pho){
   for(int iP=0;iP<nGenPho;iP++){
     if(energyGenPho[iP] < 1.) continue;
     if(DeltaR(pho->SC.eta,etaGenPho[iP],pho->SC.phi,phiGenPho[iP]) > maxDR) continue;
-    if(fabs(pho->finalEnergy-energyGenPho[iP])/energyGenPho[iP] < 1.) continue;
+    if(fabs(pho->finalEnergy-energyGenPho[iP])/energyGenPho[iP] > 1.) continue;
     if( fabs(pho->finalEnergy-energyGenPho[iP])<bestdE ){
       bestdE = fabs(pho->finalEnergy-energyGenPho[iP]);
       indexGenPho = iP;
@@ -773,7 +781,7 @@ int HggSelector::getGenMatchMu(VecbosMu *mu){
   for(int iM=0;iM<nGenMu;iM++){
     if(energyGenMu[iM] < 1.) continue;
     if(DeltaR(mu->eta,etaGenMu[iM],mu->phi,phiGenMu[iM]) > maxDR) continue;
-    if(fabs(mu->energy-energyGenMu[iM])/energyGenMu[iM] < 0.5) continue;
+    if(fabs(mu->energy-energyGenMu[iM])/energyGenMu[iM] > 0.5) continue;
     if( fabs(mu->energy-energyGenMu[iM])<bestdE ){
       bestdE = fabs(mu->energy-energyGenMu[iM]);
       indexGenMu = iM;

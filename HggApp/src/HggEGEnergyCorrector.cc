@@ -38,7 +38,84 @@ void HggEGEnergyCorrector::Init(int testPhotonCorr,Bool_t isRealData){
   ecalGeometry = loadecalGapCoordinates(isRealData);
 }
 
+std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(int j){
+  VecbosPho pho(base,j); // initialize the photon with index j
 
+  int index=0;
+  fVals[index++] = pho.SC.rawE;
+  fVals[index++] = pho.SC.eta;
+  fVals[index++] = pho.SC.phi;
+  fVals[index++] = pho.SC.r9();
+  fVals[index++] = pho.SC.e5x5/pho.SC.rawE;
+  fVals[index++] = pho.SC.etaWidth;
+  fVals[index++] = pho.SC.phiWidth;
+  fVals[index++] = pho.SC.basicClusters.size();
+  
+  fVals[index++] = pho.HTowOverE; //H/E tower
+  fVals[index++] = base->rhoFastjet;
+  fVals[index++] = base->nPV;
+
+  //seed cluster variables
+  VecbosBC BC = pho.SC.basicClusters[0];
+  fVals[index++] = BC.eta - pho.SC.eta;
+  fVals[index++] = DeltaPhi(pho.SC.phi,BC.phi);
+  fVals[index++] = BC.energy/pho.SC.rawE;
+  fVals[index++] = BC.e3x3/BC.energy;
+  fVals[index++] = BC.e5x5/BC.energy;
+
+  fVals[index++] = BC.sigmaIEtaIEta; // do these need to have sqrts???
+  fVals[index++] = BC.sigmaIPhiIPhi;
+  fVals[index++] = BC.sigmaIEtaIPhi;
+
+  fVals[index++] = BC.eMax/BC.energy;
+  fVals[index++] = BC.e2nd/BC.energy;
+  fVals[index++] = BC.eTop/BC.energy;
+  fVals[index++] = BC.eBottom/BC.energy;
+  fVals[index++] = BC.eLeft/BC.energy;
+  fVals[index++] = BC.eRight/BC.energy;
+
+  fVals[index++] = BC.e2x5Max/BC.energy;
+  fVals[index++] = BC.e2x5Top/BC.energy;
+  fVals[index++] = BC.e2x5Bottom/BC.energy;
+  fVals[index++] = BC.e2x5Left/BC.energy;
+  fVals[index++] = BC.e2x5Right/BC.energy;
+  
+  if(pho.isBarrel()){
+    fVals[index++] = BC.iEta;
+    fVals[index++] = BC.iPhi;
+    fVals[index++] = BC.iEta%5;
+    fVals[index++] = BC.iPhi%2;
+    if( abs(BC.iEta <= 25) ) fVals[index++] = BC.iEta % 25;
+    else fVals[index++] = (BC.iEta - 25*abs(BC.iEta)/BC.iEta) % 20;
+    fVals[index++] = BC.iPhi%20;
+    fVals[index++] = BC.etaCrystal;
+    fVals[index++] = BC.phiCrystal;
+  }
+  else{
+    fVals[index++] = pho.SC.esEnergy/pho.SC.rawE;
+  }
+  //finished filling array
+
+  const Double_t varscale = 1.253;
+  Double_t den;
+  const GBRForest *greader;
+  const GBRForest *greadervar;
+
+  if (pho.isBarrel()) {
+    den = pho.SC.rawE;
+    greader = fReadereb;
+    greadervar = fReaderebvariance;
+  }
+  else {
+    den = pho.SC.rawE + pho.SC.esEnergy;
+    greader = fReaderee;
+    greadervar = fReadereevariance;
+  }
+  Double_t ecor = greader->GetResponse(fVals)*den;
+  Double_t ecorerr = greadervar->GetResponse(fVals)*den*varscale;
+  
+  return std::pair<double,double>(ecor,ecorerr);
+}
 
 std::pair<double,double> HggEGEnergyCorrector::CorrectedEnergyWithError(int j){
   VecbosPho pho(base,j); // initialize the photon with index j

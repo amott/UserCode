@@ -20,4 +20,5 @@ scram b
 cd ../../
 ln -s CMSSW_5_2_3/src/h2gglobe/VertexAnalysis/interface/ h2ginclude
 ln -s CMSSW_5_2_3/lib/slc5_amd64_gcc462/ h2glib
+cp /afs/cern.ch/work/a/amott/public/HggApp/MVAWeights .
 make all

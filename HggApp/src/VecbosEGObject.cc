@@ -26,6 +26,12 @@ void VecbosBC::Init(VecbosBase* o, int i){
   eBottom = o->eBottomBC[i];
   eMax    = o->eMaxBC[i];
   e2nd    = o->e2ndBC[i];
+
+  e2x5Max  = o->e2x5MaxBC[i];
+  e2x5Left = o->e2x5LeftBC[i];
+  e2x5Right = o->e2x5RightBC[i];
+  e2x5Top = o->e2x5TopBC[i];
+  e2x5Bottom = o->e2x5BottomBC[i];
   
   etaCrystal = o->etaCrystalBC[i];
   phiCrystal = o->phiCrystalBC[i];
@@ -89,6 +95,12 @@ void VecbosPFBC::Init(VecbosBase* o, int i){
   eBottom = o->eBottomPFBC[i];
   eMax    = o->eMaxPFBC[i];
   e2nd    = o->e2ndPFBC[i];
+
+  e2x5Max  = o->e2x5MaxPFBC[i];
+  e2x5Left = o->e2x5LeftPFBC[i];
+  e2x5Right = o->e2x5RightPFBC[i];
+  e2x5Top = o->e2x5TopPFBC[i];
+  e2x5Bottom = o->e2x5BottomPFBC[i];
   
   etaCrystal = o->etaCrystalPFBC[i];
   phiCrystal = o->phiCrystalPFBC[i];
@@ -127,6 +139,26 @@ void VecbosSC::Init(VecbosBase* o, int i){
   phi      = o->phiSC[i];
   e3x3     = o->e3x3SC[i];
   e5x5     = o->e5x5SC[i];
+
+  e3x1     = o->e3x1SC[i];
+  e1x3     = o->e1x3SC[i];
+  e4x4     = o->e4x4SC[i];
+  eMax     = o->eMaxSC[i];
+  e2x2     = o->e2x2SC[i];
+  e2nd     = o->e2ndSC[i];
+  e1x5     = o->e1x5SC[i];
+  e2x5Max  = o->e2x5MaxSC[i];
+  e2x5Left = o->e2x5LeftSC[i];
+  e2x5Right = o->e2x5RightSC[i];
+  e2x5Top = o->e2x5TopSC[i];
+  e2x5Bottom = o->e2x5BottomSC[i];
+  
+  eLeft    = o->eLeftSC[i];
+  eRight   = o->eRightSC[i];
+  eTop     = o->eTopSC[i];
+  eBottom  = o->eBottomSC[i];
+
+
   sigmaIEtaIEta = o->covIEtaIEtaSC[i];
   sigmaIEtaIPhi = o->covIEtaIPhiSC[i];
   sigmaIPhiIPhi = o->covIPhiIPhiSC[i];
@@ -362,6 +394,7 @@ void VecbosPho::Init(VecbosBase* o, int i){
   index  = i;
 
   HoverE = o->hOverEPho[i];
+  HTowOverE = o->hTowOverEPho[i];
   hasPixel = o->hasPixelSeedPho[i];
 
   dr03EcalRecHitSumEtCone = o->dr03EcalRecHitSumEtPho[i];

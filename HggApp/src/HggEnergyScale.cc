@@ -190,8 +190,8 @@ float HggEnergyScale::getCategory(VecbosPho pho){
   //cout << pho.eta << "  " << pho.SC.r9() << endl;
   for(int iReg = 0; iReg< nRegions; iReg++){
     //cout << ">> " << minEta[iReg] << "  " << maxEta[iReg] << "  " << r9Cut << "  " << highR9[iReg] << endl; 
-    if( std::fabs(pho.eta) >= minEta[iReg] 
-	&& std::fabs(pho.eta) <maxEta[iReg] 
+    if( fabs(pho.eta) >= minEta[iReg] 
+	&& fabs(pho.eta) <maxEta[iReg] 
 	&& ((pho.SC.r9() > r9Cut) == highR9[iReg]) ){
       selectRegion = iReg;
       break;

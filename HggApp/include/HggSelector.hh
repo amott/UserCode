@@ -309,14 +309,14 @@ private:
   float higgsVyIn;
   float higgsVzIn;
   static const int MAXGenSaved=1000;
-  float nGenPho;
+  int nGenPho;
   float etaGenPho[MAXGenSaved];      
   float phiGenPho[MAXGenSaved];      
   float ptGenPho[MAXGenSaved];       
   float energyGenPho[MAXGenSaved];   
   int pidMomGenPho[MAXGenSaved];
 
-  float nGenMu;
+  int nGenMu;
   float etaGenMu[MAXGenSaved];      
   float phiGenMu[MAXGenSaved];      
   float ptGenMu[MAXGenSaved];       

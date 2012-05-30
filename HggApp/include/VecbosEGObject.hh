@@ -12,7 +12,7 @@ class VecbosBC{
 public:
   VecbosBC();
   VecbosBC(VecbosBase*, int);
-  void Init(VecbosBase*,int);
+  virtual void Init(VecbosBase*,int);
   int index;
   float energy;
   float eta;
@@ -25,6 +25,13 @@ public:
   float eBottom;
   float eMax;
   float e2nd;
+
+  float e2x5Max;
+  float e2x5Left;
+  float e2x5Right;
+  float e2x5Top;
+  float e2x5Bottom;
+
   float etaCrystal;
   float phiCrystal;
   int iEta;
@@ -38,34 +45,11 @@ public:
   //BCInfo getStruct();
 };
 
-class VecbosPFBC{
+class VecbosPFBC : public VecbosBC{
 public:
   VecbosPFBC();
   VecbosPFBC(VecbosBase*, int);
-  void Init(VecbosBase*,int);
-  int index;
-  float energy;
-  float eta;
-  float phi;
-  float e3x3;
-  float e5x5;
-  float eTop;
-  float eLeft;
-  float eRight;
-  float eBottom;
-  float eMax;
-  float e2nd;
-  float etaCrystal;
-  float phiCrystal;
-  int iEta;
-  int iPhi;
-  float thetaTilt;
-  float phiTilt;
-  float sigmaIEtaIEta;
-  float sigmaIEtaIPhi;
-  float sigmaIPhiIPhi;
-
-  //BCInfo getStruct();
+  void Init(VecbosBase* o, int i);
 };
 
 //super cluster
@@ -82,6 +66,25 @@ public:
   float phi;
   float e3x3;
   float e5x5;
+
+  float e3x1;
+  float e1x3;
+  float e4x4;
+  float eMax;
+  float e2x2;
+  float e2nd;
+  float e1x5;
+  float e2x5Max;
+  float e2x5Left;
+  float e2x5Right;
+  float e2x5Top;
+  float e2x5Bottom;
+  
+  float eLeft;
+  float eRight;
+  float eTop;
+  float eBottom;
+
   float sigmaIEtaIEta;
   float sigmaIEtaIPhi;
   float sigmaIPhiIPhi;
@@ -178,6 +181,7 @@ public:
   VecbosSC SC;
   VecbosPFSC PFSC;
   float HoverE;
+  float HTowOverE;
 
   int hasPixel;
   TVector3 CaloPos;

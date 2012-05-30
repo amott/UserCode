@@ -164,6 +164,7 @@ public :
    Int_t           superClusterIndexPho[5];   //[nPho]
    Int_t           PFsuperClusterIndexPho[5];   //[nPho]
    Float_t         hOverEPho[5];   //[nPho]
+   Float_t         hTowOverEPho[5];   //[nPho]
    Float_t         dr03TkSumPtPho[5];   //[nPho]
    Float_t         dr03HollowTkSumPtPho[5];   //[nPho]
    Float_t         dr03EcalRecHitSumEtPho[5];   //[nPho]
@@ -388,6 +389,11 @@ public :
    Float_t         eBottomBC[291];   //[nBC]
    Float_t         eLeftBC[291];   //[nBC]
    Float_t         eRightBC[291];   //[nBC]
+   Float_t         e2x5MaxBC[291];   //[nBC]
+   Float_t         e2x5TopBC[291];   //[nBC]
+   Float_t         e2x5BottomBC[291];   //[nBC]
+   Float_t         e2x5LeftBC[291];   //[nBC]
+   Float_t         e2x5RightBC[291];   //[nBC]
    Float_t         etaCrystalBC[291];   //[nBC]
    Float_t         phiCrystalBC[291];   //[nBC]
    Int_t           iEtaBC[291];   //[nBC]
@@ -420,6 +426,11 @@ public :
    Float_t         eBottomPFBC[11];   //[nPFBC]
    Float_t         eLeftPFBC[11];   //[nPFBC]
    Float_t         eRightPFBC[11];   //[nPFBC]
+   Float_t         e2x5MaxPFBC[291];   //[nPFBC]
+   Float_t         e2x5TopPFBC[291];   //[nPFBC]
+   Float_t         e2x5BottomPFBC[291];   //[nPFBC]
+   Float_t         e2x5LeftPFBC[291];   //[nPFBC]
+   Float_t         e2x5RightPFBC[291];   //[nPFBC]
    Float_t         etaCrystalPFBC[11];   //[nPFBC]
    Float_t         phiCrystalPFBC[11];   //[nPFBC]
    Int_t           iEtaPFBC[11];   //[nPFBC]
@@ -1134,6 +1145,7 @@ public :
    TBranch        *b_superClusterIndexPho;   //!
    TBranch        *b_PFsuperClusterIndexPho;   //!
    TBranch        *b_hOverEPho;   //!
+   TBranch        *b_hTowOverEPho;   //!
    TBranch        *b_dr03TkSumPtPho;   //!
    TBranch        *b_dr03HollowTkSumPtPho;   //!
    TBranch        *b_dr03EcalRecHitSumEtPho;   //!
@@ -1358,6 +1370,11 @@ public :
    TBranch        *b_eBottomBC;   //!
    TBranch        *b_eLeftBC;   //!
    TBranch        *b_eRightBC;   //!
+   TBranch        *b_e2x5MaxBC;   //!
+   TBranch        *b_e2x5TopBC;   //!
+   TBranch        *b_e2x5BottomBC;   //!
+   TBranch        *b_e2x5LeftBC;   //!
+   TBranch        *b_e2x5RightBC;   //!
    TBranch        *b_etaCrystalBC;   //!
    TBranch        *b_phiCrystalBC;   //!
    TBranch        *b_iEtaBC;   //!
@@ -1390,6 +1407,11 @@ public :
    TBranch        *b_eBottomPFBC;   //!
    TBranch        *b_eLeftPFBC;   //!
    TBranch        *b_eRightPFBC;   //!
+   TBranch        *b_e2x5MaxPFBC;   //!
+   TBranch        *b_e2x5TopPFBC;   //!
+   TBranch        *b_e2x5BottomPFBC;   //!
+   TBranch        *b_e2x5LeftPFBC;   //!
+   TBranch        *b_e2x5RightPFBC;   //!
    TBranch        *b_etaCrystalPFBC;   //!
    TBranch        *b_phiCrystalPFBC;   //!
    TBranch        *b_iEtaPFBC;   //!
@@ -2175,6 +2197,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("superClusterIndexPho", superClusterIndexPho, &b_superClusterIndexPho);
    fChain->SetBranchAddress("PFsuperClusterIndexPho", PFsuperClusterIndexPho, &b_PFsuperClusterIndexPho);
    fChain->SetBranchAddress("hOverEPho", hOverEPho, &b_hOverEPho);
+   fChain->SetBranchAddress("hTowOverEPho", hTowOverEPho, &b_hTowOverEPho);
    fChain->SetBranchAddress("dr03TkSumPtPho", dr03TkSumPtPho, &b_dr03TkSumPtPho);
    fChain->SetBranchAddress("dr03HollowTkSumPtPho", dr03HollowTkSumPtPho, &b_dr03HollowTkSumPtPho);
    fChain->SetBranchAddress("dr03EcalRecHitSumEtPho", dr03EcalRecHitSumEtPho, &b_dr03EcalRecHitSumEtPho);
@@ -2431,6 +2454,11 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("eBottomPFBC", eBottomPFBC, &b_eBottomPFBC);
    fChain->SetBranchAddress("eLeftPFBC", eLeftPFBC, &b_eLeftPFBC);
    fChain->SetBranchAddress("eRightPFBC", eRightPFBC, &b_eRightPFBC);
+   fChain->SetBranchAddress("e2x5MaxPFBC", e2x5MaxPFBC, &b_e2x5MaxPFBC);
+   fChain->SetBranchAddress("e2x5TopPFBC", e2x5TopPFBC, &b_e2x5TopPFBC);
+   fChain->SetBranchAddress("e2x5BottomPFBC", e2x5BottomPFBC, &b_e2x5BottomPFBC);
+   fChain->SetBranchAddress("e2x5LeftPFBC", e2x5LeftPFBC, &b_e2x5LeftPFBC);
+   fChain->SetBranchAddress("e2x5RightPFBC", e2x5RightPFBC, &b_e2x5RightPFBC);
    fChain->SetBranchAddress("etaCrystalPFBC", etaCrystalPFBC, &b_etaCrystalPFBC);
    fChain->SetBranchAddress("phiCrystalPFBC", phiCrystalPFBC, &b_phiCrystalPFBC);
    fChain->SetBranchAddress("iEtaPFBC", iEtaPFBC, &b_iEtaPFBC);
