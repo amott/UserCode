@@ -1,0 +1,245 @@
+#include <HggPhotonID.hh>
+#include "ReadConfig.hh"
+
+//includes for the TMVA ID
+#include "TMVA/Tools.h"
+#include "TMVA/Factory.h"
+#include "TMVA/Reader.h"
+#include "TRandom3.h"
+using namespace std;
+using namespace TMVA;
+
+#define debugSelector 0
+
+HggPhotonID::HggPhotonID()
+{
+}
+
+void HggPhotonID::Init(){
+
+  ReadConfig cfg;
+  if(cfg.read(configFile)!=0){
+    cout << "ERROR: Could not read PhotonID Config!";
+    valid = false;
+    return;
+  }
+
+  weightFile_IdEB_2011 = cfg.getParameter("weightFile_IdEB_2011");
+  weightFile_IdEE_2011 = cfg.getParameter("weightFile_IdEE_2011");
+  weightFile_IdEB_2012 = cfg.getParameter("weightFile_IdEB_2012");
+  weightFile_IdEE_2012 = cfg.getParameter("weightFile_IdEE_2012");
+  methodName_Id  = cfg.getParameter("methodName_Id");
+
+  version = cfg.getParameter("PhotonIDVersion");
+
+  photonMVA_EB_2011 = new TMVA::Reader( "!Color:!Silent" );;
+  photonMVA_EE_2011 = new TMVA::Reader( "!Color:!Silent" );;
+  photonMVA_EB_2012 = new TMVA::Reader( "!Color:!Silent" );;
+  photonMVA_EE_2012 = new TMVA::Reader( "!Color:!Silent" );;
+  this->setupTMVA();
+}
+
+void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  hoe = pho->HoverE;
+  sigietaieta=pho->SC.sigmaIEtaIEta;
+  r9 = pho->SC.r9();
+  ecalisodr03 = pho->dr03EcalRecHitSumEtCone;
+  ecalisodr04 = pho->dr04EcalRecHitSumEtCone;
+  hcalisodr03 = pho->dr03HcalTowerSumEtCone;
+  hcalisodr04 = pho->dr04HcalTowerSumEtCone;
+  nVertexf=nVertex;
+  etasc = pho->SC.eta;
+  scetawidth = pho->SC.etaWidth;
+  scphiwidth = pho->SC.phiWidth;
+                                                                                                                             
+  pfPhotonIso03 = pho->photonIso;
+  sigietaiphi = pho->SC.sigmaIEtaIPhi;
+  s4Ratio = pho->SC.e2x2/pho->SC.e5x5;
+  rho = rhoFastJet;                                                                                                                 
+  sigRR = pho->SC.esEffSigRR;                
+
+  //We need some computation for these:
+
+  pfChargedIsoGood03 = pho->chargedHadronIso.at(selVtxIndex);
+  std::vector<float>::iterator maxElement =  std::max_element(pho->chargedHadronIso.begin(), pho->chargedHadronIso.end());
+  pfChargedIsoBad03  = *maxElement;
+  
+  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+  
+  trkisooet = pho->photonTrkIsoFromVtx.at(selVtxIndex)/eT;
+  isosumoet = (pho->photonTrkIsoFromVtx.at(selVtxIndex) 
+	       + pho->dr03EcalRecHitSumEtCone 
+	       + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac)/eT;
+  isosumoetbad = (pho->photonWorstIsoDR04.first
+		  + pho->dr03EcalRecHitSumEtCone 
+		  + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac)/eT;
+
+  isosumoetPF = (pfChargedIsoGood03 + ecalisodr03 - rho*rhoFac) *50./eT; //don't know why there is the 50, but its in globe
+  isosumoetbadPF = (pfChargedIsoBad03 + ecalisodr04 - rho*rhoFacBad) *50./eT; //don't know why there is the 50, but its in globe
+}
+
+void HggPhotonID::setupTMVA(){
+
+  //
+  //   2011 Photon ID MVA
+  //
+
+  //setup the ID MVAs:
+  ///EB
+  photonMVA_EB_2011->AddVariable("HoE",&hoe);         
+  photonMVA_EB_2011->AddVariable("covIEtaIEta",&sigietaieta);         
+  photonMVA_EB_2011->AddVariable("tIso1abs",&isosumoet);              
+  photonMVA_EB_2011->AddVariable("tIso3abs",&trkisooet);              
+  photonMVA_EB_2011->AddVariable("tIso2abs",&isosumoetbad);           
+  photonMVA_EB_2011->AddVariable("R9",&r9);           
+  photonMVA_EB_2011->AddVariable("absIsoEcal",&ecalisodr03);          
+  photonMVA_EB_2011->AddVariable("absIsoHcal",&hcalisodr04);          
+  photonMVA_EB_2011->AddVariable("NVertexes",&nVertexf);              
+  photonMVA_EB_2011->AddVariable("ScEta",&etasc);     
+  photonMVA_EB_2011->AddVariable("EtaWidth",&scetawidth);             
+  photonMVA_EB_2011->AddVariable("PhiWidth",&scphiwidth);             
+       
+  ///EE
+  photonMVA_EE_2011->AddVariable("HoE",&hoe);         
+  photonMVA_EE_2011->AddVariable("covIEtaIEta",&sigietaieta);         
+  photonMVA_EE_2011->AddVariable("tIso1abs",&isosumoet);              
+  photonMVA_EE_2011->AddVariable("tIso3abs",&trkisooet);              
+  photonMVA_EE_2011->AddVariable("tIso2abs",&isosumoetbad);           
+  photonMVA_EE_2011->AddVariable("R9",&r9);           
+  photonMVA_EE_2011->AddVariable("absIsoEcal",&ecalisodr03);          
+  photonMVA_EE_2011->AddVariable("absIsoHcal",&hcalisodr04);          
+  photonMVA_EE_2011->AddVariable("NVertexes",&nVertexf);              
+  photonMVA_EE_2011->AddVariable("ScEta",&etasc);     
+  photonMVA_EE_2011->AddVariable("EtaWidth",&scetawidth);             
+  photonMVA_EE_2011->AddVariable("PhiWidth",&scphiwidth);             
+  
+  //book MVAs:
+  photonMVA_EB_2011->BookMVA( methodName_Id, weightFile_IdEB_2011);
+  photonMVA_EE_2011->BookMVA( methodName_Id, weightFile_IdEE_2011);
+
+  //
+  //   2012 Photon ID MVA
+  //
+
+  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03 );
+  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03 );
+  photonMVA_EB_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03 );
+
+  photonMVA_EB_2012->AddVariable("myphoton_sieie",   &sigietaieta );
+  photonMVA_EB_2012->AddVariable("myphoton_sieip",   &sigietaiphi );
+  photonMVA_EB_2012->AddVariable("myphoton_etawidth",   &scetawidth );
+  photonMVA_EB_2012->AddVariable("myphoton_phiwidth",   &scphiwidth );
+  photonMVA_EB_2012->AddVariable("myphoton_r9",   &r9 );
+  
+  photonMVA_EB_2012->AddVariable("myphoton_s4ratio",   &s4Ratio );
+  
+  photonMVA_EB_2012->AddVariable("myphoton_SCeta",   &etasc );
+  photonMVA_EB_2012->AddVariable("event_rho",   &rho );
+  
+  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03 );
+  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03 );
+  photonMVA_EE_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03 );
+
+  photonMVA_EE_2012->AddVariable("myphoton_sieie",   &sigietaieta );
+  photonMVA_EE_2012->AddVariable("myphoton_sieip",   &sigietaiphi );
+  photonMVA_EE_2012->AddVariable("myphoton_etawidth",   &scetawidth );
+  photonMVA_EE_2012->AddVariable("myphoton_phiwidth",   &scphiwidth );
+  photonMVA_EE_2012->AddVariable("myphoton_r9",   &r9 );
+  
+  photonMVA_EE_2012->AddVariable("myphoton_s4ratio",   &s4Ratio );
+  
+  photonMVA_EE_2012->AddVariable("myphoton_SCeta",   &etasc );
+  photonMVA_EE_2012->AddVariable("event_rho",   &rho );
+  
+  photonMVA_EE_2012->AddVariable("myphoton_ESEffSigmaRR",   &sigRR);
+
+ photonMVA_EB_2012->BookMVA( methodName_Id, weightFile_IdEB_2012);
+ photonMVA_EE_2012->BookMVA( methodName_Id, weightFile_IdEE_2012);
+  
+  }
+
+float HggPhotonID::getIdMVA(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+  if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex) ) return -9999;
+
+  if(version.compare("May2012")==0) return (pho->isBarrel() ? photonMVA_EB_2012->EvaluateMVA(methodName_Id) : photonMVA_EE_2012->EvaluateMVA(methodName_Id) );    
+  else return (pho->isBarrel() ? photonMVA_EB_2011->EvaluateMVA(methodName_Id) : photonMVA_EE_2011->EvaluateMVA(methodName_Id) );    
+}
+
+bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+
+  //2012 CiC Cuts:
+  const int nCats=4;
+  float cut_r9[nCats]       = {0.94,0.298,0.94,0.298};
+  float cut_hoe[nCats]      = {0.124, 0.092,0.142,0.063};
+  float cut_sieie[nCats]    = {0.0108,0.0102,0.028,0.028};
+  float cut_pfiso[nCats]    = {3.8,2.5,3.1,2.2};
+  float cut_isoGood[nCats]  = {6.,4.7,5.6,3.6};
+  float cut_isoBad[nCats]   = {10.,6.5,5.6,4.4};
+
+  int cat = this->getCiCCat(pho);
+
+  if(pho->SC.r9() < cut_r9[cat]) return false;
+  if(pho->HoverE > cut_hoe[cat]) return false;
+  if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
+  if(pho->chargedHadronIso.at(selVtxIndex) > cut_pfiso[cat]) return false;
+  if(isosumoetPF > cut_isoGood[cat]) return false;
+  if(isosumoetbadPF > cut_isoBad[cat]) return false;
+
+  return true;
+}
+
+int HggPhotonID::getCiCCat(VecbosPho* pho){
+  return (pho->SC.r9()<0.94)+2*(fabs(pho->SC.eta) > 1.48);
+}
+
+bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  if(version.compare("May2012")==0) this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+  else this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+}
+
+bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+
+  if(pho->SC.r9() < 0.9){
+    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
+        || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 4
+        || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 4) return false;
+    if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
+        || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
+  }else{ //(SC->r9() > 0.9
+    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
+        || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 50
+        || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 50 ) false;
+    if( (pho->isBarrel() && (pho->HoverE > 0.082 || pho->SC.sigmaIEtaIEta > 0.014) )
+        || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
+  }
+  return true;
+}
+
+bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+
+  if(pho->SC.r9() < 0.9){
+    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
+        || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 4
+        || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 4
+        || pho->dr03EcalRecHitSumEtCone > 3
+        || pho->dr04HcalTowerSumEtCone >  3
+        || isosumoet > 2.8
+        || pho->dr03TrkSumPtHollowCone > 4) return false;
+    if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
+        || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
+  }else{ //(SC->r9() > 0.9
+    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
+        || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 50
+        || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 50
+        || pho->dr03EcalRecHitSumEtCone > 3
+        || pho->dr04HcalTowerSumEtCone >  3
+        || isosumoet > 2.8
+        || pho->dr03TrkSumPtHollowCone > 4) return false;
+    if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
+        || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
+  }
+  return true;
+}
