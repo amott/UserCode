@@ -58,10 +58,11 @@ public:
   VecbosSC();
   VecbosSC(VecbosBase*, int);
   virtual void Init(VecbosBase*, int);
+  VecbosBC BCSeed;
   std::vector<VecbosBC> basicClusters; // basic clusters associated with this supercluser
   int index;
   float energy;
-  float esEnergy; // in the trees, but not yet in VecbosBase
+  float esEnergy;
   float eta;
   float phi;
   float e3x3;
@@ -88,6 +89,8 @@ public:
   float sigmaIEtaIEta;
   float sigmaIEtaIPhi;
   float sigmaIPhiIPhi;
+
+  float esEffSigRR;
   
   TVector3 CaloPos;
 
@@ -202,6 +205,11 @@ public:
   float dr04HcalTowerSumEtCone;
   float dr04TrkSumPtCone;
   float dr04TrkSumPtHollowCone;
+
+  //pfIsolation
+  std::vector<float>         chargedHadronIso; // charged hadron iso PER VERTEX
+  float                      neutralHadronIso;
+  float                      photonIso;
 
   bool isBarrel(){return (fabs(this->SC.eta) < 1.48);}
   int  getCategory(){ (SC.r9()>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon

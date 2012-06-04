@@ -88,7 +88,7 @@ private:
 
   HggVertexing *vertexer;
   //energy correction variables
-  int correctionType;
+  string correctionType;
   HggEGEnergyCorrector *corrector;
 
   //energy smearing

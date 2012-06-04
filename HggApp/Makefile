@@ -93,7 +93,6 @@ HggApp: $(SRCDIR)HggApp.C \
 	$(OUTLIB)HggEnergyScale.o \
 	$(OUTLIB)HggReducer.o \
 	$(OUTLIB)HggMakePhotonTree.o \
-	$(H2GLIB)libh2gglobeVertexAnalysis.so \
 	$(OUTLIB)GBRTree.o \
 	$(OUTLIB)GBRForest.o
 	$(CXX) $(CXXFLAGS) -o HggApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(H2GLIB)/*.so $(GLIBS) $ $<	
@@ -119,12 +118,19 @@ HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 
 $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMassResolution.o \
+			$(OUTLIB)HggPhotonID.o \
 			$(OUTLIB)Vecbos.o \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o \
 			$(OUTLIB)GBRTree.o \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
+
+$(OUTLIB)HggPhotonID.o: $(SRCDIR)HggPhotonID.cc \
+			$(OUTLIB)VecbosEGObject.o \
+			$(OUTLIB)HggDict.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggPhotonID.o $<
+
 
 $(OUTLIB)HggMassResolution.o: $(SRCDIR)HggMassResolution.cc \
 				$(OUTLIB)VecbosEGObject.o \
@@ -150,6 +156,7 @@ $(OUTLIB)HggMakePhotonTree.o: $(SRCDIR)HggMakePhotonTree.cc \
 
 $(OUTLIB)HggEnergyScale.o: $(SRCDIR)HggEnergyScale.cc \
 			$(OUTLIB)Vecbos.o \
+			$(H2GLIB)pluginCondFormatsEgammaObjectsCapabilities.so \
 			$(OUTLIB)MitDict.o \
 			$(OUTLIB)VecbosEGObject.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggEnergyScale.o $<

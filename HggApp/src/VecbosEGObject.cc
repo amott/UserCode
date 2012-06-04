@@ -163,6 +163,9 @@ void VecbosSC::Init(VecbosBase* o, int i){
   sigmaIEtaIPhi = o->covIEtaIPhiSC[i];
   sigmaIPhiIPhi = o->covIPhiIPhiSC[i];
 
+  esEffSigRR = TMath::Sqrt( TMath::Power(o->esEffsIxIxSC[i],2) +
+			    TMath::Power(o->esEffsIyIySC[i],2) );
+
   CaloPos.SetXYZ(o->xPosSC[i],o->yPosSC[i],o->zPosSC[i]);
 
   rawE     = o->rawEnergySC[i];
@@ -171,6 +174,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
   HoverE   = o->hOverESC[i];
   r9Scale  = 1;
   //get the basic clusters
+  
   std::vector< std::pair<int,float> > indexEnergyMap;
   for(int j=0; j<o->nBC; j++){
     if(o->indexSCBC[j] == i){ // the basic cluster points to this SC
@@ -182,6 +186,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
     basicClusters.push_back(VecbosBC(o,indexEnergyMap.at(j).first));
   }
   
+  BCSeed.Init(o,indexEnergyMap.at(0).first);
  }
 
 /*
@@ -406,6 +411,12 @@ void VecbosPho::Init(VecbosBase* o, int i){
   dr04HcalTowerSumEtCone  = o->dr04HcalTowerSumEtPho[i];
   dr04TrkSumPtCone        = o->dr04TkSumPtPho[i];
   dr04TrkSumPtHollowCone  = o->dr04HollowTkSumPtPho[i]; 
+
+  for(int iPV=0;iPV<o->nPV;iPV++){
+    chargedHadronIso.push_back( o->chargedHadronIsoPho[i*o->nPV+iPV] );
+  }
+  neutralHadronIso        = o->neutralHadronIsoPho[i];
+  photonIso               = o->photonIsoPho[i];
   int SCI = o->superClusterIndexPho[i];
   CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
 };

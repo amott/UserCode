@@ -1,30 +1,39 @@
 #include "HggEGEnergyCorrector.hh"
-#include "VecbosEGObject.hh"
 #include "HggPhysUtils.cc"
+#include "ReadConfig.hh"
 #include <string>
+#include <iostream>
 
 #define debugEGEnergy 0
-HggEGEnergyCorrector::HggEGEnergyCorrector(VecbosBase *r,int phCorrs,Bool_t isRealData):
-  base(r)
+HggEGEnergyCorrector::HggEGEnergyCorrector(VecbosBase *r,string cfgFile,Bool_t realData):
+  base(r),
+  version("")
 {
-  this->Init(phCorrs,isRealData);
+  isRealData = realData;
+  configFile = cfgFile;
+  this->Init();
+}
+
+std::pair<double,double> HggEGEnergyCorrector::getPhotonEnergyCorrection(int index){
+  VecbosPho pho(base,index); // initialize the photon with index j
+
+  if(version.compare("May2012")==0) return this->photonEnergyCorrector_May2012(pho);
+  if(version.compare("2011")==0) return this->photonEnergyCorrector_CorrectedEnergyWithErrorv2(pho);
+  
+  return std::pair<double,double>(pho.energy,0);
 }
 
 
-void HggEGEnergyCorrector::Init(int testPhotonCorr,Bool_t isRealData){
+void HggEGEnergyCorrector::Init(){
   //  fVals = new Float_t[18];
   fVals = new Float_t[73];
-  
-  std::string regweights; 
-  if( testPhotonCorr == 99){
-    regweights = "/afs/cern.ch/cms/cit/yongy/regweights/gbrph.root";
-  }else if( testPhotonCorr == 98) {
-    regweights = "/afs/cern.ch/cms/cit/yongy/regweights/gbrele.root";
-  }else if( testPhotonCorr == 97){
-    regweights = "/afs/cern.ch/cms/cit/yongy/regweights/gbrv2ele.root";
-  }else if( testPhotonCorr == 96){
-    regweights = "/afs/cern.ch/cms/cit/yongy/regweights/gbrv2ph.root";
-  }
+
+  ReadConfig cfg(configFile);
+  version = cfg.getParameter("EnergyCorrectionVersion");
+  std::string regweights = cfg.getParameter("EnergyCorrectionWeights");
+
+  std::cout << "Using Correction Weights: " << regweights << std::endl
+	    << "Using Correction Version: " << version << std::endl;
   
   TFile *fgbr = new TFile(regweights.c_str(),"READ");
   fReadereb = (GBRForest*)fgbr->Get("EBCorrection");
@@ -38,65 +47,62 @@ void HggEGEnergyCorrector::Init(int testPhotonCorr,Bool_t isRealData){
   ecalGeometry = loadecalGapCoordinates(isRealData);
 }
 
-std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(int j){
-  VecbosPho pho(base,j); // initialize the photon with index j
-
+std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(VecbosPho &pho){
   int index=0;
-  fVals[index++] = pho.SC.rawE;
-  fVals[index++] = pho.SC.eta;
-  fVals[index++] = pho.SC.phi;
-  fVals[index++] = pho.SC.r9();
-  fVals[index++] = pho.SC.e5x5/pho.SC.rawE;
-  fVals[index++] = pho.SC.etaWidth;
-  fVals[index++] = pho.SC.phiWidth;
-  fVals[index++] = pho.SC.basicClusters.size();
-  
-  fVals[index++] = pho.HTowOverE; //H/E tower
-  fVals[index++] = base->rhoFastjet;
-  fVals[index++] = base->nPV;
+  fVals[0] = pho.SC.rawE;
+  fVals[1] = pho.SC.eta;
+  fVals[2] = pho.SC.phi;
+  fVals[3] = pho.SC.r9();
+  fVals[4] = pho.SC.e5x5/pho.SC.rawE;
+  fVals[5] = pho.SC.etaWidth;
+  fVals[6] = pho.SC.phiWidth;
+  fVals[7] = pho.SC.basicClusters.size();
+  fVals[8] = pho.HTowOverE; //H/E tower
+  fVals[9] = base->rhoFastjet;
+  fVals[10] = base->nPV;
 
   //seed cluster variables
-  VecbosBC BC = pho.SC.basicClusters[0];
-  fVals[index++] = BC.eta - pho.SC.eta;
-  fVals[index++] = DeltaPhi(pho.SC.phi,BC.phi);
-  fVals[index++] = BC.energy/pho.SC.rawE;
-  fVals[index++] = BC.e3x3/BC.energy;
-  fVals[index++] = BC.e5x5/BC.energy;
+  VecbosBC BC = pho.SC.BCSeed;
+  fVals[11] = BC.eta - pho.SC.eta;
+  fVals[12] = DeltaPhi(pho.SC.phi,BC.phi);
+  fVals[13] = BC.energy/pho.SC.rawE;
+  fVals[14] = BC.e3x3/BC.energy;
+  fVals[15] = BC.e5x5/BC.energy;
 
-  fVals[index++] = BC.sigmaIEtaIEta; // do these need to have sqrts???
-  fVals[index++] = BC.sigmaIPhiIPhi;
-  fVals[index++] = BC.sigmaIEtaIPhi;
+  fVals[16] = sqrt(BC.sigmaIEtaIEta); // do these need to have sqrts???
+  fVals[17] = sqrt(BC.sigmaIPhiIPhi);
+  fVals[18] = BC.sigmaIEtaIPhi;
 
-  fVals[index++] = BC.eMax/BC.energy;
-  fVals[index++] = BC.e2nd/BC.energy;
-  fVals[index++] = BC.eTop/BC.energy;
-  fVals[index++] = BC.eBottom/BC.energy;
-  fVals[index++] = BC.eLeft/BC.energy;
-  fVals[index++] = BC.eRight/BC.energy;
+  fVals[19] = BC.eMax/BC.energy;
+  fVals[20] = BC.e2nd/BC.energy;
+  fVals[21] = BC.eTop/BC.energy;
+  fVals[22] = BC.eBottom/BC.energy;
+  fVals[23] = BC.eLeft/BC.energy;
+  fVals[24] = BC.eRight/BC.energy;
 
-  fVals[index++] = BC.e2x5Max/BC.energy;
-  fVals[index++] = BC.e2x5Top/BC.energy;
-  fVals[index++] = BC.e2x5Bottom/BC.energy;
-  fVals[index++] = BC.e2x5Left/BC.energy;
-  fVals[index++] = BC.e2x5Right/BC.energy;
+  fVals[25] = BC.e2x5Max/BC.energy;
+  fVals[26] = BC.e2x5Top/BC.energy;
+  fVals[27] = BC.e2x5Bottom/BC.energy;
+  fVals[28] = BC.e2x5Left/BC.energy;
+  fVals[29] = BC.e2x5Right/BC.energy;
   
   if(pho.isBarrel()){
-    fVals[index++] = BC.iEta;
-    fVals[index++] = BC.iPhi;
-    fVals[index++] = BC.iEta%5;
-    fVals[index++] = BC.iPhi%2;
-    if( abs(BC.iEta <= 25) ) fVals[index++] = BC.iEta % 25;
-    else fVals[index++] = (BC.iEta - 25*abs(BC.iEta)/BC.iEta) % 20;
-    fVals[index++] = BC.iPhi%20;
-    fVals[index++] = BC.etaCrystal;
-    fVals[index++] = BC.phiCrystal;
+    fVals[30] = BC.iEta;
+    fVals[31] = BC.iPhi;
+    fVals[32] = BC.iEta%5;
+    fVals[33] = BC.iPhi%2;
+    if( abs(BC.iEta <= 25) ) fVals[34] = BC.iEta % 25;
+    else fVals[34] = (BC.iEta - 25*abs(BC.iEta)/BC.iEta) % 20;
+    fVals[35] = BC.iPhi%20;
+    fVals[36] = BC.etaCrystal;
+    fVals[37] = BC.phiCrystal;
   }
   else{
-    fVals[index++] = pho.SC.esEnergy/pho.SC.rawE;
+    fVals[30] = pho.SC.esEnergy/pho.SC.rawE;
   }
   //finished filling array
 
-  const Double_t varscale = 1.253;
+  const Double_t varscale = 1.;
   Double_t den;
   const GBRForest *greader;
   const GBRForest *greadervar;
@@ -414,10 +420,9 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
 
 
 
-std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEnergyWithErrorv2(int j){
+std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosPho &pho){
     
   
-  VecbosPho pho(base,j);
   if(debugEGEnergy) cout << "Getting ECAL Coordinates" << endl;
   THIS_ECAL_GEO thisGeometry = getGapCoordinates(ecalGeometry, pho.SC.eta, pho.SC.phi);
   if(debugEGEnergy) cout << "Done" << endl;

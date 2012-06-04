@@ -1,6 +1,6 @@
 
-#ifndef ROOT_GBRTree
-#define ROOT_GBRTree
+#ifndef EGAMMAOBJECTS_GBRTree
+#define EGAMMAOBJECTS_GBRTree
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
@@ -9,7 +9,7 @@
 // A fast minimal implementation of Gradient-Boosted Regression Trees   //
 // which has been especially optimized for size on disk and in memory.  //                                                                  
 //                                                                      //
-// Designed to built from TMVA-trained trees, but could also be         //
+// Designed to be built from TMVA-trained trees, but could also be      //
 // generalized to otherwise-trained trees, classification,              //
 //  or other boosting methods in the future                             //
 //                                                                      //
@@ -25,8 +25,6 @@
 
 #include <vector>
 #include <map>
-#include "Rtypes.h"
-
 
   namespace TMVA {
     class DecisionTree;
@@ -38,39 +36,80 @@
     public:
 
        GBRTree();
-       GBRTree(const TMVA::DecisionTree *tree);
-       
+       explicit GBRTree(const TMVA::DecisionTree *tree);
        virtual ~GBRTree();
        
-       Double_t GetResponse(const Float_t* vector) const;
+       double GetResponse(const float* vector) const;
+       int TerminalIndex(const float *vector) const;
        
-    protected:
-      
-        UInt_t CountIntermediateNodes(const TMVA::DecisionTreeNode *node);
-        UInt_t CountTerminalNodes(const TMVA::DecisionTreeNode *node);
+       std::vector<float> &Responses() { return fResponses; }       
+       const std::vector<float> &Responses() const { return fResponses; }
+       
+       std::vector<unsigned char> &CutIndices() { return fCutIndices; }
+       const std::vector<unsigned char> &CutIndices() const { return fCutIndices; }
+       
+       std::vector<float> &CutVals() { return fCutVals; }
+       const std::vector<float> &CutVals() const { return fCutVals; }
+       
+       std::vector<int> &LeftIndices() { return fLeftIndices; }
+       const std::vector<int> &LeftIndices() const { return fLeftIndices; } 
+       
+       std::vector<int> &RightIndices() { return fRightIndices; }
+       const std::vector<int> &RightIndices() const { return fRightIndices; }
+       
+
+       
+    protected:      
+        unsigned int CountIntermediateNodes(const TMVA::DecisionTreeNode *node);
+        unsigned int CountTerminalNodes(const TMVA::DecisionTreeNode *node);
       
         void AddNode(const TMVA::DecisionTreeNode *node);
         
-        Int_t    fNIntermediateNodes;
-        Int_t    fNTerminalNodes;
-      
-        UChar_t *fCutIndices;//[fNIntermediateNodes]
-        Float_t *fCutVals;//[fNIntermediateNodes]
-        Int_t   *fLeftIndices;//[fNIntermediateNodes]
-        Int_t   *fRightIndices;//[fNIntermediateNodes]        
-        Float_t *fResponses;//[fNTerminalNodes]
-
+	std::vector<unsigned char> fCutIndices;
+	std::vector<float> fCutVals;
+	std::vector<int> fLeftIndices;
+	std::vector<int> fRightIndices;
+	std::vector<float> fResponses;  
         
-    ClassDef(GBRTree,1) // Node for the Decision Tree 
   };
 
 //_______________________________________________________________________
-inline Double_t GBRTree::GetResponse(const Float_t* vector) const {
+inline double GBRTree::GetResponse(const float* vector) const {
   
-  Int_t index = 0;
+  int index = 0;
   
-  UChar_t cutindex = fCutIndices[0];
-  Float_t cutval = fCutVals[0];
+  unsigned char cutindex = fCutIndices[0];
+  float cutval = fCutVals[0];
+  
+  while (true) {
+     
+    if (vector[cutindex] > cutval) {
+      index = fRightIndices[index];
+    }
+    else {
+      index = fLeftIndices[index];
+    }
+    
+    if (index>0) {
+      cutindex = fCutIndices[index];
+      cutval = fCutVals[index];
+    }
+    else {
+      return fResponses[-index];
+    }
+    
+  }
+  
+
+}
+
+//_______________________________________________________________________
+inline int GBRTree::TerminalIndex(const float* vector) const {
+  
+  int index = 0;
+  
+  unsigned char cutindex = fCutIndices[0];
+  float cutval = fCutVals[0];
   
   while (true) {
     if (vector[cutindex] > cutval) {
@@ -85,7 +124,7 @@ inline Double_t GBRTree::GetResponse(const Float_t* vector) const {
       cutval = fCutVals[index];
     }
     else {
-      return fResponses[-index];
+      return (-index);
     }
     
   }

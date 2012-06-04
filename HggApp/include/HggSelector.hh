@@ -1,7 +1,6 @@
-
-
 #include <VecbosEGObject.hh>
 #include <HggMassResolution.hh>
+#include <HggPhotonID.hh>
 
 #include <vector>
 #include <iostream>
@@ -42,12 +41,15 @@ private:
   string outputFile;
 
   std::pair<int,int> getBestPair(float*,int,int);
+  std::pair<int,int> getBestPairPFCiC(int,int);
   
   bool doElectronVeto;
   bool isData_;
   
   string massResConfig;
   HggMassResolution *massRes;
+
+  HggPhotonID *PhotonID;
 
   const static float rhoFac    = 0.17;
   const static float rhoFacBad = 0.52;
@@ -70,15 +72,10 @@ private:
 
   void fillMuMuGamma();
   //TMVA stuff
-  string weightFile_IdEB;
-  string weightFile_IdEE;
   string weightFile_diPho;
-  string methodName_Id;
   string methodName_diPho;
-  TMVA::Reader *photonMVA_EB;
-  TMVA::Reader *photonMVA_EE;
   TMVA::Reader *diPhotonMVA;
-  float getIdMVA(int,int,bool,bool,int);
+
   float getDiPhoMVA(int,int,float,float,bool);
 
   float getMPair(int,int);
@@ -86,19 +83,6 @@ private:
   //better to do it this way so we can do PFSC or regular SC without major changes
 
   
-  //photon ID MVA:
-  float hoe;
-  float sigietaieta;
-  float isosumoet;
-  float trkisooet;
-  float isosumoetbad;
-  float r9;
-  float ecalisodr03;
-  float hcalisodr04;
-  float nVertexf;
-  float etasc;
-  float scetawidth;
-  float scphiwidth;
   //diPhotonMVA:
   float smearedMassErrByMass; // mass error smeared/mass
   float smearedMassErrByMassWrongVtx;
@@ -125,13 +109,18 @@ private:
   float diPhoVtxX_;
   float diPhoVtxY_;
   float diPhoVtxZ_;
-  float pfmPair_;
-  float pfmPairRes_;
-  float pfmPairResWrongVtx_;
-  float pfdiPhoMVA_;
-  float pfpho1MVA_;
-  float pfpho2MVA_;
-  int pfdiPhoVtx_;
+
+  float mPairPFCiC_;
+  float mPairNoCorrPFCiC_;
+  float mPairResPFCiC_;
+  float mPairResWrongVtxPFCiC_;
+  int diPhoVtxPFCiC_;
+  float diPhoVtxXPFCiC_;
+  float diPhoVtxYPFCiC_;
+  float diPhoVtxZPFCiC_;
+
+  std::vector<VecbosPho> OutPhotons_;
+  std::vector<VecbosPho> OutPhotonsPFCiC_;
 
   float energyPho1;
   float energyNoCorrPho1;
@@ -140,6 +129,8 @@ private:
   float pyPho1;
   float pzPho1;
   float r9Pho1;
+  int catPho1;
+  int passPFCiCPho1;
   float indexPho1;
 
   float energyPho2;
@@ -149,28 +140,12 @@ private:
   float pyPho2;
   float pzPho2;
   float r9Pho2;
+  int catPho2;
+  int passPFCiCPho2;
   float indexPho2;
-
-  float energyPFPho1;
-  float etaPFPho1;
-  float pxPFPho1;
-  float pyPFPho1;
-  float pzPFPho1;
-  float r9PFPho1;
-  float indexPFPho1;
-
-  float energyPFPho2;
-  float etaPFPho2;
-  float pxPFPho2;
-  float pyPFPho2;
-  float pzPFPho2;
-  float r9PFPho2;
-  float indexPFPho2;
 
   VecbosPho pho1_;
   VecbosPho pho2_;
-  VecbosPho pfpho1_;
-  VecbosPho pfpho2_;
 
   int nSigma;
   std::vector<float> mPairScale;
@@ -181,6 +156,9 @@ private:
   std::vector<float> pho1MVASmear;
   std::vector<float> pho2MVASmear;
   std::vector<float> diPhoMVASmear;
+
+  std::vector<float> mPairScalePFCiC;
+  std::vector<float> mPairSmearPFCiC;
 
   //for mumuG
   const static int maxMuMuG = 500;

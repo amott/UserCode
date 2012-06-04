@@ -16,6 +16,7 @@ cmsenv
 cvs co -r vertex_mva_v4 -d h2gglobe/VertexAnalysis UserCode/HiggsAnalysis/HiggsTo2photons/h2gglobe/VertexAnalysis/
 cvs co -r vertex_mva_v4_fixed UserCode/CITAnalysis/VertexAnalysis/src/HggVertexAnalyzer.cc
 cp  UserCode/CITAnalysis/VertexAnalysis/src/HggVertexAnalyzer.cc h2gglobe/VertexAnalysis/src
+cvs co CondFormats/EgammaObjects/
 scram b
 cd ../../
 ln -s CMSSW_5_2_3/src/h2gglobe/VertexAnalysis/interface/ h2ginclude

@@ -72,23 +72,20 @@ int HggSelector::init(){
     valid = false;
     return -1;
   }
-  weightFile_IdEB = cfg.getParameter("weightFile_IdEB");
-  weightFile_IdEE = cfg.getParameter("weightFile_IdEE");
   weightFile_diPho = cfg.getParameter("weightFile_diPho");
 
-  methodName_Id  = cfg.getParameter("methodName_Id");
   methodName_diPho  = cfg.getParameter("methodName_diPho");
 
   triggers = cfg.getTokens("Triggers",",");
   cout << "Parameters: " << endl
-       << weightFile_IdEB << endl
-       << weightFile_IdEB << endl
        << weightFile_diPho << endl
-       << methodName_Id << endl
        << methodName_diPho << endl;
 
-  this->setupTMVA();
+  PhotonID = new HggPhotonID();
+  PhotonID->setConfig(configFile);
+  PhotonID->Init();
 
+  this->setupTMVA();
 }
 
 void HggSelector::Loop(){
@@ -100,7 +97,7 @@ void HggSelector::Loop(){
   Long64_t nEntries = fChain->GetEntries();
   Long64_t jentry=-1;
   int index1=-1,index2=-1;
-  int PFindex1=-1,PFindex2=-1;
+  int index1PFCiC=-1,index2PFCiC=-1;
   while(fChain->GetEntry(++jentry)){
     if(jentry%500==0) cout << ">> Processing Entry " << jentry << "/" << nEntries << endl;
 
@@ -125,6 +122,7 @@ void HggSelector::Loop(){
     
     if(nSigma>0 && !isData_){ //do the energy scale and energy resolution systematics
       for(int iSmear=-nSigma;iSmear<=nSigma;iSmear++){
+	//Do the Smearing for the MVA analysis
 	indices = getBestPair(mvaOut,iSmear,0);
 	diPhoMVASmear.push_back(mvaOut[0]);
 	pho1MVASmear.push_back(mvaOut[1]);
@@ -135,9 +133,16 @@ void HggSelector::Loop(){
 	}else{
 	  mPairSmear.push_back(getMPair(indices.first,indices.second));
 	}
-      }
+	//do the smearing for the PFCiC Analysis
+	indices = getBestPairPFCiC(iSmear,0);
+	if(indices.first == -1 || indices.second==-1){
+	  mPairSmearPFCiC.push_back(-1);
+	}else{
+	  mPairSmearPFCiC.push_back(getMPair(indices.first,indices.second));
+	}
+      } // Done with smearing
 
-      for(int iScale=-nSigma;iScale<=nSigma;iScale++){
+      for(int iScale=-nSigma;iScale<=nSigma;iScale++){ //do the scaling systematic
 	indices = getBestPair(mvaOut,-999,iScale);
 	diPhoMVAScale.push_back(mvaOut[0]);
 	pho1MVAScale.push_back(mvaOut[1]);
@@ -148,6 +153,14 @@ void HggSelector::Loop(){
 	}else{
 	  mPairScale.push_back(getMPair(indices.first,indices.second));
 	}
+		//do the smearing for the PFCiC Analysis
+	indices = getBestPairPFCiC(-999,iScale);
+	if(indices.first == -1 || indices.second==-1){
+	  mPairScalePFCiC.push_back(-1);
+	}else{
+	  mPairScalePFCiC.push_back(getMPair(indices.first,indices.second));
+	}
+
       }
 
     }
@@ -159,23 +172,26 @@ void HggSelector::Loop(){
     pho1MVA_  = mvaOut[1];
     pho2MVA_  = mvaOut[2];
 
+    //Do the PFCiC selection as well!
+    indices = getBestPairPFCiC(0,0); // no scaling and default smearing
+    index1PFCiC = indices.first;
+    index2PFCiC = indices.second;
 
     if(debugSelector) cout << "LOOP DONE" << endl;	  
-    if(index1 == -1 || index2==-1 || index1 >=nPho_ || index2 >=nPho_){
-      //cout << "No selected photon pair!!!" << endl;
-      outTree->Fill();
-      continue;
-    }
+    
 
     if(debugSelector) cout << "indices: " << index1 << "  " << index2 << endl;
-    int selectedVertex = getVertexIndex(index1,index2);
-    if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
-    
-    TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
-    if(debugSelector) cout << "Vtx Pos: " << vtxPos.X() << "  " << vtxPos.Y() << "  " << vtxPos.Z() << endl;
+
     if(index1 > -1 && index2 > -1){
+      //fill MVA variables
+      int selectedVertex = getVertexIndex(index1,index2);
+      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      
+      TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
       pho1_ = Photons_->at(index1);
       pho2_ = Photons_->at(index2);
+      OutPhotons_.push_back(pho1_);
+      OutPhotons_.push_back(pho2_);
       energyPho1 = pho1_.finalEnergy;
       energyNoCorrPho1 = pho1_.energy;
       etaPho1    = pho1_.SC.eta;
@@ -204,47 +220,38 @@ void HggSelector::Loop(){
       diPhoVtxY_ = vtxY[selectedVertex];
       diPhoVtxZ_ = vtxZ[selectedVertex];
     }else{
-      mPair_=-1;
+      mPair_=-1;      
     }
 
-    if(debugSelector) cout << "indices: " << PFindex1 << "  " << PFindex2 << endl;
-    if(PFindex1 != -1 && PFindex2!=-1 && PFindex1 <nPho_ && PFindex2 < nPho_){
-      int PFselectedVertex = getVertexIndex(PFindex1,PFindex2);
-      if(debugSelector) cout << "PF Final Selection: " << PFselectedVertex << endl;
-      TVector3 PFvtxPos(vtxX[PFselectedVertex],vtxY[PFselectedVertex],vtxZ[PFselectedVertex]);
-      if(PFindex1 > -1 && PFindex2 > -1){
-	pfpho1_ = Photons_->at(PFindex1);
-	pfpho2_ = Photons_->at(PFindex2);
-	energyPFPho1 = pfpho1_.finalEnergy;
-	etaPFPho1    = pfpho1_.SC.eta;
-	pxPFPho1     = pfpho1_.p4FromVtx(vtxPos,pfpho1_.finalEnergy,true).Px();
-	pyPFPho1     = pfpho1_.p4FromVtx(vtxPos,pfpho1_.finalEnergy,true).Py();
-	pzPFPho1     = pfpho1_.p4FromVtx(vtxPos,pfpho1_.finalEnergy,true).Pz();
-	r9PFPho1     = pfpho1_.SC.r9();
-	indexPFPho1  = pfpho1_.index;
-	
-	energyPFPho2 = pfpho2_.finalEnergy;
-	etaPFPho2    = pfpho2_.SC.eta;
-	pxPFPho2     = pfpho2_.p4FromVtx(vtxPos,pfpho2_.finalEnergy).Px();
-	pyPFPho2     = pfpho2_.p4FromVtx(vtxPos,pfpho2_.finalEnergy).Py();
-	pzPFPho2     = pfpho2_.p4FromVtx(vtxPos,pfpho2_.finalEnergy).Pz();
-	r9PFPho2     = pfpho2_.SC.r9();
-	indexPFPho2  = pfpho2_.index;
+    if(index1PFCiC > -1 && index2PFCiC > -1){
+      //fill PFCiC variables
+      int selectedVertex = getVertexIndex(index1PFCiC,index2PFCiC);
+      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      
+      TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
+      pho1_ = Photons_->at(index1);
+      pho2_ = Photons_->at(index2);
+      OutPhotonsPFCiC_.push_back(pho1_);
+      OutPhotonsPFCiC_.push_back(pho2_);
 
-	pfmPair_ = (pfpho1_.p4FromVtx(PFvtxPos,pfpho1_.finalEnergy,true) + pfpho2_.p4FromVtx(PFvtxPos,pfpho2_.finalEnergy,true)).M();
-	pfmPairRes_ = massRes->getMassResolution(&pfpho1_,&pfpho2_,vtxPos,false);
-	pfmPairResWrongVtx_ = massRes->getMassResolution(&pfpho1_,&pfpho2_,vtxPos,true);
-	pfdiPhoVtx_ = PFselectedVertex;
-      }else{
-	pfmPair_=-1;
-      }
+      mPairPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
+      mPairNoCorrPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
+      mPairResPFCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,false);
+      mPairResWrongVtxPFCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,true);
+      diPhoVtxPFCiC_ = selectedVertex;
+      diPhoVtxXPFCiC_ = vtxX[selectedVertex];
+      diPhoVtxYPFCiC_ = vtxY[selectedVertex];
+      diPhoVtxZPFCiC_ = vtxZ[selectedVertex];
+    }else{
+      mPairPFCiC_=-1;
     }
+
     outTree->Fill();
   }//while(fChain...
 
   TFile *f = new TFile(outputFile.c_str(),"RECREATE");
   outTree->Write();
-  outTreeMuMuG->Write();
+  if(doMuMuGamma) outTreeMuMuG->Write();
   f->Close();
 }
 
@@ -258,20 +265,23 @@ float HggSelector::getMPair(int i1, int i2){
   return (pho1.p4FromVtx(vtxPos,pho1.finalEnergy) + pho2.p4FromVtx(vtxPos,pho2.finalEnergy)).M();
 }
 
-std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int scaleShift){
+std::pair<int,int> HggSelector::getBestPairPFCiC(int smearShift,int scaleShift){
   std::pair<int,int> indices(-1,-1);
-  float diPhoMVAMax=-99;
+  //int bestCat=-1;
+  //float bestMass=-99;
+  float highestPtSum=0; // is this the best way to select the pairs?
   TRandom3 rng(0);
 
     for(int iPho1=0; iPho1<nPho_;iPho1++){
+      if(photonMatchedElectron[iPho1] && doElectronVeto) return std::pair<int,int>(-1,-1);
       for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
 	if(iPho1==iPho2) continue;
+	if(photonMatchedElectron[iPho2] && doElectronVeto) return std::pair<int,int>(-1,-1);
 	if(debugSelector) cout << ">> " << iPho1 << "  " << iPho2 << endl;
-	//NON-PF block
 	//scale/smear the energy of the photon
+	VecbosPho* pho1 = &(Photons_->at(iPho1));
+	VecbosPho* pho2 = &(Photons_->at(iPho2));
 	if(!isData_){
-	  VecbosPho* pho1 = &(Photons_->at(iPho1));
-	  VecbosPho* pho2 = &(Photons_->at(iPho2));
 	  
 	  //apply scale shift	  
 	  pho1->finalEnergy = pho1->scaledEnergy + scaleShift*pho1->scaledEnergyError;
@@ -290,32 +300,84 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 	  if(rand > 1E3) rand = 1E3;
 	  pho2->finalEnergy = pho2->finalEnergy*(1+rand);
 	}
-	float mva1 = getIdMVA(iPho1,iPho2,true,false,-1);
-	float mva2 = getIdMVA(iPho1,iPho2,false,false,-1);
-	float diPhoMVA =  getDiPhoMVA(iPho1,iPho2,mva1,mva2,false);
-	if(debugSelector) cout << "\t\t" << mva1 << "  " << mva2 << "  " << diPhoMVA << endl;
-	if(diPhoMVA > diPhoMVAMax){
+	int selVtxI = this->getVertexIndex(iPho1,iPho2);
+	bool CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	bool CiC2 = PhotonID->getIdCiCPF(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	if(!CiC1 || !CiC2) continue;
+	float thisPtSum = pho1->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho1->finalEnergy).Pt()
+	  + pho2->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho2->finalEnergy).Pt();	
+	if(thisPtSum > highestPtSum){
+	  highestPtSum = thisPtSum;
 	  indices.first = iPho1;
 	  indices.second = iPho2;
-	  diPhoMVAMax = diPhoMVA;
-	  mvaOut[0] = diPhoMVA;
-	  mvaOut[1] = mva1;
-	  mvaOut[2] = mva2;
 	}
       }// for(iPho2...
     }// for(iPho1...
 
+    return indices;
+
+}
+
+std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int scaleShift){
+  std::pair<int,int> indices(-1,-1);
+  float diPhoMVAMax=-99;
+  TRandom3 rng(0);
+  mvaOut[0] = -999;
+  mvaOut[1] = -999;
+  mvaOut[2] = -999;
+  for(int iPho1=0; iPho1<nPho_;iPho1++){
+    if(photonMatchedElectron[iPho1] && doElectronVeto) continue;
+    for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
+      if(iPho1==iPho2) continue;
+      if(photonMatchedElectron[iPho2] && doElectronVeto) continue;
+      if(debugSelector) cout << ">> " << iPho1 << "  " << iPho2 << endl;
+      //NON-PF block
+      //scale/smear the energy of the photon
+      VecbosPho* pho1 = &(Photons_->at(iPho1));
+      VecbosPho* pho2 = &(Photons_->at(iPho2));
+      if(!isData_){
+	
+	//apply scale shift	  
+	pho1->finalEnergy = pho1->scaledEnergy + scaleShift*pho1->scaledEnergyError;
+	pho2->finalEnergy = pho2->scaledEnergy + scaleShift*pho2->scaledEnergyError;
+	
+	float smear = pho1->dEoE + smearShift*pho1->dEoEErr;
+	if(smear < 0) smear = 0;
+	if(smearShift<-100) smear = 0;
+	float rand=0;
+	if(smear > 0) rand = rng.Gaus(0,smear);
+	if(rand < -1) rand=-1;
+	if(rand > 1E3) rand = 1E3;
+	pho1->finalEnergy = pho1->finalEnergy*(1+rand);
+	if(smear > 0) rand = rng.Gaus(0,smear);
+	if(rand < -1) rand = -1;
+	if(rand > 1E3) rand = 1E3;
+	pho2->finalEnergy = pho2->finalEnergy*(1+rand);
+      }
+      int selVtxI = this->getVertexIndex(iPho1,iPho2);
+      float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      float mva2 = PhotonID->getIdMVA(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      float diPhoMVA =  getDiPhoMVA(iPho1,iPho2,mva1,mva2,false);
+      if(debugSelector) cout << "\t\t" << mva1 << "  " << mva2 << "  " << diPhoMVA << endl;
+      if(diPhoMVA > diPhoMVAMax && diPhoMVA>=-1){
+	indices.first = iPho1;
+	indices.second = iPho2;
+	diPhoMVAMax = diPhoMVA;
+	mvaOut[0] = diPhoMVA;
+	mvaOut[1] = mva1;
+	mvaOut[2] = mva2;
+      }
+    }// for(iPho2...
+  }// for(iPho1...
+  
     return indices;
 }
 
 void HggSelector::setDefaults(){
   mPair_=-1;
   mPairNoCorr_=-1;
-  pfmPair_=-1;
   indexPho1 = -1;
   indexPho2 = -1;
-  indexPFPho1 = -1;
-  indexPFPho2 = -1;      
   genHiggsPt = -1;
   nPU_ = inPU;
 }
@@ -330,12 +392,6 @@ void HggSelector::clear(){
   diPhoVtxY_=0;
   diPhoVtxZ_=0;
 
-  pfmPair_=-1;
-  pfdiPhoMVA_=-999;
-  pfpho1MVA_=-999;
-  pfpho2MVA_=-999;  
-  pfdiPhoVtx_=-1;
-
   genHiggsPt = higgsPtIn;
   genHiggsVx = higgsVxIn;
   genHiggsVy = higgsVyIn;
@@ -349,6 +405,9 @@ void HggSelector::clear(){
   pho1MVASmear.clear();
   pho2MVASmear.clear();
   diPhoMVASmear.clear();
+
+  OutPhotons_.clear();
+  OutPhotonsPFCiC_.clear();
 
   int selGenPho=0;
   for(int iPho=0;iPho<nGenPho;iPho++){
@@ -373,39 +432,8 @@ void HggSelector::clear(){
 }
 
 void HggSelector::setupTMVA(){
-  photonMVA_EB = new TMVA::Reader( "!Color:!Silent" );;
-  photonMVA_EE = new TMVA::Reader( "!Color:!Silent" );;
   diPhotonMVA = new TMVA::Reader( "!Color:!Silent" );; 
 
-  //setup the ID MVAs:
-  ///EB
-  photonMVA_EB->AddVariable("HoE",&hoe);         
-  photonMVA_EB->AddVariable("covIEtaIEta",&sigietaieta);         
-  photonMVA_EB->AddVariable("tIso1abs",&isosumoet);              
-  photonMVA_EB->AddVariable("tIso3abs",&trkisooet);              
-  photonMVA_EB->AddVariable("tIso2abs",&isosumoetbad);           
-  photonMVA_EB->AddVariable("R9",&r9);           
-  photonMVA_EB->AddVariable("absIsoEcal",&ecalisodr03);          
-  photonMVA_EB->AddVariable("absIsoHcal",&hcalisodr04);          
-  photonMVA_EB->AddVariable("NVertexes",&nVertexf);              
-  photonMVA_EB->AddVariable("ScEta",&etasc);     
-  photonMVA_EB->AddVariable("EtaWidth",&scetawidth);             
-  photonMVA_EB->AddVariable("PhiWidth",&scphiwidth);             
-       
-  ///EE
-  photonMVA_EE->AddVariable("HoE",&hoe);         
-  photonMVA_EE->AddVariable("covIEtaIEta",&sigietaieta);         
-  photonMVA_EE->AddVariable("tIso1abs",&isosumoet);              
-  photonMVA_EE->AddVariable("tIso3abs",&trkisooet);              
-  photonMVA_EE->AddVariable("tIso2abs",&isosumoetbad);           
-  photonMVA_EE->AddVariable("R9",&r9);           
-  photonMVA_EE->AddVariable("absIsoEcal",&ecalisodr03);          
-  photonMVA_EE->AddVariable("absIsoHcal",&hcalisodr04);          
-  photonMVA_EE->AddVariable("NVertexes",&nVertexf);              
-  photonMVA_EE->AddVariable("ScEta",&etasc);     
-  photonMVA_EE->AddVariable("EtaWidth",&scetawidth);             
-  photonMVA_EE->AddVariable("PhiWidth",&scphiwidth);             
-  
   // diphoton                
   diPhotonMVA->AddVariable("masserrsmeared/mass",&smearedMassErrByMass); 
   diPhotonMVA->AddVariable("masserrsmearedwrongvtx/mass",&smearedMassErrByMass);         
@@ -419,8 +447,6 @@ void HggSelector::setupTMVA(){
   diPhotonMVA->AddVariable("ph2.idmva",&pho2IdMVA);
 
   //book MVAs:
-  photonMVA_EB->BookMVA( methodName_Id, weightFile_IdEB);
-  photonMVA_EE->BookMVA( methodName_Id, weightFile_IdEE);
   diPhotonMVA->BookMVA(  methodName_diPho, weightFile_diPho);
 }
 
@@ -503,13 +529,18 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxY",&diPhoVtxY_,"diPhotonVtxY/F");
   outTree->Branch("diPhotonVtxZ",&diPhoVtxZ_,"diPhotonVtxZ/F");
 
-  outTree->Branch("PFmPair",&pfmPair_,"PFmPair/F");
-  outTree->Branch("PFmPairRes",&pfmPairRes_,"PFmPairRes/F");
-  outTree->Branch("PFmPairResWrongVtx",&pfmPairResWrongVtx_,"PFmPairResWrongVtx/F");
-  outTree->Branch("PFdiPhotonMVA",&pfdiPhoMVA_,"PFdiPhotonMVA/F");
-  outTree->Branch("PFPhoton1MVA",&pfpho1MVA_,"PFPhoton1MVA/F");
-  outTree->Branch("PFPhoton2MVA",&pfpho2MVA_,"PFPhoton2MVA/F");
-  outTree->Branch("PFdiPhotonVtx",&pfdiPhoVtx_,"PFdiPhotonVtx/I");
+  outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
+  outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
+  outTree->Branch("mPairResPFCiC",&mPairResPFCiC_,"mPairResPFCiC/F");
+  outTree->Branch("mPairResWrongVtxPFCiC",&mPairResWrongVtxPFCiC_,"mPairResWrongVtxPFCiC/F");
+  outTree->Branch("diPhotonVtxPFCiC",&diPhoVtxPFCiC_,"diPhotonVtxPFCiC/I");
+  outTree->Branch("diPhotonVtxXPFCiC",&diPhoVtxXPFCiC_,"diPhotonVtxXPFCiC/F");
+  outTree->Branch("diPhotonVtxYPFCiC",&diPhoVtxYPFCiC_,"diPhotonVtxYPFCiC/F");
+  outTree->Branch("diPhotonVtxZPFCiC",&diPhoVtxZPFCiC_,"diPhotonVtxZPFCiC/F");
+
+  
+  outTree->Branch("Photon",&OutPhotons_);
+  outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
 
   outTree->Branch("energyPho1",&energyPho1);
   outTree->Branch("energyNoCorrPho1",&energyNoCorrPho1);
@@ -518,6 +549,8 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("pyPho1",&pyPho1);
   outTree->Branch("pzPho1",&pzPho1);
   outTree->Branch("r9Pho1",&r9Pho1);
+  outTree->Branch("catPho1",&catPho1,"catPho1/I");
+  outTree->Branch("passPFCiCPho1",&passPFCiCPho1,"passPFCiCPho1/I");  
   outTree->Branch("indexPho1",&indexPho1);
 
   outTree->Branch("energyPho2",&energyPho2);
@@ -527,23 +560,9 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("pyPho2",&pyPho2);
   outTree->Branch("pzPho2",&pzPho2);
   outTree->Branch("r9Pho2",&r9Pho2);
+  outTree->Branch("catPho2",&catPho2,"catPho2/I");
+  outTree->Branch("passPFCiCPho2",&passPFCiCPho2,"passPFCiCPho2/I");  
   outTree->Branch("indexPho2",&indexPho2);
-
-  outTree->Branch("energyPFPho1",&energyPFPho1);
-  outTree->Branch("etaPFPho1",&etaPFPho1);
-  outTree->Branch("pxPFPho1",&pxPFPho1);
-  outTree->Branch("pyPFPho1",&pyPFPho1);
-  outTree->Branch("pzPFPho1",&pzPFPho1);
-  outTree->Branch("r9PFPho1",&r9PFPho1);
-  outTree->Branch("indexPFPho1",&indexPFPho1);
-
-  outTree->Branch("energyPFPho2",&energyPFPho2);
-  outTree->Branch("etaPFPho2",&etaPFPho2);
-  outTree->Branch("pxPFPho2",&pxPFPho2);
-  outTree->Branch("pyPFPho2",&pyPFPho2);
-  outTree->Branch("pzPFPho2",&pzPFPho2);
-  outTree->Branch("r9PFPho2",&r9PFPho2);
-  outTree->Branch("indexPFPho2",&indexPFPho2);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);
   outTree->Branch("genHiggsVx",&genHiggsVx);
@@ -733,7 +752,7 @@ void HggSelector::fillMuMuGamma(){
 	dr03TrkSumHollowConePho[nMuMuG] = pho.dr03TrkSumPtHollowCone;
 	float eT = pho.p4FromVtx(vtx,pho.energy,false).Et();
 	isosumoetPho[nMuMuG] = (pho.dr03EcalRecHitSumEtCone + pho.dr04HcalTowerSumEtCone + pho.dr03TrkSumPtHollowCone + isoSumConst - rho*rhoFac)/eT;
-	mvaPho[nMuMuG] = getIdMVA(iPho,0,0,false,0);
+	mvaPho[nMuMuG] = PhotonID->getIdMVA(&pho,nVtx,rho,TVector3(vtxX[0],vtxY[0],vtxZ[0]),0); 
 	genMatchPho[nMuMuG] = (genIndexPho>=0);
 	if(genMatchPho[nMuMuG]){
 	  genEnergyPho[nMuMuG] = energyGenPho[genIndexPho];
@@ -833,84 +852,6 @@ float HggSelector::getVertexMVA(int indexPho1,int indexPho2){
     }
   }
   return selectedVertex;
-}
-
-float HggSelector::getIdMVA(int indexPho1,int indexPho2, bool selPho1, bool usePFSC,int forceVertex=-1){
-  
-  if(debugSelector) cout << "getIdMVA" <<endl;
-  if(debugSelector) cout << "get vertex index ... " << flush;
- 
-  int selectedVertex = forceVertex;
-  if(forceVertex == -1) selectedVertex = getVertexIndex(indexPho1,indexPho2);
-  if(debugSelector) cout << "Done" <<endl;
-  if(selectedVertex<0 || selectedVertex >= nVtx){
-    cout << "WARNING: Photons " << indexPho1 << " and " << indexPho2 
-	 << " have no selected vertex!" << endl
-	 << "Skipping this pair" << endl;
-    return -9999.;
-  }
-  
-  int index = (selPho1==true ? indexPho1: indexPho2);
-  if(debugSelector) cout << "index: " << index << endl;
-  if(debugSelector) cout << "selectedVertex: " << selectedVertex << " / " << nVtx << endl;
-  VecbosPho pho = Photons_->at(index);
-  //get the vtx w.r.t. which this has the worst isolation
-  float worstVtxTrkIso    = pho.photonWorstIsoDR04.first;
-  int worstVtxIndex       = pho.photonWorstIsoDR04.second;
-  if(debugSelector) cout << "savedVertices: " << pho.photonTrkIsoFromVtx.size() << endl;
-  float selectedVtxTrkIso = pho.photonTrkIsoFromVtx.at(selectedVertex);
-
-  if(debugSelector) cout << worstVtxTrkIso << "  " << worstVtxIndex << "  " 
-			 << selectedVtxTrkIso << endl;
-
-  //vetos:
-  if(photonMatchedElectron[index] && doElectronVeto) return -8999.;
-  
-  //set variables
-  VecbosSC *SC;
-  if(usePFSC) SC = &(pho.PFSC);
-  else SC = &(pho.SC);
-  TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
-
-  float eT = pho.p4FromVtx(vtxPos,pho.finalEnergy,false).Et();
-  hoe = pho.HoverE;
-  sigietaieta = SC->sigmaIEtaIEta;        
-  isosumoet   = (selectedVtxTrkIso + pho.dr03EcalRecHitSumEtCone + pho.dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac)/eT;
-  trkisooet = selectedVtxTrkIso;
-  isosumoetbad = (worstVtxTrkIso + pho.dr04EcalRecHitSumEtCone + pho.dr04HcalTowerSumEtCone + isoSumConstBad - rho*rhoFacBad)/eT;
-  r9 = SC->r9();          
-  ecalisodr03 = pho.dr03EcalRecHitSumEtCone - rho*rhoFac;         
-  hcalisodr04 = pho.dr04HcalTowerSumEtCone  - rho*rhoFac;         
-  nVertexf  = nVtx;             
-  etasc = SC->eta;    
-  scetawidth = SC->etaWidth;            
-  scphiwidth = SC->phiWidth;            
-
-  if(debugSelector) cout << "et: " << eT << "  " << SC->r9() << "  " << pho.dr03EcalRecHitSumEtCone << "  " << pho.dr04HcalTowerSumEtCone << "  " << selectedVtxTrkIso << "  " 
-			 << isosumoet << "  " << pho.dr03TrkSumPtHollowCone << endl;
-  if(SC->r9() < 0.9){
-    if( (pho.dr03EcalRecHitSumEtCone - 0.012*eT) > 4 
-	|| (pho.dr04HcalTowerSumEtCone - 0.005*eT) > 4 
-	|| (selectedVtxTrkIso - 0.002*eT) > 4
-	|| pho.dr03EcalRecHitSumEtCone > 3 
-	|| pho.dr04HcalTowerSumEtCone >  3
-	|| isosumoet > 2.8 
-	|| pho.dr03TrkSumPtHollowCone > 4) return -9998.;
-    if( (pho.isBarrel() && (pho.HoverE > 0.075 || SC->sigmaIEtaIEta > 0.014) )
-	|| (!pho.isBarrel() && (pho.HoverE > 0.075 || SC->sigmaIEtaIEta > 0.034) ) ) return -9997.;
-  }else{ //(SC->r9() > 0.9
-    if( (pho.dr03EcalRecHitSumEtCone - 0.012*eT) > 50 
-	|| (pho.dr04HcalTowerSumEtCone - 0.005*eT) > 50 
-	|| (selectedVtxTrkIso - 0.002*eT) > 50
-	|| pho.dr03EcalRecHitSumEtCone > 3 
-	|| pho.dr04HcalTowerSumEtCone >  3
-	|| isosumoet > 2.8 
-	|| pho.dr03TrkSumPtHollowCone > 4) return -9996.;
-    if( (pho.isBarrel() && (pho.HoverE > 0.075 || SC->sigmaIEtaIEta > 0.014) )
-	|| (!pho.isBarrel() && (pho.HoverE > 0.075 || SC->sigmaIEtaIEta > 0.034) ) ) return -9995.;
-  }
-
-  return (pho.isBarrel() ? photonMVA_EB->EvaluateMVA(methodName_Id) : photonMVA_EE->EvaluateMVA(methodName_Id) );	      
 }
 
 float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float mva2, bool usePFSC){

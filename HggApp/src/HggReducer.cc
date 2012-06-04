@@ -162,11 +162,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       if(debugReducer) cout << "pass" << endl;
 
       //DO ENERGY CORRECTION
-      std::pair<float,float> cor(pho.energy,0.);
-      if(correctionType == 96){
-	//cout << "Doing Energy Correction" << endl;
-	cor = corrector->photonEnergyCorrector_CorrectedEnergyWithErrorv2(iPho);
-      }
+      std::pair<float,float> cor = corrector->getPhotonEnergyCorrection(iPho);
       pho.correctedEnergy = cor.first;
       pho.correctedEnergyError = cor.second;
             if(debugReducer) cout << "Corrected Photon: E=" << pho.energy << "  CorE=" << pho.correctedEnergy << "  eta=" 
@@ -397,40 +393,29 @@ void HggReducer::init(string outputFileName){
    return;
  }
 
- string VertexingCFG = cfg.getParameter("VertexingCFG");
- string EnergyCorrectorCFG = cfg.getParameter("EnergyCorrectorCFG");
  string EnergyScaleCFG = cfg.getParameter("EnergyScaleCFG");
  string EnergySmearCFG = cfg.getParameter("EnergySmearCFG");
- string sCorrectionType = cfg.getParameter("EnergyCorrectionType");
  string sPreselection   = cfg.getParameter("Preselection");
  string sScaleSmear     = cfg.getParameter("ScaleSmear");
  string sMinPhoSel      = cfg.getParameter("MinPreselPhotons");
  triggerNames  = cfg.getTokens("Triggers",",");
 
- correctionType = atoi(sCorrectionType.c_str());
  preSelSet = atoi(sPreselection.c_str());
  applyScaleSmear = atoi(sScaleSmear.c_str());
  if(sMinPhoSel.compare("")!=0) minPhoSel = atoi(sMinPhoSel.c_str());
 
  cout << "Config Parameters:" << endl
-      << "Vertexing: " << VertexingCFG << endl
-      << "Energy Corrector: " << EnergyCorrectorCFG << endl
       << "EnergyScale: " << EnergyScaleCFG << endl
       << "EnergySmear: " << EnergySmearCFG << endl
-      << "Correction Type: " << sCorrectionType << endl
       << "Preselection Set: " << sPreselection << endl
       << "ApplyScaleSmear: "  << sScaleSmear << endl;
 
  vertexer  = new HggVertexing(this);
- vertexer->setConfigFile(VertexingCFG);
+ vertexer->setConfigFile(config);
  vertexer->useConversions();
  vertexer->init();
- corrector = new HggEGEnergyCorrector(this,correctionType,_isData);
- if(correctionType == 99){
-   energyScale = new HggEnergyScale(EnergyScaleCFG);
- }else if(correctionType == 96){
-   energyScale = new HggEnergyScale(EnergyScaleCFG);
- }
+ corrector = new HggEGEnergyCorrector(this,config,_isData);
+ energyScale = new HggEnergyScale(EnergyScaleCFG);
  energySmear = new HggEnergyScale(EnergySmearCFG);
  
 }
@@ -554,6 +539,7 @@ void HggReducer::fillVertexInfo(){
     vtxIsFake[i] = isFakePV[i];          
     vtxIsValid[i] = isValidPV[i];         
   }
+  rho=rhoFastjet;
 }
 
 void HggReducer::fillGeneratorInfo(){
