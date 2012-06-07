@@ -103,7 +103,7 @@ void HggSelector::Loop(){
 
     nPU_ = inPU;
     this->clear();
-    this->fillGenInfo();
+    if(!isData_) this->fillGenInfo();
     if(doMuMuGamma) this->fillMuMuGamma();
     
     if(debugSelector) cout << "requiring triggers ... " << flush;
