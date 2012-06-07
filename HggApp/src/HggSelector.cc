@@ -103,8 +103,9 @@ void HggSelector::Loop(){
 
     nPU_ = inPU;
     this->clear();
+    this->fillGenInfo();
     if(doMuMuGamma) this->fillMuMuGamma();
-
+    
     if(debugSelector) cout << "requiring triggers ... " << flush;
     trigger_ = this->requireTrigger();
     if(!trigger_){
@@ -392,11 +393,7 @@ void HggSelector::clear(){
   diPhoVtxY_=0;
   diPhoVtxZ_=0;
 
-  genHiggsPt = higgsPtIn;
-  genHiggsVx = higgsVxIn;
-  genHiggsVy = higgsVyIn;
-  genHiggsVz = higgsVzIn;
-
+  if(debugSelector) std::cout << "Clearing Scale/Smear variables" << std::endl;
   mPairScale.clear();
   pho1MVAScale.clear();
   pho2MVAScale.clear();
@@ -406,29 +403,54 @@ void HggSelector::clear(){
   pho2MVASmear.clear();
   diPhoMVASmear.clear();
 
+  if(debugSelector) std::cout << "Clearing Output Variables" << std::endl;
   OutPhotons_.clear();
   OutPhotonsPFCiC_.clear();
 
-  int selGenPho=0;
-  for(int iPho=0;iPho<nGenPho;iPho++){
-    if(pidMomGenPho[iPho] == 25){ //higgs
-      if(selGenPho==0){
-	etaGenPho1 = etaGenPho[iPho];
-	phiGenPho1 = phiGenPho[iPho];
-	ptGenPho1 = ptGenPho[iPho];
-	energyGenPho1 = energyGenPho[iPho];
-      }
-      else if(selGenPho==1){
-	etaGenPho2 = etaGenPho[iPho];
-	phiGenPho2 = phiGenPho[iPho];
-	ptGenPho2 = ptGenPho[iPho];
-	energyGenPho2 = energyGenPho[iPho];
-      }else{
-	cout << "More than 2 photons from a higgs decay!!" << endl;
-      }
-      selGenPho++;
-    }
+  if(debugSelector) std::cout << "Clearing MMG Output Variables" << std::endl;
+  if(doMuMuGamma){
+    MMG_Mu1.clear();
+    MMG_Mu2.clear();
+    MMG_Pho.clear();
   }
+}
+
+void HggSelector::fillGenInfo(){
+  if(debugSelector) std::cout << "Setting Gen Higgs Info" << std::endl;
+  if(nGenHiggs > 0){
+    genHiggsPt = GenHiggs->front().pt;
+    genHiggsVx = GenHiggs->front().Vx;
+    genHiggsVy = GenHiggs->front().Vy;
+    genHiggsVz = GenHiggs->front().Vz;
+  }else{
+    genHiggsPt = 0;
+    genHiggsVx = 0;
+    genHiggsVy = 0;
+    genHiggsVz = 0;
+  }
+
+  if(debugSelector) std::cout << "Clearing Output Variables" << std::endl;
+  int selGenPho=0;
+  GenCollection::const_iterator genPho;
+  for(genPho = GenPhotons->begin(); genPho != GenPhotons->end(); genPho++){
+    if(genPho->idMother != 25) continue; // not a higgs
+    if(selGenPho==0){
+      etaGenPho1 = genPho->eta;
+      phiGenPho1 = genPho->phi;
+      ptGenPho1 =  genPho->pt;
+      energyGenPho1 = genPho->energy;
+    }
+    else if(selGenPho==1){
+      etaGenPho2 = genPho->eta;
+      phiGenPho2 = genPho->phi;
+      ptGenPho2 =  genPho->pt;
+      energyGenPho2 = genPho->energy;
+    }else{
+      cout << "More than 2 photons from a higgs decay!!" << endl;
+    }
+    selGenPho++;
+  }
+  
 }
 
 void HggSelector::setupTMVA(){
@@ -483,27 +505,14 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("ggVerticesPhotonIndices",&ggVerticesPhotonIndices);
  fChain->SetBranchAddress("ggVerticesVertexIndex",&ggVerticesVertexIndex);
 
- fChain->SetBranchAddress("nMu",&nMu_);
- fChain->SetBranchAddress("Muons",&Muons_);
+ //fChain->SetBranchAddress("nMu",&nMu_);
+ //fChain->SetBranchAddress("Muons",&Muons_);
 
- fChain->SetBranchAddress("higgsPt",&higgsPtIn);
- fChain->SetBranchAddress("higgsVx",&higgsVxIn);
- fChain->SetBranchAddress("higgsVy",&higgsVyIn);
- fChain->SetBranchAddress("higgsVz",&higgsVzIn);
+ fChain->SetBranchAddress("nGenHiggs",&nGenHiggs);
+ fChain->SetBranchAddress("GenHiggs",&GenHiggs);
 
  fChain->SetBranchAddress("nGenPho",&nGenPho);
- fChain->SetBranchAddress("etaGenPho",etaGenPho);
- fChain->SetBranchAddress("phiGenPho",phiGenPho);
- fChain->SetBranchAddress("ptGenPho",ptGenPho);
- fChain->SetBranchAddress("energyGenPho",energyGenPho);
- fChain->SetBranchAddress("pidMomGenPho",pidMomGenPho);
-
- fChain->SetBranchAddress("nGenMu",&nGenMu);
- fChain->SetBranchAddress("etaGenMu",etaGenMu);
- fChain->SetBranchAddress("phiGenMu",phiGenMu);
- fChain->SetBranchAddress("ptGenMu",ptGenMu);
- fChain->SetBranchAddress("energyGenMu",energyGenMu);
- fChain->SetBranchAddress("pidMomGenMu",pidMomGenMu);
+ fChain->SetBranchAddress("GenPhotons",&GenPhotons);
 
  fChain->SetBranchAddress("nPU",&inPU);
  vector<string>::const_iterator trigIt;
@@ -600,62 +609,13 @@ void HggSelector::setupOutputTree(){
     outTreeMuMuG->Branch("massMuMuGenGamma",massMuMuGenGamma,"massMuMuGenGamma[nMuMuG]");
     outTreeMuMuG->Branch("massMuMu",massMuMu,"massMuMu[nMuMuG]");
     outTreeMuMuG->Branch("puWeight",puWeight,"puWeight[nMuMuG]");
-  
-    outTreeMuMuG->Branch("ptMu1",ptMu1,"ptMu1[nMuMuG]");
-    outTreeMuMuG->Branch("etaMu1",etaMu1,"etaMu1[nMuMuG]");
-    outTreeMuMuG->Branch("phiMu1",phiMu1,"phiMu1[nMuMuG]");
-    outTreeMuMuG->Branch("chargeMu1",chargeMu1,"chargeMu1[nMuMuG]/I");
-    outTreeMuMuG->Branch("isoMu1",isoMu1,"isoMu1[nMuMuG]");
-    outTreeMuMuG->Branch("drPhoMu1",drPhoMu1,"drPhoMu1[nMuMuG]");
-  //gen muon, same charge, stat 1
-  //dR < 0.5, ptRelDif < 0.5
-  //two gen objects cannot match reco object
-    outTreeMuMuG->Branch("genMatchMu1",genMatchMu1,"genMatchMu1[nMuMuG]/I");
-    outTreeMuMuG->Branch("genPtMu1",genPtMu1,"genPtMu1[nMuMuG]");
-    outTreeMuMuG->Branch("genIdMu1",genIdMu1,"genIdMu1[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusMu1",genStatusMu1,"genStatusMu1[nMuMuG]/I");
-    outTreeMuMuG->Branch("genIdMomMu1",genIdMomMu1,"genIdMomMu1[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusMomMu1",genStatusMomMu1,"genStatusMomMu1[nMuMuG]/I");
 
-    outTreeMuMuG->Branch("ptMu2",ptMu2,"ptMu2[nMuMuG]");
-    outTreeMuMuG->Branch("etaMu2",etaMu2,"etaMu2[nMuMuG]");
-    outTreeMuMuG->Branch("phiMu2",phiMu2,"phiMu2[nMuMuG]");
-    outTreeMuMuG->Branch("chargeMu2",chargeMu2,"chargeMu2[nMuMuG]/I");
-    outTreeMuMuG->Branch("isoMu2",isoMu2,"isoMu2[nMuMuG]");
-    outTreeMuMuG->Branch("drPhoMu2",drPhoMu2,"drPhoMu2[nMuMuG]");
-  //gen muon, same charge, stat 1
-  //dR < 0.5, ptRelDif < 0.5
-  //two gen objects cannot match reco object
-    outTreeMuMuG->Branch("genMatchMu2",genMatchMu2,"genMatchMu2[nMuMuG]/I");
-    outTreeMuMuG->Branch("genPtMu2",genPtMu2,"genPtMu2[nMuMuG]");
-    outTreeMuMuG->Branch("genIdMu2",genIdMu2,"genIdMu2[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusMu2",genStatusMu2,"genStatusMu2[nMuMuG]/I");
-    outTreeMuMuG->Branch("genIdMomMu2",genIdMomMu2,"genIdMomMu2[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusMomMu2",genStatusMomMu2,"genStatusMomMu2[nMuMuG]/I");
-
+    outTreeMuMuG->Branch("Muon1",&MMG_Mu1);
+    outTreeMuMuG->Branch("Muon2",&MMG_Mu2);
+    outTreeMuMuG->Branch("Photon",&MMG_Pho);
   
-    outTreeMuMuG->Branch("defEnergyPho",defEnergyPho,"defEnergyPho[nMuMuG]");
-    outTreeMuMuG->Branch("regEnergyPho",regEnergyPho,"regEnergyPho[nMuMuG]");
-    outTreeMuMuG->Branch("scaleEnergyPho",scaleEnergyPho,"scaleEnergyPho[nMuMuG]");
-    outTreeMuMuG->Branch("etaPho",etaPho,"etaPho[nMuMuG]");
-    outTreeMuMuG->Branch("phiPho",phiPho,"phiPho[nMuMuG]");
-    outTreeMuMuG->Branch("eleMatchPho",eleMatchPho,"eleMatchPho[nMuMuG]/I");
-    outTreeMuMuG->Branch("r9Pho",r9Pho,"r9Pho[nMuMuG]");
-    outTreeMuMuG->Branch("hOePho",hOePho,"hOePho[nMuMuG]");
-    outTreeMuMuG->Branch("dr03EcalIsoPho",dr03EcalIsoPho,"dr03EcalIsoPho[nMuMuG]");
-    outTreeMuMuG->Branch("dr04HcalIsoPho",dr04HcalIsoPho,"dr04HcalIsoPho[nMuMuG]");
     outTreeMuMuG->Branch("isosumoetPho",isosumoetPho,"isosumoetPho[nMuMuG]");
-    outTreeMuMuG->Branch("dr03TrkSumHollowConePho",dr03TrkSumHollowConePho,"dr03TrkSumHollowConePho[nMuMuG]");  
     outTreeMuMuG->Branch("mvaPho",mvaPho,"mvaPho[nMuMuG]");
-  // photon matching: dR < 0.2
-  // |recoPt-truePt/truePt| < 1
-
-    outTreeMuMuG->Branch("genMatchPho",genMatchPho,"genMatchPho[nMuMuG]/I");
-    outTreeMuMuG->Branch("genEnergyPho",genEnergyPho,"genEnergyPho[nMuMuG]");
-    outTreeMuMuG->Branch("genIdPho",genIdPho,"genIdPho[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusPho",genStatusPho,"genStatusPho[nMuMuG]/I");
-    outTreeMuMuG->Branch("genIdMomPho",genIdMomPho,"genIdMomPho[nMuMuG]/I");
-    outTreeMuMuG->Branch("genStatusMomPho",genStatusMomPho,"genStatusMomPho[nMuMuG]/I");
   }
 }
 
@@ -669,7 +629,6 @@ void HggSelector::fillMuMuGamma(){
     if(mu1.nTrackHits <= 10 | mu1.nPixelHits==0) continue;
     if(mu1.trackImpactPar >=0.2) continue;
     if(mu1.trkIso >= 3) continue;
-    int genIndexMu1 = getGenMatchMu(&mu1);
     for(int iMu2=iMu1+1;iMu2<nMu_;iMu2++){
       VecbosMu mu2 = Muons_->at(iMu2);
       if(mu2.pt < 10) continue;
@@ -679,10 +638,8 @@ void HggSelector::fillMuMuGamma(){
       if(mu2.nTrackHits <= 10 | mu2.nPixelHits==0) continue;
       if(mu2.trackImpactPar >=0.2) continue;
       if(mu2.trkIso >= 3) continue;
-      int genIndexMu2 = getGenMatchMu(&mu2);
       for(int iPho=0; iPho<nPho_;iPho++){
 	VecbosPho pho = Photons_->at(iPho);
-	int genIndexPho = getGenMatchPho(&pho);
 
 	//fill the different masses
 	TLorentzVector p4Mu1; p4Mu1.SetPtEtaPhiM(mu1.pt,mu1.eta,mu1.phi,0.106);
@@ -692,81 +649,15 @@ void HggSelector::fillMuMuGamma(){
 	massMuMuGamma[nMuMuG] = (p4Mu1+p4Mu2+pho.p4FromVtx(vtx,pho.energy,false)).M();
 	massMuMuRegGamma[nMuMuG] = (p4Mu1+p4Mu2+pho.p4FromVtx(vtx,pho.correctedEnergy,false)).M();
 	massMuMuScaleGamma[nMuMuG] = (p4Mu1+p4Mu2+pho.p4FromVtx(vtx,pho.scaledEnergy,false)).M();
-	if(genIndexPho>=0) massMuMuGenGamma[nMuMuG] = (p4Mu1+p4Mu2+pho.p4FromVtx(vtx,energyGenPho[genIndexPho],false)).M();
+	if(pho.genMatch.index>=0) massMuMuGenGamma[nMuMuG] = (p4Mu1+p4Mu2+pho.p4FromVtx(vtx,pho.genMatch.energy,false)).M();
 	else massMuMuGenGamma[nMuMuG] = -1;
 
-	//muon info
-	ptMu1[nMuMuG] = mu1.pt;
-	etaMu1[nMuMuG] = mu1.eta;
-	phiMu1[nMuMuG] = mu1.phi;
-	chargeMu1[nMuMuG] = mu1.charge;
-	isoMu1[nMuMuG] = mu1.combinedIso;
-	drPhoMu1[nMuMuG] = DeltaR(mu1.eta,pho.SC.eta,mu2.phi,pho.SC.phi);
-	genMatchMu1[nMuMuG] = (genIndexMu1>=0);
-	if(genMatchMu1[nMuMuG]){
-	  genPtMu1[nMuMuG] = ptGenMu[genIndexMu1];
-	  genIdMu1[nMuMuG] = mu1.charge*(-13);
-	  genStatusMu1[nMuMuG] = 1;
-	  genIdMomMu1[nMuMuG] = pidMomGenMu[genIndexMu1];
-	  genStatusMomMu1[nMuMuG] = 3;
-	}else{
-	  genPtMu1[nMuMuG] = 0;
-	  genIdMu1[nMuMuG] = 0;
-	  genStatusMu1[nMuMuG] = 0;
-	  genIdMomMu1[nMuMuG] = 0;
-	  genStatusMomMu1[nMuMuG] = 0;
-	}
-	
-	ptMu2[nMuMuG] = mu2.pt;
-	etaMu2[nMuMuG] = mu2.eta;
-	phiMu2[nMuMuG] = mu2.phi;
-	chargeMu2[nMuMuG] = mu2.charge;
-	isoMu2[nMuMuG] = mu2.combinedIso;
-	drPhoMu2[nMuMuG] = DeltaR(mu2.eta,pho.SC.eta,mu2.phi,pho.SC.phi);
-	genMatchMu2[nMuMuG] = (genIndexMu2>=0);
-	if(genMatchMu2[nMuMuG]){
-	  genPtMu2[nMuMuG] = ptGenMu[genIndexMu2];
-	  genIdMu2[nMuMuG] = mu2.charge*(-13);
-	  genStatusMu2[nMuMuG] = 1;
-	  genIdMomMu2[nMuMuG] = pidMomGenMu[genIndexMu2];
-	  genStatusMomMu2[nMuMuG] = 3;
-	}else{
-	  genPtMu2[nMuMuG] = 0;
-	  genIdMu2[nMuMuG] = 0;
-	  genStatusMu2[nMuMuG] = 0;
-	  genIdMomMu2[nMuMuG] = 0;
-	  genStatusMomMu2[nMuMuG] = 0;
-	}
-
-	//photon
-	defEnergyPho[nMuMuG] = pho.energy;
-	regEnergyPho[nMuMuG] = pho.correctedEnergy;
-	scaleEnergyPho[nMuMuG] = pho.scaledEnergy;
-	etaPho[nMuMuG] = pho.SC.eta;
-	phiPho[nMuMuG] = pho.SC.phi;
-	eleMatchPho[nMuMuG] = photonMatchedElectron[iPho];
-	r9Pho[nMuMuG] = pho.SC.r9();
-	hOePho[nMuMuG] = pho.HoverE;
-	dr03EcalIsoPho[nMuMuG] = pho.dr03EcalRecHitSumEtCone;
-	dr04HcalIsoPho[nMuMuG] = pho.dr04HcalTowerSumEtCone;
-	dr03TrkSumHollowConePho[nMuMuG] = pho.dr03TrkSumPtHollowCone;
+	MMG_Mu1.push_back(mu1);
+	MMG_Mu2.push_back(mu2);
+	MMG_Pho.push_back(pho);
 	float eT = pho.p4FromVtx(vtx,pho.energy,false).Et();
 	isosumoetPho[nMuMuG] = (pho.dr03EcalRecHitSumEtCone + pho.dr04HcalTowerSumEtCone + pho.dr03TrkSumPtHollowCone + isoSumConst - rho*rhoFac)/eT;
 	mvaPho[nMuMuG] = PhotonID->getIdMVA(&pho,nVtx,rho,TVector3(vtxX[0],vtxY[0],vtxZ[0]),0); 
-	genMatchPho[nMuMuG] = (genIndexPho>=0);
-	if(genMatchPho[nMuMuG]){
-	  genEnergyPho[nMuMuG] = energyGenPho[genIndexPho];
-	  genIdPho[nMuMuG] = 22;
-	  genStatusPho[nMuMuG] = 1;
-	  genIdMomPho[nMuMuG] = pidMomGenPho[genIndexPho];
-	  genStatusMomPho[nMuMuG] = 3;
-	}else{
-	  genEnergyPho[nMuMuG] = 0;
-	  genIdPho[nMuMuG] = 0;
-	  genStatusPho[nMuMuG] = 0;
-	  genIdMomPho[nMuMuG] = 0;
-	  genStatusMomPho[nMuMuG] = 0;
-	}
 	
 	nMuMuG++;
       }
@@ -775,38 +666,6 @@ void HggSelector::fillMuMuGamma(){
 
 
   if(doMuMuGamma) outTreeMuMuG->Fill();
-}
-
-int HggSelector::getGenMatchPho(VecbosPho *pho){
-  const float maxDR = 0.2;
-  float bestdE = 9999;
-  int indexGenPho=-1;
-  for(int iP=0;iP<nGenPho;iP++){
-    if(energyGenPho[iP] < 1.) continue;
-    if(DeltaR(pho->SC.eta,etaGenPho[iP],pho->SC.phi,phiGenPho[iP]) > maxDR) continue;
-    if(fabs(pho->finalEnergy-energyGenPho[iP])/energyGenPho[iP] > 1.) continue;
-    if( fabs(pho->finalEnergy-energyGenPho[iP])<bestdE ){
-      bestdE = fabs(pho->finalEnergy-energyGenPho[iP]);
-      indexGenPho = iP;
-    }
-  }
-  return indexGenPho;
-}
-
-int HggSelector::getGenMatchMu(VecbosMu *mu){
-  const float maxDR = 0.5;
-  float bestdE = 9999;
-  int indexGenMu=-1;
-  for(int iM=0;iM<nGenMu;iM++){
-    if(energyGenMu[iM] < 1.) continue;
-    if(DeltaR(mu->eta,etaGenMu[iM],mu->phi,phiGenMu[iM]) > maxDR) continue;
-    if(fabs(mu->energy-energyGenMu[iM])/energyGenMu[iM] > 0.5) continue;
-    if( fabs(mu->energy-energyGenMu[iM])<bestdE ){
-      bestdE = fabs(mu->energy-energyGenMu[iM]);
-      indexGenMu = iM;
-    }
-  }
-  return indexGenMu;
 }
 
 bool HggSelector::requireTrigger(){

@@ -56,7 +56,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   fVals[4] = pho.SC.e5x5/pho.SC.rawE;
   fVals[5] = pho.SC.etaWidth;
   fVals[6] = pho.SC.phiWidth;
-  fVals[7] = pho.SC.basicClusters.size();
+  fVals[7] = pho.SC.nBCs;
   fVals[8] = pho.HTowOverE; //H/E tower
   fVals[9] = base->rhoFastjet;
   fVals[10] = base->nPV;

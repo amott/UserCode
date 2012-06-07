@@ -5,8 +5,8 @@ import sys
 #######################################
 ### usage  cmst3_submit_manyfilesperjob.py dataset njobs applicationName queue 
 #######################################
-if len(sys.argv) < 8:
-    print "usage cmst3_submit_manyfilesperjob.py dir dataset njobs applicationName sample queue config [json]"
+if len(sys.argv) < 9:
+    print "usage cmst3_submit_manyfilesperjob.py dir dataset njobs applicationName sample queue reducerConfig selectorConfig [json]"
     print '      cmst3_submit_manyfilesperjob.py Summer11 TTJets_TuneZ2_7TeV-madgraph-tauola 50 VecbosApp TTJets 1nh [json]'
     sys.exit(1)
 dir = sys.argv[1]
@@ -22,10 +22,11 @@ queue = sys.argv[6]
 ijobmax = int(sys.argv[3])
 application = sys.argv[4]
 sample = sys.argv[5]
-cfg    = sys.argv[7]
+cfgR   = sys.argv[7]
+cfgS   = sys.argv[8]
 json=''
-if len(sys.argv)>8:
-    json = sys.argv[8]
+if len(sys.argv)>9:
+    json = sys.argv[9]
 # to write on the cmst3 cluster disks
 #outputdir = "/castor/cern.ch/user/a/amott/CMST3/DiJet/"+dataset;
 #outputdir = "/castor/cern.ch/user/a/amott/CMST3/RazorDiPhoton/"+dataset;
@@ -34,8 +35,10 @@ if len(sys.argv)>8:
 #os.system("rfmkdir "+outputdir)
 #outputdirLXCMS132 = "/data/amott/VecbosApp/RazorBoostedTop/MC/"
 #outputdirLXCMS132 = "/data1/amott/VecbosApp/RazorBoostedTop/Data/JetPD/"
-outputdir = "/castor/cern.ch/user/a/amott/CMST3/Hgg/2012/Reduced/"+dataset
-os.system("rfmkdir -p "+outputdir)
+outputdirR = "/castor/cern.ch/user/a/amott/CMST3/Hgg/2012/Reduced/"+dataset
+outputdirS = "/castor/cern.ch/user/a/amott/CMST3/Hgg/2012/Selected/"+dataset
+os.system("rfmkdir -p "+outputdirR)
+os.system("rfmkdir -p "+outputdirS)
 ################################################
 os.system("mkdir -p "+dir+"/"+output)
 os.system("mkdir -p "+dir+"/"+output+"/log/")
@@ -78,11 +81,16 @@ for ijob in range(ijobmax):
     outputfile.write('export SCRAM_ARCH=slc5_amd64_gcc462\n')
     outputfile.write("cd /afs/cern.ch/user/a/amott/CMSSW_5_2_3/src/; eval `scramv1 run -sh`\n")
     outputfile.write('cd '+pwd+'\n')
-    if isData: outputfile.write('./HggApp '+inputfilename+" /tmp/"+output+"_"+str(ijob)+".root "+cfg+" --isData -json="+str(json)+"\n")
-    else: outputfile.write('./HggApp '+inputfilename+" /tmp/"+output+"_"+str(ijob)+".root "+cfg+" \n")
-    outputfile.write("rfcp /tmp/"+output+"_"+str(ijob)+".root "+outputdir+"/\n") 
+    if isData: outputfile.write('./HggApp '+inputfilename+" /tmp/"+output+"_"+str(ijob)+".root "+cfgR+" --isData -json="+str(json)+"\n")
+    else: outputfile.write('./HggApp '+inputfilename+" /tmp/"+output+"_"+str(ijob)+".root "+cfgR+" \n")
+    outputfile.write("rfcp /tmp/"+output+"_"+str(ijob)+".root "+outputdirR+"/\n") 
+    outputfile.write("echo /tmp/"+output+"_"+str(ijob)+".root > /tmp/tmp_"+str(ijob)+".list \n")
+    outputfile.write("./HggSelectorApp /tmp/tmp_"+str(ijob)+".list /tmp/"+output+"_"+str(ijob)+"_Selected.root "+cfgS+"\n")
+    outputfile.write("rfcp /tmp/"+output+"_"+str(ijob)+"_Selected.root "+outputdirS+"/\n") 
     #outputfile.write("scp  -o StrictHostKeyChecking=no /tmp/"+output+"_"+str(ijob)+".root amott@lxcms132:"+outputdirLXCMS132+"/\n") 
     outputfile.write("rm /tmp/"+output+"_"+str(ijob)+".root \n")
+    outputfile.write("rm /tmp/"+output+"_"+str(ijob)+"_Selected.root \n")
+    outputfile.write("rm /tmp/tmp_"+str(ijob)+".list \n")
     outputfile.close
     os.system("echo bsub -q "+queue+" -o /dev/null -e /dev/null source "+pwd+"/"+outputname)
     os.system("sleep 1; bsub -q "+queue+" -o /dev/null -e /dev/null source "+pwd+"/"+outputname)

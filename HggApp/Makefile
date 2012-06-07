@@ -275,6 +275,10 @@ VecbosApp.clean:
 
 clean:
 	rm -f $(OUTLIB)*.o $(OUTLIBCOMMON)*.o $(OUTLIBEGAMMA)*.o
+	rm -f HggDict.cc
+	rm -f HggDict.h
+	rm -f MitPhysicsDict.cc
+	rm -f MitPhysicsDict.h
 	rm -f VecbosApp
 	rm -f HggApp
 	rm -f HggSelectorApp

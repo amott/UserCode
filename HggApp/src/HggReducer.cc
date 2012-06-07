@@ -173,6 +173,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       if(_isData){ // get the energy scale for data
 	if(debugReducer) cout << "Doing Energy Scale ... " << flush;
 	std::pair<float,float> dE = energyScale->getDEoE(pho,runNumber);
+	if(debugReducer) cout << "Done" << endl;;	
 	pho.dEoE    = dE.first;
 	pho.dEoEErr = 0; 
 	pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
@@ -273,7 +274,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     } // end of photon isolation loop
 
     //fill remaining collections
-    this->fillGeneratorInfo();
+    if(!_isData) this->fillGeneratorInfo();
     this->matchPhotonsElectrons();
    //cout << "Filling Collection" << endl;
     outTree->Fill();
@@ -342,17 +343,6 @@ void HggReducer::matchPhotonsElectrons(){
 void HggReducer::clearAll(){
 //clear collections
 
-  /*
-  PFSuperClusters_.clear();
-  SuperClusters_.clear();
-  BasicClusters_.clear();
-  Conversions_.clear();
-  
-  nPFSC_=0;
-  nSC_=0;
-  nBC_=0;
-  nConv_=0;
-  */
   nPho_=0;
   Photons_.clear();
   
@@ -363,12 +353,17 @@ void HggReducer::clearAll(){
   
   ggVerticesPhotonIndices.clear();
   ggVerticesVertexIndex.clear();
-  /*
-  photonMatchedElectron.clear();
-  photonTrkIsoFromVtx.clear();
-  photonWorstIsoDR03.clear();
-  photonWorstIsoDR04.clear();
-  */
+
+  nGenPho=0;
+  nGenMu =0;
+  nGenEle=0;
+  nGenHiggs=0;
+
+  GenPhotons.clear();
+  GenMuons.clear();
+  GenElectrons.clear();
+  GenHiggs.clear();
+
 }
 
 void HggReducer::init(string outputFileName){
@@ -539,7 +534,7 @@ void HggReducer::fillVertexInfo(){
     vtxIsFake[i] = isFakePV[i];          
     vtxIsValid[i] = isValidPV[i];         
   }
-  rho=rhoFastjet;
+  rho=rhoJetsFastJet;  // rho from kt6PFJets
 }
 
 void HggReducer::fillGeneratorInfo(){
@@ -547,70 +542,42 @@ void HggReducer::fillGeneratorInfo(){
   nGenPho=0;
   nGenMu =0;
   nGenEle=0;
+  nGenHiggs=0;
+
   for(int iGen=0;iGen<nMc;iGen++){
-    if(idMc[iGen] == 25){ //Higgs
-      higgsPt  = pMc[iGen]/cosh(etaMc[iGen]);
-      higgsEnergy = energyMc[iGen];
-      higgsMass = TMath::Sqrt(energyMc[iGen]*energyMc[iGen]-pMc[iGen]*pMc[iGen]);
-      higgsEta = etaMc[iGen];
-      higgsPhi = phiMc[iGen];
-      higgsVx = vxMc[iGen];
-      higgsVy = vyMc[iGen];
-      higgsVz = vzMc[iGen];
+    VecbosGen part(this,iGen);
 
-
+    switch(abs(idMc[iGen])){
+    case 25:  //higgs
+      GenHiggs.push_back(part); break;
+    case 22: //Photons
+      GenPhotons.push_back(part); break;
+    case 13: //Muons
+      GenMuons.push_back(part); break;
+    case 11: //Electrons
+      GenElectrons.push_back(part); break;
+    Default:
+      GenOthers.push_back(part); break;
     }
-    if(statusMc[iGen]!=1) continue;
-
-    if(idMc[iGen] == 22){ //photons
-      indexGenPho[nGenPho] = iGen;
-      etaGenPho[nGenPho] = etaMc[iGen];
-      phiGenPho[nGenPho] = phiMc[iGen];
-      ptGenPho[nGenPho] = pMc[iGen]/cosh(etaMc[iGen]);
-      energyGenPho[nGenPho] = energyMc[iGen];
-      pidMomGenPho[nGenPho] = (mothMc[iGen] >=0 && mothMc[iGen]<nMc ? idMc[mothMc[iGen]] : 0);
-      indMomGenPho[nGenPho] = mothMc[iGen];
-      statusGenPho[nGenPho] = statusMc[iGen];
-      vXGenPho[nGenPho]     = vxMc[iGen];
-      vYGenPho[nGenPho]     = vyMc[iGen];
-      vZGenPho[nGenPho]     = vzMc[iGen];
-      nGenPho++;
-    }
-    if(abs(idMc[iGen]) == 13){ //muons
-      indexGenMu[nGenMu] = iGen;
-      chargeGenMu[nGenMu] = (idMc > 0 ? -1:1);
-      etaGenMu[nGenMu] = etaMc[iGen];
-      phiGenMu[nGenMu] = phiMc[iGen];
-      ptGenMu[nGenMu] = pMc[iGen]/cosh(etaMc[iGen]);
-      energyGenMu[nGenMu] = energyMc[iGen];
-      pidMomGenMu[nGenMu] = (mothMc[iGen] >=0 && mothMc[iGen]<nMc ? idMc[mothMc[iGen]] : 0);
-      indMomGenMu[nGenMu] = mothMc[iGen];
-      statusGenMu[nGenMu] = statusMc[iGen];
-      vXGenMu[nGenMu]     = vxMc[iGen];
-      vYGenMu[nGenMu]     = vyMc[iGen];
-      vZGenMu[nGenMu]     = vzMc[iGen];
-      nGenMu++;
-    }
-    if(abs(idMc[iGen]) == 11){ //electrons
-      indexGenEle[nGenEle] = iGen;
-      chargeGenEle[nGenEle] = (idMc > 0 ? -1:1);
-      etaGenEle[nGenEle] = etaMc[iGen];
-      phiGenEle[nGenEle] = phiMc[iGen];
-      ptGenEle[nGenEle] = pMc[iGen]/cosh(etaMc[iGen]);
-      energyGenEle[nGenEle] = energyMc[iGen];
-      pidMomGenEle[nGenEle] = (mothMc[iGen] >=0 && mothMc[iGen]<nMc ? idMc[mothMc[iGen]] : 0);
-      indMomGenEle[nGenEle] = mothMc[iGen];
-      statusGenEle[nGenEle] = statusMc[iGen];
-      vXGenEle[nGenEle]     = vxMc[iGen];
-      vYGenEle[nGenEle]     = vyMc[iGen];
-      vZGenEle[nGenEle]     = vzMc[iGen];
-      nGenEle++;
-    }
-  }
-
+    nGenHiggs = GenHiggs.size();
+    nGenPho   = GenPhotons.size();
+    nGenEle   = GenElectrons.size();
+    nGenMu    = GenMuons.size();
+    nGenOthers= GenOthers.size();
+  }    
   procID = 0; //genProcessId;
   qScale;
-  nPu = nPU[0];
+  nPu = nPU[1];
+  
+  //match the reco objects to gen objects
+  
+  PhoCollection::iterator phoIt;
+  for(phoIt = Photons_.begin(); phoIt !=Photons_.end(); phoIt++)
+    phoIt->doGenMatch(this);
+  MuCollection::iterator muIt;
+  for(muIt = Muons_.begin(); muIt !=Muons_.end(); muIt++)
+    muIt->doGenMatch(this);
+  
 }
 
 void HggReducer::setOutputBranches(){
@@ -685,52 +652,19 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
 
     ///gen electron, muon,photon
     outTree->Branch("nGenPho",&nGenPho,"nGenPho/I");
-    outTree->Branch("etaGenPho",etaGenPho,"etaGenPho[nGenPho]/F");
-    outTree->Branch("phiGenPho",phiGenPho,"phiGenPho[nGenPho]/F");
-    outTree->Branch("ptGenPho",ptGenPho,"ptGenPho[nGenPho]/F");
-    outTree->Branch("energyGenPho",energyGenPho,"energyGenPho[nGenPho]/F");
-    outTree->Branch("vXGenPho",vXGenPho,"vXGenPho[nGenPho]/F");
-    outTree->Branch("vYGenPho",vYGenPho,"vYGenPho[nGenPho]/F");
-    outTree->Branch("vZGenPho",vZGenPho,"vZGenPho[nGenPho]/F");
-    outTree->Branch("pidMomGenPho",pidMomGenPho,"pidMomGenPho[nGenPho]/I");
-    outTree->Branch("statusGenPho",statusGenPho,"statusGenPho[nGenPho]/I");
+    outTree->Branch("GenPhotons",&GenPhotons);
 
     outTree->Branch("nGenEle",&nGenEle,"nGenEle/I");
-    outTree->Branch("chargeGenEle",chargeGenEle,"chargeGenEle[nGenEle]/I");
-    outTree->Branch("etaGenEle",etaGenEle,"etaGenEle[nGenEle]/F");
-    outTree->Branch("phiGenEle",phiGenEle,"phiGenEle[nGenEle]/F");
-    outTree->Branch("ptGenEle",ptGenEle,"ptGenEle[nGenEle]/F");
-    outTree->Branch("energyGenEle",energyGenEle,"energyGenEle[nGenEle]/F");
-    outTree->Branch("pidMomGenEle",pidMomGenEle,"pidMomGenEle[nGenEle]/I");
-    outTree->Branch("statusGenEle",statusGenEle,"statusGenEle[nGenEle]/I");
-    outTree->Branch("vXGenEle",vXGenEle,"vXGenEle[nGenEle]/F");
-    outTree->Branch("vYGenEle",vYGenEle,"vYGenEle[nGenEle]/F");
-    outTree->Branch("vZGenEle",vZGenEle,"vZGenEle[nGenEle]/F");
+    outTree->Branch("GenElectrons",&GenElectrons);
     
     outTree->Branch("nGenMu",&nGenMu,"nGenMu/I");
-    outTree->Branch("etaGenMu",etaGenMu,"etaGenMu[nGenMu]/F");
-    outTree->Branch("phiGenMu",phiGenMu,"phiGenMu[nGenMu]/F");
-    outTree->Branch("ptGenMu",ptGenMu,"ptGenMu[nGenMu]/F");
-    outTree->Branch("energyGenMu",energyGenMu,"energyGenMu[nGenMu]/F");
-    outTree->Branch("pidMomGenMu",pidMomGenMu,"pidMomGenMu[nGenMu]/I");
-    outTree->Branch("statusGenMu",statusGenMu,"statusGenMu[nGenMu]/I");
-    outTree->Branch("vXGenMu",vXGenMu,"vXGenMu[nGenMu]/F");
-    outTree->Branch("vYGenMu",vYGenMu,"vYGenMu[nGenMu]/F");
-    outTree->Branch("vZGenMu",vZGenMu,"vZGenMu[nGenMu]/F");
-    outTree->Branch("chargeGenMu",chargeGenMu,"chargeGenMu[nGenMu]/I");
-
+    outTree->Branch("GenMuons",&GenMuons);
     //generator level higgs
-    outTree->Branch("higgsSM",&higgsSM,"higgsSM");
-    outTree->Branch("higgsPt",&higgsPt,"higgsPt");
-    outTree->Branch("higgsMass",&higgsMass,"higgsMass");
-    outTree->Branch("higgsEnergy",&higgsEnergy,"higgsEnergy");
-    outTree->Branch("higgsEta",&higgsEta,"higgsEta");
-    outTree->Branch("higgsPhi",&higgsPhi,"higgsPhi");
-    outTree->Branch("higgsVx",&higgsVx,"higgsVx");
-    outTree->Branch("higgsVy",&higgsVy,"higgsVy");
-    outTree->Branch("higgsVz",&higgsVz,"higgsVz");
+    outTree->Branch("nGenHiggs",&nGenHiggs,"nGenHiggs/I");
+    outTree->Branch("GenHiggs",&GenHiggs);
+    //other particles
+    outTree->Branch("nGenOthers",&nGenOthers,"nGenOthers/I");
+    outTree->Branch("GenOthers",&GenOthers);
   }
-
-
 
 }

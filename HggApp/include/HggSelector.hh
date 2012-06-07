@@ -69,6 +69,7 @@ private:
   void setBranchAddresses();
   void setupOutputTree();
   void setupTMVA();
+  void fillGenInfo();
 
   void fillMuMuGamma();
   //TMVA stuff
@@ -170,62 +171,12 @@ private:
   float massMuMu[maxMuMuG];
   float puWeight[maxMuMuG];
   
-  float ptMu1[maxMuMuG];
-  float etaMu1[maxMuMuG];
-  float phiMu1[maxMuMuG];
-  int chargeMu1[maxMuMuG];
-  float isoMu1[maxMuMuG];
-  float drPhoMu1[maxMuMuG];
-  //gen muon, same charge, stat 1
-  //dR < 0.5, ptRelDif < 0.5
-  //two gen objects cannot match reco object
-  int genMatchMu1[maxMuMuG];
-  float genPtMu1[maxMuMuG];
-  int genIdMu1[maxMuMuG];
-  int genStatusMu1[maxMuMuG];
-  int genIdMomMu1[maxMuMuG];
-  int genStatusMomMu1[maxMuMuG];
-
-  float ptMu2[maxMuMuG];
-  float etaMu2[maxMuMuG];
-  float phiMu2[maxMuMuG];
-  int chargeMu2[maxMuMuG];
-  float isoMu2[maxMuMuG];
-  float drPhoMu2[maxMuMuG];
-  int genMatchMu2[maxMuMuG];
-  float genPtMu2[maxMuMuG];
-  int genIdMu2[maxMuMuG];
-  int genStatusMu2[maxMuMuG];
-  int genIdMomMu2[maxMuMuG];
-  int genStatusMomMu2[maxMuMuG];
-  
-  float defEnergyPho[maxMuMuG];
-  float regEnergyPho[maxMuMuG];
-  float scaleEnergyPho[maxMuMuG];
-  float etaPho[maxMuMuG];
-  float phiPho[maxMuMuG];
-  int   eleMatchPho[maxMuMuG];
-  float r9Pho[maxMuMuG];
-  float hOePho[maxMuMuG];
-  float dr03EcalIsoPho[maxMuMuG];
-  float dr04HcalIsoPho[maxMuMuG];
-  float isosumoetPho[maxMuMuG];
-  float dr03TrkSumHollowConePho[maxMuMuG];  
+  MuCollection MMG_Mu1;
+  MuCollection MMG_Mu2;
+  PhoCollection MMG_Pho;
   float mvaPho[maxMuMuG];
-  // photon matching: dR < 0.2
-  // |recoPt-truePt/truePt| < 1
-
-  int   genMatchPho[maxMuMuG];
-  float genEnergyPho[maxMuMuG];
-  int   genIdPho[maxMuMuG];
-  int   genStatusPho[maxMuMuG];
-  int   genIdMomPho[maxMuMuG];
-  int   genStatusMomPho[maxMuMuG];
+  float isosumoetPho[maxMuMuG];
   
-  
-  int getGenMatchPho(VecbosPho*);
-  int getGenMatchMu(VecbosMu*);
-
   //----
   float genHiggsPt;
   float genHiggsVx;
@@ -282,24 +233,11 @@ private:
   long evtNumber;
   bool _isData;
 
-  float higgsPtIn;
-  float higgsVxIn;
-  float higgsVyIn;
-  float higgsVzIn;
-  static const int MAXGenSaved=1000;
-  int nGenPho;
-  float etaGenPho[MAXGenSaved];      
-  float phiGenPho[MAXGenSaved];      
-  float ptGenPho[MAXGenSaved];       
-  float energyGenPho[MAXGenSaved];   
-  int pidMomGenPho[MAXGenSaved];
+  int nGenHiggs;
+  std::vector<VecbosGen> *GenHiggs;
 
-  int nGenMu;
-  float etaGenMu[MAXGenSaved];      
-  float phiGenMu[MAXGenSaved];      
-  float ptGenMu[MAXGenSaved];       
-  float energyGenMu[MAXGenSaved];   
-  int pidMomGenMu[MAXGenSaved];
+  int nGenPho;
+  std::vector<VecbosGen> *GenPhotons;
 
   float inPU;
 };

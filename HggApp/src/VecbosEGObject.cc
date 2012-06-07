@@ -117,7 +117,7 @@ void VecbosPFBC::Init(VecbosBase* o, int i){
 
 struct sort_pred {
   bool operator()(const std::pair<int,float> &left, const std::pair<int,float> &right) {
-    return left.second < right.second;
+    return left.second > right.second;
   }
 };
 
@@ -176,17 +176,25 @@ void VecbosSC::Init(VecbosBase* o, int i){
   //get the basic clusters
   
   std::vector< std::pair<int,float> > indexEnergyMap;
+  float maxE=-1;
+  int maxI=-1;
+  nBCs++;
   for(int j=0; j<o->nBC; j++){
     if(o->indexSCBC[j] == i){ // the basic cluster points to this SC
+      nBCs++;
       indexEnergyMap.push_back(std::pair<int,float>(j,o->energyBC[j]) );
+      if(o->energyBC[j] > maxE){
+	maxE = o->energyBC[j];
+	maxI = j;
+      }
     }
   }
-  std::sort(indexEnergyMap.begin(),indexEnergyMap.end(),sort_pred()); // sort the BCs by energy
-  for(int j=0;j<indexEnergyMap.size();j++){
-    basicClusters.push_back(VecbosBC(o,indexEnergyMap.at(j).first));
-  }
+  //std::sort(indexEnergyMap.begin(),indexEnergyMap.end(),sort_pred()); // sort the BCs by energy
+  //for(int j=0;j<indexEnergyMap.size();j++){
+  //  basicClusters.push_back(VecbosBC(o,indexEnergyMap.at(j).first));
+  //}
   
-  BCSeed.Init(o,indexEnergyMap.at(0).first);
+  BCSeed.Init(o,maxI);
  }
 
 /*
@@ -419,6 +427,8 @@ void VecbosPho::Init(VecbosBase* o, int i){
   photonIso               = o->photonIsoPho[i];
   int SCI = o->superClusterIndexPho[i];
   CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
+
+  genMatch.Init(o,-1);
 };
 
 TLorentzVector VecbosPho::p4FromVtx(TVector3 vtx,float E,bool pf){
@@ -466,6 +476,26 @@ void VecbosPho::matchConversion(VecbosBase *o,bool dR){ //for some reason, the h
 
   VecbosConversion c(o,-1);
   conversion = c;
+}
+
+void VecbosPho::doGenMatch(VecbosBase* o){
+  const int phoID = 22;
+  const float maxDR = 0.2;
+  float dEoEBest = 9999;
+  int indexGen = -1;
+  for(int i=0;i<o->nMc;i++){  
+    if(!o->statusMc[i]==1) continue; //require status 1 particles
+    if(!o->idMc[i] == phoID) continue; //gen photon
+    if(o->energyMc[i] < 1.) continue;
+    if(DeltaR(SC.eta,o->etaMc[i],SC.phi,o->phiMc[i]) > maxDR) continue;
+    float dEoE = fabs(finalEnergy-o->energyMc[i])/o->energyMc[i];
+    if(dEoE > 1.) continue;
+    if(dEoE < dEoEBest){
+      dEoEBest = dEoE;
+      indexGen = i;
+    }
+  }
+  genMatch.Init(o,indexGen);
 }
 
 /*
@@ -554,7 +584,7 @@ void VecbosMu::Init(VecbosBase* o, int i){
     pt = TMath::Sqrt( TMath::Power(o->pxMuon[i],2) + TMath::Power(o->pyMuon[i],2) );
     eta = o->etaMuon[i];
     phi = o->phiMuon[i];
-    p4.SetPtEtaPhiE(pt,eta,phi,energy);
+    //p4.SetPtEtaPhiE(pt,eta,phi,energy);
     charge = o->chargeMuon[i];
     combinedIso = (o->emEt03Muon[i] + o->hadEt03Muon[i] + o->sumPt03Muon[i] - o->rhoFastjet * TMath::Pi()*0.3*0.3)/pt;;
     emIso = o->emEt03Muon[i];
@@ -582,4 +612,71 @@ void VecbosMu::Init(VecbosBase* o, int i){
     isTightMuon = isLooseMuon;
     if(!isTrackerMuon || !isPromptMuon || combinedIso >=0.15 || nPixelHits == 0 || trackImpactPar >=0.2) isTightMuon = false;
   }
+
+  genMatch.Init(o,-1);
 }
+
+void VecbosMu::doGenMatch(VecbosBase* o){
+  const int muID = 13;
+  const float maxDR = 0.2;
+  float dEoEBest = 9999;
+  int indexGen = -1;
+  for(int i=0;i<o->nMc;i++){  
+    if(!o->statusMc[i]==1) continue; //require status 1 particles
+    if(!abs(o->idMc[i]) == muID) continue; //gen mu
+    if(o->energyMc[i] < 1.) continue;
+    if(DeltaR(eta,o->etaMc[i],phi,o->phiMc[i]) > maxDR) continue;
+    float dEoE = fabs(energy-o->energyMc[i])/o->energyMc[i];
+    if(dEoE > 0.5) continue;
+    if(dEoE < dEoEBest){
+      dEoEBest = dEoE;
+      indexGen = i;
+    }
+  }
+  genMatch.Init(o,indexGen);
+}
+
+
+
+VecbosGen::VecbosGen(){}
+
+VecbosGen::VecbosGen(VecbosBase* o, int i){
+  this->Init(o,i);
+}
+
+void VecbosGen::Init(VecbosBase* o, int i){
+  if(i < 0 || i > o->nMc){
+    index = -1;
+    return;
+  }
+
+  index = i;
+  pt = o->pMc[i]/cosh(o->etaMc[i]);
+  energy = o->energyMc[i];
+  eta = o->etaMc[i];
+  phi = o->phiMc[i];
+  
+  //Vtx.SetXYZ(o->vxMc[i],o->vyMc[i],o->vzMc[i]);
+  Vx = o->vxMc[i];
+  Vy = o->vyMc[i];
+  Vz = o->vzMc[i];
+
+  status = o->statusMc[i];
+  id     = o->idMc[i];
+  indexMother = o->mothMc[i];
+  if(indexMother >=0){
+    statusMother = o->statusMc[indexMother];
+    idMother     = o->idMc[indexMother];
+  }else{
+    statusMother = -1;
+    idMother     =  0;
+  }
+}
+
+/*
+TLorentzVector VecbosGen::getP4(){
+  TLorentzVector p4;
+  p4.SetPtEtaPhiE(pt,eta,phi,energy);
+  return p4;
+}
+*/

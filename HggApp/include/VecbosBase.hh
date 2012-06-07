@@ -2422,6 +2422,11 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("eBottomBC", eBottomBC, &b_eBottomBC);
    fChain->SetBranchAddress("eLeftBC", eLeftBC, &b_eLeftBC);
    fChain->SetBranchAddress("eRightBC", eRightBC, &b_eRightBC);
+   fChain->SetBranchAddress("e2x5MaxBC", e2x5MaxBC, &b_e2x5MaxBC);
+   fChain->SetBranchAddress("e2x5TopBC", e2x5TopBC, &b_e2x5TopBC);
+   fChain->SetBranchAddress("e2x5BottomBC", e2x5BottomBC, &b_e2x5BottomBC);
+   fChain->SetBranchAddress("e2x5LeftBC", e2x5LeftBC, &b_e2x5LeftBC);
+   fChain->SetBranchAddress("e2x5RightBC", e2x5RightBC, &b_e2x5RightBC);
    fChain->SetBranchAddress("etaCrystalBC", etaCrystalBC, &b_etaCrystalBC);
    fChain->SetBranchAddress("phiCrystalBC", phiCrystalBC, &b_phiCrystalBC);
    fChain->SetBranchAddress("iEtaBC", iEtaBC, &b_iEtaBC);

@@ -152,16 +152,18 @@ HggEnergyScale::HggEnergyScale(std::string path){
 }
 
 int HggEnergyScale::getRunIndex(int run){
+  if(debugEnergyScale) cout << "getRunIndex" << endl;
  int runIndex;
   for(runIndex=0;runIndex<runs.size();runIndex++){
     if(run <= runs.at(runIndex)) break;
   }
   if(runIndex == runs.size()) runIndex--;
-
+  if(debugEnergyScale) cout << runIndex << endl;
   return runIndex;
 }
 
 std::pair<float,float> HggEnergyScale::getDEoE(VecbosPho pho, int run){
+  if(debugEnergyScale) cout << "getDEoE" << endl;
   if(!valid) return std::pair<float,float>(0,0);
   int runIndex = getRunIndex(run);
   int selectRegion = getCategory(pho);
@@ -171,11 +173,13 @@ std::pair<float,float> HggEnergyScale::getDEoE(VecbosPho pho, int run){
   string regionName = configNames[selectRegion];
   string regionErrName = regionName;  regionErrName.append("_Err");
 
+  if(debugEnergyScale) cout << energyScales[regionName].at(runIndex) << endl;
   return std::pair<float,float>(energyScales[regionName].at(runIndex),
 				energyScales[regionErrName].at(runIndex));
 }
 
 float HggEnergyScale::getMCScaleErr(VecbosPho pho, int run){
+  if(debugEnergyScale) cout << "getMCScaleErr" << endl;
   int runIndex = getRunIndex(run);
   int selectRegion = getCategory(pho);
 
@@ -186,6 +190,7 @@ float HggEnergyScale::getMCScaleErr(VecbosPho pho, int run){
 }
 
 float HggEnergyScale::getCategory(VecbosPho pho){
+  if(debugEnergyScale) cout << "getCategory" << endl;
   int selectRegion=-1;
   //cout << pho.eta << "  " << pho.SC.r9() << endl;
   for(int iReg = 0; iReg< nRegions; iReg++){
@@ -197,6 +202,7 @@ float HggEnergyScale::getCategory(VecbosPho pho){
       break;
     }
   }
+  if(debugEnergyScale) cout << selectRegion << endl;
   return selectRegion;
 }
 

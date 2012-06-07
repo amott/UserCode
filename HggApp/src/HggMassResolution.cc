@@ -110,7 +110,7 @@ float HggMassResolution::getResolution(VecbosPho* pho){
 
 int HggMassResolution::getCategory(VecbosPho* pho){
   if(debugMassRes) cout << "getCategory" << endl;
-  if(this->isSphericalPhoton(pho->SC.basicClusters[0].iEta,pho->SC.basicClusters[0].iPhi)){ // these are the "special" photons that have to be treated differently
+  if(this->isSphericalPhoton(pho->SC.BCSeed.iEta,pho->SC.BCSeed.iPhi)){ // these are the "special" photons that have to be treated differently
     if(pho->SC.r9() > r9Cut) return sphericalIndex;
   }
   if(debugMassRes) cout << "not a special photon" << endl;

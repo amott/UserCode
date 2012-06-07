@@ -59,6 +59,7 @@ public:
   VecbosSC(VecbosBase*, int);
   virtual void Init(VecbosBase*, int);
   VecbosBC BCSeed;
+  int nBCs;
   std::vector<VecbosBC> basicClusters; // basic clusters associated with this supercluser
   int index;
   float energy;
@@ -157,6 +158,31 @@ public:
   //ConversionInfo getStruct();
 };
 
+class VecbosGen{
+public:
+  VecbosGen();
+  VecbosGen(VecbosBase*, int);
+  void Init(VecbosBase*, int);
+  int index;
+  float energy;
+  float pt;
+  float eta;
+  float phi;
+  //TLorentzVector getP4();
+
+  //TVector3 Vtx;
+  float Vx;
+  float Vy;
+  float Vz;
+
+  int status;
+  int id;
+  int statusMother;
+  int idMother;
+  int indexMother;
+};
+
+
 class VecbosPho{
 public:
   VecbosPho();
@@ -214,7 +240,11 @@ public:
   bool isBarrel(){return (fabs(this->SC.eta) < 1.48);}
   int  getCategory(){ (SC.r9()>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon
   //PhoInfo getStruct();
+
+  VecbosGen genMatch;
+  void doGenMatch(VecbosBase* o);
 };
+
 class VecbosEle{
 public:
   VecbosEle();
@@ -246,7 +276,7 @@ public:
   float pt;
   float eta;
   float phi;
-  TLorentzVector p4;
+  //TLorentzVector p4;
   int charge;
   float combinedIso;
   float emIso;
@@ -261,7 +291,11 @@ public:
 
   bool isLooseMuon;
   bool isTightMuon;
+
+  VecbosGen genMatch;
+  void doGenMatch(VecbosBase*);
 };
+
 
 typedef std::vector<VecbosPho> PhoCollection;
 typedef std::vector<VecbosSC> SCCollection;
@@ -269,4 +303,5 @@ typedef std::vector<VecbosPFSC> PFSCCollection;
 typedef std::vector<VecbosBC> BCCollection;
 typedef std::vector<VecbosConversion> ConvCollection;
 typedef std::vector<VecbosMu> MuCollection;
+typedef std::vector<VecbosGen> GenCollection;
 #endif

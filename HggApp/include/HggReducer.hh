@@ -165,63 +165,24 @@ private:
   static const int MAXGenSaved = 1000;
   //gen-leve phton
   int nGenPho;
-  float etaGenPho[MAXGenSaved];
-  float phiGenPho[MAXGenSaved];
-  float ptGenPho[MAXGenSaved];
-  float energyGenPho[MAXGenSaved];
-  int pidMomGenPho[MAXGenSaved];
-  int indMomGenPho[MAXGenSaved];
-  int statusGenPho[MAXGenSaved];
-  int indexGenPho[MAXGenSaved];
-  float vXGenPho[MAXGenSaved];
-  float vYGenPho[MAXGenSaved];
-  float vZGenPho[MAXGenSaved];
-  
-  //gen Muon 
-  int nGenMu; 
-  int chargeGenMu[MAXGenSaved];
-  float etaGenMu[MAXGenSaved];
-  float phiGenMu[MAXGenSaved];
-  float ptGenMu[MAXGenSaved];
-  float energyGenMu[MAXGenSaved];
-  int pidMomGenMu[MAXGenSaved];
-  int indMomGenMu[MAXGenSaved];
-  int statusGenMu[MAXGenSaved];
-  int indexGenMu[MAXGenSaved];
-  float vXGenMu[MAXGenSaved];
-  float vYGenMu[MAXGenSaved];
-  float vZGenMu[MAXGenSaved];
-  
-  //gen electron
-  int nGenEle; 
-  int chargeGenEle[MAXGenSaved];
-  float etaGenEle[MAXGenSaved];
-  float phiGenEle[MAXGenSaved];
-  float ptGenEle[MAXGenSaved];
-  float energyGenEle[MAXGenSaved];
-  int pidMomGenEle[MAXGenSaved];
-  int indMomGenEle[MAXGenSaved];
-  int statusGenEle[MAXGenSaved];
-  int indexGenEle[MAXGenSaved];
-  int pidGenEle[MAXGenSaved];
-  float vXGenEle[MAXGenSaved];
-  float vYGenEle[MAXGenSaved];
-  float vZGenEle[MAXGenSaved];
+  GenCollection GenPhotons;
+
+  int nGenMu;
+  GenCollection GenMuons;
+
+  int nGenEle;
+  GenCollection GenElectrons;
+
+  int nGenHiggs;
+  GenCollection GenHiggs;
+
+  int nGenOthers;
+  GenCollection GenOthers;
 
   int procID;
   float qScale;
   float nPu;
 
-  //Gen Higgs
-  float higgsSM;
-  float higgsPt;
-  float higgsEnergy;
-  float higgsMass;
-  float higgsEta;
-  float higgsPhi;
-  float higgsVx;
-  float higgsVy;
-  float higgsVz;
 };
 #endif
 

@@ -8,3 +8,12 @@ EElowEtaBadDeltaE=-0.0025,0.0041,0.0026,0.0147,0.0236,0.0331,0,-0.0043,-0.0045
 EElowEtaGoldDeltaE=-0.0005,0.0062,0.0048,0.0168,0.0257,0.0353,0,-0.0002,-0.0004
 EEhiEtaBadDeltaE=-0.0050,0.0052,0.0001,-0.0041,-0.0011,-0.0050,0,0.0104,-0.0038
 EEhiEtaGoldDeltaE=0.0010,0.0113,0.0062,0.0019,0.0049,0.0009,0,0.022,0.0077
+
+EBlowEtaBadDeltaE_Err=0,0,0,0,0,0,0,0,0
+EBlowEtaGoldDeltaE_Err=0,0,0,0,0,0,0,0,0
+EBhiEtaBadDeltaE_Err=0,0,0,0,0,0,0,0,0
+EBhiEtaGoldDeltaE_Err=0,0,0,0,0,0,0,0,0
+EElowEtaBadDeltaE_Err=0,0,0,0,0,0,0,0,0
+EElowEtaGoldDeltaE_Err=0,0,0,0,0,0,0,0,0
+EEhiEtaBadDeltaE_Err=0,0,0,0,0,0,0,0,0
+EEhiEtaGoldDeltaE_Err=0,0,0,0,0,0,0,0,0
