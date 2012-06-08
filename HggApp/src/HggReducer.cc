@@ -150,6 +150,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     this->fillVertexInfo();
 
     this->fillMuons();
+    this->fillJets();
     // setup the photons
     std::vector<VecbosPho> tmpPhotons; //temporarily hold a collection of VecbosPhos
     int nSelectedPho=0; // number of selected photons
@@ -437,6 +438,34 @@ void HggReducer::fillMuons(){
     nMu_++;
   }
 }
+
+void HggReducer::fillJets(){
+  const float minPt = 20;
+  const int nJetCat=4;
+  const float maxJetEta[nJetCat] = {2.5,2.75,3,4.7};
+  const float betaStarSlope[nJetCat] = {0.2,0.3,999,999};
+  const float rmsCut[nJetCat] = {0.06,0.05,0.05,0.055};
+
+  nJets=0;
+  for(int iJ=0;iJ<nAK5PFPUcorrJet; iJ++){
+    int jetCat=0;
+    for(; jetCat<4; jetCat++){ // get the jet category
+      if(fabs(etaAK5PFPUcorrJet[iJ]) <maxJetEta[jetCat]) break;
+    }
+  if(jetCat>3) continue; //if its >4.7, reject the jet
+  float pT = TMath::Sqrt(TMath::Power(pxAK5PFPUcorrJet[iJ],2)+TMath::Power(pyAK5PFPUcorrJet[iJ],2));
+  if(pT < 30.) continue;
+  if(betastarAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
+  if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
+
+  ptJet[nJets] = pT;
+  etaJet[nJets] = etaAK5PFPUcorrJet[iJ];
+  phiJet[nJets] = phiAK5PFPUcorrJet[iJ];
+  energyJet[nJets] = energyAK5PFPUcorrJet[iJ];
+  nJets++;
+
+  }
+}
 void HggReducer::setupPreSelection(){
   //used to define the sets of prescale cuts we can use
   //maybe this should be totally configurable, but for now hard-code
@@ -643,6 +672,13 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
 
  outTree->Branch("nMu",&nMu_,"nMu/I");
  outTree->Branch("Muons",&Muons_);
+
+ outTree->Branch("nJets",&nJets,"nJets/I");
+ outTree->Branch("ptJet",ptJet,"ptJet[nJets]");
+ outTree->Branch("etaJet",etaJet,"etaJet[nJets]");
+ outTree->Branch("phiJet",phiJet,"phiJet[nJets]");
+ outTree->Branch("energyJet",energyJet,"energyJet[nJets]");
+
  //FOR MONTE CARLO:
   if(!_isData){
     //generator level information

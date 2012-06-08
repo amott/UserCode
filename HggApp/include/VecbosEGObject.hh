@@ -245,6 +245,17 @@ public:
   void doGenMatch(VecbosBase* o);
 };
 
+struct ReducedPhotonData{
+  TLorentzVector p4;
+  TLorentzVector p4NoCorr;
+  TLorentzVector p4Gen;
+  int index;
+  float r9;
+  bool passPFCiC;
+  int category;
+  float idMVA;
+};
+
 class VecbosEle{
 public:
   VecbosEle();
@@ -295,6 +306,7 @@ public:
   VecbosGen genMatch;
   void doGenMatch(VecbosBase*);
 };
+
 
 
 typedef std::vector<VecbosPho> PhoCollection;

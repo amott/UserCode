@@ -83,6 +83,7 @@ private:
   //photon preselection variables
   void setupPreSelection();
   void fillMuons();
+  void fillJets();
   vector<PreSelCuts> preselections;
   int preSelSet;
 
@@ -182,6 +183,14 @@ private:
   int procID;
   float qScale;
   float nPu;
+
+  const static int maxJets=50;
+  int nJets;
+  float ptJet[maxJets];
+  float etaJet[maxJets];
+  float phiJet[maxJets];
+  float energyJet[maxJets];
+  
 
 };
 #endif

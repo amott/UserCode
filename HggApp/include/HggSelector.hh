@@ -11,8 +11,6 @@
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
 using namespace std;
-
-                                    
 #include "HggVertexing.hh"
 
 class HggSelector{
@@ -72,6 +70,7 @@ private:
   void fillGenInfo();
 
   void fillMuMuGamma();
+  float getVBFMjj(VecbosPho*,VecbosPho*,TVector3);
   //TMVA stuff
   string weightFile_diPho;
   string methodName_diPho;
@@ -80,6 +79,8 @@ private:
   float getDiPhoMVA(int,int,float,float,bool);
 
   float getMPair(int,int);
+
+  ReducedPhotonData getReducedData(VecbosPho*,TVector3,int);
   //These are the variables that will be filled for the TMVA:
   //better to do it this way so we can do PFSC or regular SC without major changes
 
@@ -104,12 +105,11 @@ private:
   float mPairRes_;
   float mPairResWrongVtx_;
   float diPhoMVA_;
-  float pho1MVA_;
-  float pho2MVA_;
   int diPhoVtx_;
   float diPhoVtxX_;
   float diPhoVtxY_;
   float diPhoVtxZ_;
+  float Mjj_;
 
   float mPairPFCiC_;
   float mPairNoCorrPFCiC_;
@@ -119,31 +119,11 @@ private:
   float diPhoVtxXPFCiC_;
   float diPhoVtxYPFCiC_;
   float diPhoVtxZPFCiC_;
+  float MjjPFCiC_;
 
-  std::vector<VecbosPho> OutPhotons_;
-  std::vector<VecbosPho> OutPhotonsPFCiC_;
-
-  float energyPho1;
-  float energyNoCorrPho1;
-  float etaPho1;
-  float pxPho1;
-  float pyPho1;
-  float pzPho1;
-  float r9Pho1;
-  int catPho1;
-  int passPFCiCPho1;
-  float indexPho1;
-
-  float energyPho2;
-  float energyNoCorrPho2;
-  float etaPho2;
-  float pxPho2;
-  float pyPho2;
-  float pzPho2;
-  float r9Pho2;
-  int catPho2;
-  int passPFCiCPho2;
-  float indexPho2;
+  
+  std::vector<ReducedPhotonData> OutPhotons_;
+  std::vector<ReducedPhotonData> OutPhotonsPFCiC_;
 
   VecbosPho pho1_;
   VecbosPho pho2_;
@@ -238,6 +218,13 @@ private:
 
   int nGenPho;
   std::vector<VecbosGen> *GenPhotons;
+
+  const static int maxJets=50;
+  int nJets;
+  float ptJets[maxJets];
+  float etaJets[maxJets];
+  float phiJets[maxJets];
+  float energyJets[maxJets];
 
   float inPU;
 };

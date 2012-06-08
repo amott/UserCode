@@ -34,6 +34,7 @@
 #include "TCanvas.h"
 #include "TLatex.h"
 #include "TLegend.h"
+#include "TLorentzVector.h"
 #include <fstream>
 
 using namespace RooFit;
@@ -55,20 +56,30 @@ void setTCanvasNicev1(TCanvas *can0){
   can0->SetFrameBorderMode(0);
 }
 
-int getCat(float mva,const int nCat,const float* min,const float* max){
+int getCatMVA(float mva,float mjj,
+	      const int nCat,
+	      const float* min,const float* max,const float *mjjmin,const float *mjjmax){
   for(int iCat=0;iCat<nCat;iCat++){
-    if(mva>min[iCat] && mva<=max[iCat]) return iCat;
+    if(mva>min[iCat] && mva<=max[iCat]
+       && mjj > mjjmin[iCat] && mjj < mjjmax[iCat]) return iCat;
   }
   return -1;
 }
 
+int getCatPFCiC( float r9_1,  float r9_2,  float eta_1,  float eta_2,  float mjj){
+  if(mjj > 500.) return 0;
+  if(mjj > 250.) return 1;
+  return ( r9_1<0.94 || r9_2<0.94) + 2*( fabs(eta_1) > 1.48 || fabs(eta_2) > 1.48 );
+}		
 void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=180,bool applyTrigger=true,
-		      TString outputFile="interpolated/BkgWorkSpace.root"){
+		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false){
   
-  const int nCat = 4;
-  const float CatMin[nCat] = {0.89,0.72,0.55,0.05};
-  const float CatMax[nCat] = {9999,0.89,0.72,0.55}; // predefined cuts for the diPhotonMVA categories
-
+  const int nCat = 6;
+  const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
+  const float CatMax[nCat] = {9999,9999,9999,0.89,0.74,0.55}; // predefined cuts for the diPhotonMVA categories
+  const float MjjMin[nCat] = {500.,250.,-999,-999,-999,-999};
+  const float MjjMax[nCat] = {9999,500.,   0,   0,   0,   0};
+  
   //gStyle->SetErrorX(0); 
   //gStyle->SetOptStat(0);
 
@@ -86,10 +97,23 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   Float_t         mPair;
   Float_t         diPhotonMVA;
   Int_t           trigger;
-
+  Float_t           Mjj;
+  Float_t          pho1_r9;
+  Float_t          pho2_r9;
+  TLorentzVector   pho1_p4;
+  TLorentzVector   pho2_p4;
   fChain->SetBranchAddress("mPair", &mPair);
   fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
   fChain->SetBranchAddress("trigger",&trigger);
+  fChain->SetBranchAddress("Mjj",&Mjj);
+  
+  fChain->SetBranchAddress("Photon[0].r9",&pho1_r9);
+  fChain->SetBranchAddress("Photon[1].r9",&pho2_r9);
+
+  fChain->SetBranchAddress("Photon[0].p4",&pho1_p4);
+  fChain->SetBranchAddress("Photon[1].p4",&pho2_p4);
+
+  
 
   RooRealVar *rv_mass = new RooRealVar("mass","mass",100,mMin,mMax);
   //rv_mass->setRange(100,150);
@@ -114,15 +138,22 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   
 
   //loop over events
-  int nSelected = 0;
+  int nSelected[nCat] = {0,0,0,0,0,0};
   for(int iEvent=0; iEvent< Nevents; iEvent++){
     fChain->GetEntry(iEvent);
     if(applyTrigger && !trigger) continue;
-    int category = getCat(diPhotonMVA,nCat,CatMin,CatMax);
-    if(iEvent%100==0) cout<<"mPair/cat " << mPair << " "<< category << "   nSelected: " << nSelected << endl; 
-    if(category==-1) continue; // not a good diPhoton event
-    nSelected++;
+    int category;
+    if(doPFCiC) category = getCatPFCiC(pho1_r9,pho2_r9,pho1_p4.Eta(),pho2_p4.Eta(),Mjj);
+    else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
     
+    if(iEvent%500==0){
+      cout << "Processing Event " << iEvent << "  Selected: " << endl;
+      for(int i=0;i<nCat;i++) cout << "\t cat" << i  <<  ": " << nSelected[i];
+      cout << endl;
+    }
+
+    if(category==-1) continue; // not a good diPhoton event
+    nSelected[category]++;
     if(mPair >=mMin && mPair <= mMax){
       rv_mass->setVal(mPair);
       rds_data_mass[category]->add(*rv_mass);
@@ -285,8 +316,12 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   float ymax[10] = {20,40,40,100,200};
   
   string ptname[2] = {"p^{#gamma#gamma}_{T} > 40 GeV/c","p^{#gamma#gamma}_{T} < 40 GeV/c"};
-  string etaname[4] = { "MVA > 0.89", "0.89 > MVA > 0.72" , "0.72 > MVA > 0.55","0.55 > MVA > 0.05" 
-  };
+  string mvaname[6] = { "M_{jj} > 500 GeV  MVA > 0.05", "500 > M_{jj} > 250 GeV  MVA > 0.05", "MVA > 0.89", 
+			"0.89 > MVA > 0.74" , "0.74 > MVA > 0.55","0.55 > MVA > 0.05" };
+  string cicname[6] = { "M_{jj} > 500 GeV", "500 > M_{jj} > 250 GeV", "Barrel High R9", "Barrel Low R9",
+			"Endcap High R9", "Endcap Low R9"};
+			
+  
   
   for (UInt_t icat=0; icat<catnames.size(); ++icat) {
     
@@ -352,7 +387,7 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
     
     
     if( icat < nCat ){
-      string textname = etaname[icat];
+      string textname = (doPFCiC ? cicname[icat] : mvaname[icat]);
       TLatex *tex = new TLatex(0.2,0.8,textname.c_str());
       tex->SetNDC();
       tex->SetTextSize(0.04);

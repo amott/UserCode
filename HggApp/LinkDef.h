@@ -19,6 +19,7 @@
 #pragma link C++ class VecbosConversion+;
 #pragma link C++ class VecbosMu+;
 #pragma link C++ class VecbosGen+;
+#pragma link C++ class ReducedPhotonData+;
 #pragma link C++ class std::vector<VecbosPho>+;
 #pragma link C++ class std::vector<VecbosSC>+;
 #pragma link C++ class std::vector<VecbosPFSC>+;
@@ -27,6 +28,7 @@
 #pragma link C++ class std::vector<VecbosConversion>+;
 #pragma link C++ class std::vector<VecbosMu>+;
 #pragma link C++ class std::vector<VecbosGen>+;
+#pragma link C++ class std::vector<ReducedPhotonData>+;
 
 #endif
 

@@ -55,8 +55,6 @@ int HggSelector::init(){
   mPair_ = -1;
   mPairNoCorr_ = -1;
   diPhoMVA_ = -999.;
-  pho1MVA_  = -999.;
-  pho2MVA_  = -999.;
 
   triggerDec = new int[triggers.size()];
 
@@ -166,12 +164,9 @@ void HggSelector::Loop(){
 
     }
     
-    indices = getBestPair(mvaOut,0,0); // no scaling and default smearing
+    indices = getBestPair(&diPhoMVA_,0,0); // no scaling and default smearing
     index1 = indices.first;
     index2 = indices.second;
-    diPhoMVA_ = mvaOut[0];
-    pho1MVA_  = mvaOut[1];
-    pho2MVA_  = mvaOut[2];
 
     //Do the PFCiC selection as well!
     indices = getBestPairPFCiC(0,0); // no scaling and default smearing
@@ -191,25 +186,9 @@ void HggSelector::Loop(){
       TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
       pho1_ = Photons_->at(index1);
       pho2_ = Photons_->at(index2);
-      OutPhotons_.push_back(pho1_);
-      OutPhotons_.push_back(pho2_);
-      energyPho1 = pho1_.finalEnergy;
-      energyNoCorrPho1 = pho1_.energy;
-      etaPho1    = pho1_.SC.eta;
-      pxPho1     = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy).Px();
-      pyPho1     = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy).Py();
-      pzPho1     = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy).Pz();
-      r9Pho1     = pho1_.SC.r9();
-      indexPho1  = pho1_.index;
+      OutPhotons_.push_back(getReducedData(&pho1_,vtxPos,selectedVertex));
+      OutPhotons_.push_back(getReducedData(&pho2_,vtxPos,selectedVertex));
 
-      energyPho2 = pho2_.finalEnergy;
-      energyNoCorrPho2 = pho2_.energy;      
-      etaPho2    = pho2_.SC.eta;
-      pxPho2     = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy).Px();
-      pyPho2     = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy).Py();
-      pzPho2     = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy).Pz();
-      r9Pho2     = pho2_.SC.r9();
-      indexPho2  = pho2_.index;
       if(debugSelector) cout << "Photon Indices: " << pho1_.index << "  " << pho2_.index << endl;
 
       mPair_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
@@ -220,6 +199,7 @@ void HggSelector::Loop(){
       diPhoVtxX_ = vtxX[selectedVertex];
       diPhoVtxY_ = vtxY[selectedVertex];
       diPhoVtxZ_ = vtxZ[selectedVertex];
+      Mjj_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos);
     }else{
       mPair_=-1;      
     }
@@ -232,8 +212,8 @@ void HggSelector::Loop(){
       TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
       pho1_ = Photons_->at(index1);
       pho2_ = Photons_->at(index2);
-      OutPhotonsPFCiC_.push_back(pho1_);
-      OutPhotonsPFCiC_.push_back(pho2_);
+      OutPhotonsPFCiC_.push_back(getReducedData(&pho1_,vtxPos,selectedVertex));
+      OutPhotonsPFCiC_.push_back(getReducedData(&pho2_,vtxPos,selectedVertex));
 
       mPairPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
       mPairNoCorrPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
@@ -243,6 +223,7 @@ void HggSelector::Loop(){
       diPhoVtxXPFCiC_ = vtxX[selectedVertex];
       diPhoVtxYPFCiC_ = vtxY[selectedVertex];
       diPhoVtxZPFCiC_ = vtxZ[selectedVertex];
+      MjjPFCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos);
     }else{
       mPairPFCiC_=-1;
     }
@@ -323,9 +304,7 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
   std::pair<int,int> indices(-1,-1);
   float diPhoMVAMax=-99;
   TRandom3 rng(0);
-  mvaOut[0] = -999;
-  mvaOut[1] = -999;
-  mvaOut[2] = -999;
+  *mvaOut = -999.;
   for(int iPho1=0; iPho1<nPho_;iPho1++){
     if(photonMatchedElectron[iPho1] && doElectronVeto) continue;
     for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
@@ -364,9 +343,7 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 	indices.first = iPho1;
 	indices.second = iPho2;
 	diPhoMVAMax = diPhoMVA;
-	mvaOut[0] = diPhoMVA;
-	mvaOut[1] = mva1;
-	mvaOut[2] = mva2;
+	*mvaOut = diPhoMVA;
       }
     }// for(iPho2...
   }// for(iPho1...
@@ -377,8 +354,6 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 void HggSelector::setDefaults(){
   mPair_=-1;
   mPairNoCorr_=-1;
-  indexPho1 = -1;
-  indexPho2 = -1;
   genHiggsPt = -1;
   nPU_ = inPU;
 }
@@ -386,8 +361,6 @@ void HggSelector::clear(){
   mPair_=-1;
   mPairNoCorr_=-1;
   diPhoMVA_=-999;
-  pho1MVA_=-999;
-  pho2MVA_=-999;
   diPhoVtx_= -1;
   diPhoVtxX_=0;
   diPhoVtxY_=0;
@@ -453,6 +426,21 @@ void HggSelector::fillGenInfo(){
   
 }
 
+ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int selVtxI){
+  ReducedPhotonData data;
+  data.p4 = pho->p4FromVtx(selVtx,pho->finalEnergy,false);
+  data.p4NoCorr = pho->p4FromVtx(selVtx,pho->energy,false);
+  if(pho->genMatch.index!=-1) 
+    data.p4Gen.SetPtEtaPhiE(pho->genMatch.pt,pho->genMatch.eta,pho->genMatch.phi,pho->genMatch.energy);
+  else
+    data.p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
+  data.index = pho->index;
+  data.r9 = pho->SC.r9();
+  data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtx,selVtxI); 
+  data.category = (data.r9 < 0.94)+2*(fabs(data.p4.Eta()) > 1.48); 
+  data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtx,selVtxI);
+}
+
 void HggSelector::setupTMVA(){
   diPhotonMVA = new TMVA::Reader( "!Color:!Silent" );; 
 
@@ -515,6 +503,13 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("GenPhotons",&GenPhotons);
 
  fChain->SetBranchAddress("nPU",&inPU);
+
+ fChain->SetBranchAddress("nJets",&nJets);
+ fChain->SetBranchAddress("ptJet",ptJets);
+ fChain->SetBranchAddress("etaJet",etaJets);
+ fChain->SetBranchAddress("phiJet",phiJets);
+ fChain->SetBranchAddress("energyJet",energyJets);
+
  vector<string>::const_iterator trigIt;
  int i=0;
  for(trigIt=triggers.begin();trigIt!=triggers.end();trigIt++,i++){
@@ -531,12 +526,11 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("mPairRes",&mPairRes_,"mPairRes/F");
   outTree->Branch("mPairResWrongVtx",&mPairResWrongVtx_,"mPairResWrongVtx/F");
   outTree->Branch("diPhotonMVA",&diPhoMVA_,"diPhotonMVA/F");
-  outTree->Branch("Photon1MVA",&pho1MVA_,"Photon1MVA/F");
-  outTree->Branch("Photon2MVA",&pho2MVA_,"Photon2MVA/F");
   outTree->Branch("diPhotonVtx",&diPhoVtx_,"diPhotonVtx/I");
   outTree->Branch("diPhotonVtxX",&diPhoVtxX_,"diPhotonVtxX/F");
   outTree->Branch("diPhotonVtxY",&diPhoVtxY_,"diPhotonVtxY/F");
   outTree->Branch("diPhotonVtxZ",&diPhoVtxZ_,"diPhotonVtxZ/F");
+  outTree->Branch("Mjj",&Mjj_,"Mjj");
 
   outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
   outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
@@ -546,32 +540,10 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxXPFCiC",&diPhoVtxXPFCiC_,"diPhotonVtxXPFCiC/F");
   outTree->Branch("diPhotonVtxYPFCiC",&diPhoVtxYPFCiC_,"diPhotonVtxYPFCiC/F");
   outTree->Branch("diPhotonVtxZPFCiC",&diPhoVtxZPFCiC_,"diPhotonVtxZPFCiC/F");
-
+  outTree->Branch("MjjPFCiC",&MjjPFCiC_,"MjjPFCiC");
   
   outTree->Branch("Photon",&OutPhotons_);
   outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
-
-  outTree->Branch("energyPho1",&energyPho1);
-  outTree->Branch("energyNoCorrPho1",&energyNoCorrPho1);
-  outTree->Branch("etaPho1",&etaPho1);
-  outTree->Branch("pxPho1",&pxPho1);
-  outTree->Branch("pyPho1",&pyPho1);
-  outTree->Branch("pzPho1",&pzPho1);
-  outTree->Branch("r9Pho1",&r9Pho1);
-  outTree->Branch("catPho1",&catPho1,"catPho1/I");
-  outTree->Branch("passPFCiCPho1",&passPFCiCPho1,"passPFCiCPho1/I");  
-  outTree->Branch("indexPho1",&indexPho1);
-
-  outTree->Branch("energyPho2",&energyPho2);
-  outTree->Branch("energyNoCorrPho2",&energyNoCorrPho2);
-  outTree->Branch("etaPho2",&etaPho2);
-  outTree->Branch("pxPho2",&pxPho2);
-  outTree->Branch("pyPho2",&pyPho2);
-  outTree->Branch("pzPho2",&pzPho2);
-  outTree->Branch("r9Pho2",&r9Pho2);
-  outTree->Branch("catPho2",&catPho2,"catPho2/I");
-  outTree->Branch("passPFCiCPho2",&passPFCiCPho2,"passPFCiCPho2/I");  
-  outTree->Branch("indexPho2",&indexPho2);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);
   outTree->Branch("genHiggsVx",&genHiggsVx);
@@ -666,6 +638,43 @@ void HggSelector::fillMuMuGamma(){
 
 
   if(doMuMuGamma) outTreeMuMuG->Fill();
+}
+
+float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx){
+  TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
+  TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
+  
+  if( max(p1.Pt(),p2.Pt()) < 60. ) return 0;
+  if( min(p1.Pt(),p2.Pt()) < 25. ) return 0;
+
+  if( (p1+p2).M() > 120. ) return 0; 
+  if(nJets<2) return 0;
+  int i1=-1,i2=-1;
+  float maxSumPt=0;
+  for(int iJ1=0;iJ1<nJets;iJ1++){
+    if(ptJets[iJ1] < 30.) continue;
+    for(int iJ2=0;iJ2<nJets;iJ2++){
+      if(ptJets[iJ2] < 30.) continue;
+      if(ptJets[iJ1]+ptJets[iJ2] > maxSumPt){
+	maxSumPt = ptJets[iJ1]+ptJets[iJ2];
+	i1=iJ1; i2=iJ2;
+      }
+    }
+  }
+
+  if(i1==-1 || i2==-1) return 0; //didn't find 2 30 GeV Jets
+
+  float dEtaJ = fabs(etaJets[i1]-etaJets[i2]);
+  if(dEtaJ < 3.) return 0;
+  TLorentzVector ggSystem = p1+p2;
+  float Z = ggSystem.Eta() - (etaJets[i1]+etaJets[i2])/2;
+  if(fabs(Z)>2.5) return 0;
+  TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
+  TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
+  TLorentzVector jjSystem = j1+j2;
+  if( fabs(jjSystem.DeltaPhi(ggSystem)) < 2.6 ) return 0;
+
+  return jjSystem.M();
 }
 
 bool HggSelector::requireTrigger(){
