@@ -61,7 +61,7 @@ int getCatMVA(float mva,float mjj,
 	      const float* min,const float* max,const float *mjjmin,const float *mjjmax){
   for(int iCat=0;iCat<nCat;iCat++){
     if(mva>min[iCat] && mva<=max[iCat]
-       && mjj > mjjmin[iCat] && mjj < mjjmax[iCat]) return iCat;
+       && mjj > mjjmin[iCat] && mjj <=mjjmax[iCat]) return iCat;
   }
   return -1;
 }
@@ -71,18 +71,16 @@ int getCatPFCiC( float r9_1,  float r9_2,  float eta_1,  float eta_2,  float mjj
   if(mjj > 250.) return 1;
   return ( r9_1<0.94 || r9_2<0.94) + 2*( fabs(eta_1) > 1.48 || fabs(eta_2) > 1.48 );
 }		
-void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=180,bool applyTrigger=true,
-		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false){
+
+void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
+		      TString outputFile="rootFiles/smallTree.root", bool doPFCiC=false,bool applyTrigger=true){
   
   const int nCat = 6;
   const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
   const float CatMax[nCat] = {9999,9999,9999,0.89,0.74,0.55}; // predefined cuts for the diPhotonMVA categories
   const float MjjMin[nCat] = {500.,250.,-999,-999,-999,-999};
-  const float MjjMax[nCat] = {9999,500.,   0,   0,   0,   0};
+  const float MjjMax[nCat] = {9999,500.,250.,250.,250.,250.};
   
-  //gStyle->SetErrorX(0); 
-  //gStyle->SetOptStat(0);
-
   TChain *fChain = new TChain("HggOutput");
   
   ifstream st(inputFiles.c_str(),fstream::in);
@@ -93,28 +91,68 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
     if(file.find("/castor/cern.ch")!=string::npos) file.insert(0,"rfio://");
     fChain->AddFile(file.c_str());
   }
-
   Float_t         mPair;
   Float_t         diPhotonMVA;
   Int_t           trigger;
   Float_t           Mjj;
-  Float_t          pho1_r9;
-  Float_t          pho2_r9;
-  TLorentzVector   pho1_p4;
-  TLorentzVector   pho2_p4;
+  Int_t            nPho;
+  Float_t          pho_r9[2];
+  Float_t          pho_px[2];
+  Float_t          pho_py[2];
+  Float_t          pho_pz[2];
+  Float_t          pho_E[2];
   fChain->SetBranchAddress("mPair", &mPair);
   fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
   fChain->SetBranchAddress("trigger",&trigger);
   fChain->SetBranchAddress("Mjj",&Mjj);
   
-  fChain->SetBranchAddress("Photon[0].r9",&pho1_r9);
-  fChain->SetBranchAddress("Photon[1].r9",&pho2_r9);
+  fChain->SetBranchAddress("Photon.r9",pho_r9);
+  fChain->SetBranchAddress("Photon.p4.fP.fX",pho_px);
+  fChain->SetBranchAddress("Photon.p4.fP.fY",pho_py);
+  fChain->SetBranchAddress("Photon.p4.fP.fZ",pho_pz);
+  fChain->SetBranchAddress("Photon.p4.fE",pho_E);
 
-  fChain->SetBranchAddress("Photon[0].p4",&pho1_p4);
-  fChain->SetBranchAddress("Photon[1].p4",&pho2_p4);
+  TTree *outTree = new TTree("HggOutputReduced","");
+  Float_t         mPairOut;
+  Int_t           catOut;
+  outTree->Branch("mPair", &mPairOut);
+  outTree->Branch("cat",&catOut,"cat/I");
 
+  Long64_t ientry = -1;
+  while(fChain->GetEntry(++ientry)){
+    cout << pho_E[0] << endl;
+    TLorentzVector p1(1.,0.,0.,1.);//(pho_px[0],pho_py[0],pho_pz[0],pho_E[0]);
+    TLorentzVector p2(1.,0.,0.,1.);//(pho_px[1],pho_py[1],pho_pz[1],pho_E[1]);
+    int category;
+    if(doPFCiC) category = getCatPFCiC(pho_r9[0],pho_r9[1],p1.Eta(),p2.Eta(),Mjj);
+    else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
+    if(category == -1 || mPair < mMin || mPair > mMax) continue;
+    mPairOut = mPair;
+    catOut   = category;
+    outTree->Fill();
+  }
+  TFile *f = new TFile(outputFile,"RECREATE");
+  outTree->Write();
+  f->Close();
+}
+
+void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180,
+		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false,bool applyTrigger=true){
+
+  const int nCat = 6;
+  const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
+  const float CatMax[nCat] = {9999,9999,9999,0.89,0.74,0.55}; // predefined cuts for the diPhotonMVA categories
+  const float MjjMin[nCat] = {500.,250.,-999,-999,-999,-999};
+  const float MjjMax[nCat] = {9999,500.,250.,250.,250.,250.};
+  //gStyle->SetErrorX(0); 
+  //gStyle->SetOptStat(0);
+
+
+  Float_t         mPair;
+  Int_t           cat;
+  fChain->SetBranchAddress("mPair", &mPair);
+  fChain->SetBranchAddress("cat",&cat);
   
-
   RooRealVar *rv_mass = new RooRealVar("mass","mass",100,mMin,mMax);
   //rv_mass->setRange(100,150);
   rv_mass->setRange(mMin,mMax);
@@ -135,47 +173,39 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   int Nevents = fChain->GetEntries();
   
   vector<float> allmass; 
-  
+
+  vector<TString> catnames;
+  for(int i=0;i<nCat;i++){
+    catnames.push_back(Form("cat_%d",i));
+  }
 
   //loop over events
   int nSelected[nCat] = {0,0,0,0,0,0};
   for(int iEvent=0; iEvent< Nevents; iEvent++){
     fChain->GetEntry(iEvent);
-    if(applyTrigger && !trigger) continue;
-    int category;
-    if(doPFCiC) category = getCatPFCiC(pho1_r9,pho2_r9,pho1_p4.Eta(),pho2_p4.Eta(),Mjj);
-    else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
-    
+
     if(iEvent%500==0){
       cout << "Processing Event " << iEvent << "  Selected: " << endl;
       for(int i=0;i<nCat;i++) cout << "\t cat" << i  <<  ": " << nSelected[i];
       cout << endl;
     }
 
-    if(category==-1) continue; // not a good diPhoton event
-    nSelected[category]++;
+    if(cat==-1) continue; // not a good diPhoton event
+    nSelected[cat]++;
     if(mPair >=mMin && mPair <= mMax){
       rv_mass->setVal(mPair);
-      rds_data_mass[category]->add(*rv_mass);
+      rds_data_mass[cat]->add(*rv_mass);
       rds_data_mass[nCat]->add(*rv_mass);
       allmass.push_back(mPair);
     }
   }  
-  
-  std::vector<TString> catnames;  
+  RooWorkspace *w = new RooWorkspace("cms_hgg_workspace","wbkg") ;
 
-  for(int j=0; j< nCat; j++){
-    catnames.push_back(TString(Form("cat%d",j)));
-  }
-  
-  
   std::vector<RooAbsData*> datav;
   std::vector<RooAbsPdf*> pdfv;
   
   std::vector<RooRealVar*> coeffv;
   std::vector<RooRealVar*> normv;
-  
-  RooWorkspace *w = new RooWorkspace("cms_hgg_workspace","wbkg") ;
   
   RooRealVar *p1first=0;
   RooRealVar *p2first=0;
@@ -257,13 +287,12 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
     w->import(*databinned);
     
   }
-
-  
   catnames.push_back("combcat");    
   ///last one is combined
-  datav.push_back(rds_data_mass[nCat]);
+  datav.push_back(rds_data_mass[nCat]);  
   
-  
+  w->import(datacomb);  
+
   //gStyle->SetOptStat(1110);
   
   ///here is to get all p1 and p2 for 8 categories by simulateous fit 
@@ -451,4 +480,23 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   
   
 
+}
+
+
+
+
+void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=180,
+		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false,bool applyTrigger=true){
+  TChain *fChain = new TChain("HggOutputReduced");
+  
+  ifstream st(inputFiles.c_str(),fstream::in);
+  string file;
+  while(st.good()){
+    getline(st,file);
+    if(file.empty()) continue;
+    if(file.find("/castor/cern.ch")!=string::npos) file.insert(0,"rfio://");
+    fChain->AddFile(file.c_str());
+  }
+
+  makeBkgWorkSpace(fChain,lumi,mMin,mMax,outputFile,doPFCiC,applyTrigger);
 }

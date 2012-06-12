@@ -42,6 +42,8 @@ int main(int argc, char* argv[]) {
   if ( argc < 3 ){
     cout << "Error at Input: please specify an input file including the list of input ROOT files" << endl; 
     cout << "Example:        ./VecbosApp list.txt output.root cfg" << endl;
+    cout << "Example:        ./VecbosApp list.root output.root cfg" << endl;
+
     return 1;
   }
 
@@ -110,7 +112,7 @@ int main(int argc, char* argv[]) {
     //cout << "Suppressing Electron Veto!" << endl;
   }
   if(Commands["doMuMuGamma"]) sel.setDoMuMuGamma();
-  if(Commands["suppressElectronVeto"]) sel.suppressElectronVeto();
+  //if(Commands["suppressElectronVeto"]) sel.suppressElectronVeto();
   sel.Loop();
   
   cout << "DONE" <<endl;

@@ -421,10 +421,10 @@ void VecbosPho::Init(VecbosBase* o, int i){
   dr04TrkSumPtHollowCone  = o->dr04HollowTkSumPtPho[i]; 
 
   for(int iPV=0;iPV<o->nPV;iPV++){
-    chargedHadronIso.push_back( o->chargedHadronIsoPho[i*o->nPV+iPV] );
+    chargedHadronIso.push_back( o->dr03chPFIsoPho[i*o->nPV+iPV] );
   }
-  neutralHadronIso        = o->neutralHadronIsoPho[i];
-  photonIso               = o->photonIsoPho[i];
+  neutralHadronIso        = o->dr03nhPFIsoPho[i*o->nPV];
+  photonIso               = o->dr03phPFIsoPho[i*o->nPV];
   int SCI = o->superClusterIndexPho[i];
   CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
 

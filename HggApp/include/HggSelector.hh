@@ -10,6 +10,7 @@
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
+
 using namespace std;
 #include "HggVertexing.hh"
 
@@ -70,7 +71,7 @@ private:
   void fillGenInfo();
 
   void fillMuMuGamma();
-  float getVBFMjj(VecbosPho*,VecbosPho*,TVector3);
+  float getVBFMjj(VecbosPho*,VecbosPho*,TVector3,float*);
   //TMVA stuff
   string weightFile_diPho;
   string methodName_diPho;
@@ -110,6 +111,8 @@ private:
   float diPhoVtxY_;
   float diPhoVtxZ_;
   float Mjj_;
+  float ptJet1_;
+  float ptJet2_;
 
   float mPairPFCiC_;
   float mPairNoCorrPFCiC_;
@@ -120,9 +123,13 @@ private:
   float diPhoVtxYPFCiC_;
   float diPhoVtxZPFCiC_;
   float MjjPFCiC_;
+  float ptJet1PFCiC_;
+  float ptJet2PFCiC_;
 
   
+  Int_t nOutPhotons_;
   std::vector<ReducedPhotonData> OutPhotons_;
+  Int_t nOutPhotonsPFCiC_;
   std::vector<ReducedPhotonData> OutPhotonsPFCiC_;
 
   VecbosPho pho1_;

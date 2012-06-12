@@ -246,9 +246,9 @@ public:
 };
 
 struct ReducedPhotonData{
-  TLorentzVector p4;
-  TLorentzVector p4NoCorr;
-  TLorentzVector p4Gen;
+  Float_t pt,eta,phi,E;
+  Float_t pt_NoCorr, eta_NoCorr, phi_NoCorr, E_NoCorr;
+  Float_t pt_Gen, eta_Gen, phi_Gen, E_Gen;
   int index;
   float r9;
   bool passPFCiC;

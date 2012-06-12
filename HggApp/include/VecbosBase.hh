@@ -178,6 +178,9 @@ public :
    Float_t         photonIsoPho[10];   //[nPho]
    Int_t           hasPixelSeedPho[10];   //[nPho]
    Bool_t          hasMatchedConversionPho[10];   //[nPho]
+   Float_t         dr03chPFIsoPho[400];   //[nPerPVPho]
+   Float_t         dr03nhPFIsoPho[400];   //[nPerPVPho]
+   Float_t         dr03phPFIsoPho[400];   //[nPerPVPho]
    Int_t           nConv;
    Float_t         pxPairConv[40];   //[nConv]
    Float_t         pyPairConv[40];   //[nConv]
@@ -1159,6 +1162,9 @@ public :
    TBranch        *b_photonIsoPho;   //!
    TBranch        *b_hasPixelSeedPho;   //!
    TBranch        *b_hasMatchedConversionPho;   //!
+   TBranch        *b_dr03chPFIsoPho;   //!
+   TBranch        *b_dr03nhPFIsoPho;   //!
+   TBranch        *b_dr03phPFIsoPho;   //!
    TBranch        *b_nConv;   //!
    TBranch        *b_pxPairConv;   //!
    TBranch        *b_pyPairConv;   //!
@@ -2211,6 +2217,9 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("photonIsoPho", photonIsoPho, &b_photonIsoPho);
    fChain->SetBranchAddress("hasPixelSeedPho", hasPixelSeedPho, &b_hasPixelSeedPho);
    fChain->SetBranchAddress("hasMatchedConversionPho", hasMatchedConversionPho, &b_hasMatchedConversionPho);
+   fChain->SetBranchAddress("dr03chPFIsoPho", dr03chPFIsoPho, &b_dr03chPFIsoPho);
+   fChain->SetBranchAddress("dr03nhPFIsoPho", dr03nhPFIsoPho, &b_dr03nhPFIsoPho);
+   fChain->SetBranchAddress("dr03phPFIsoPho", dr03phPFIsoPho, &b_dr03phPFIsoPho);
    fChain->SetBranchAddress("nConv", &nConv, &b_nConv);
    fChain->SetBranchAddress("pxPairConv", pxPairConv, &b_pxPairConv);
    fChain->SetBranchAddress("pyPairConv", pyPairConv, &b_pyPairConv);

@@ -106,10 +106,10 @@ void HggSelector::Loop(){
     
     if(debugSelector) cout << "requiring triggers ... " << flush;
     trigger_ = this->requireTrigger();
-    if(!trigger_){
-      outTree->Fill();
-      continue; // don't bother doing the MVA 
-    }
+    //    if(!trigger_){
+    //  outTree->Fill();
+    //  continue; // don't bother doing the MVA 
+    //}
 
     if(debugSelector) cout << "done" << endl;
     if(debugSelector) cout << "# Photons: " << nPho_ << endl;
@@ -199,7 +199,10 @@ void HggSelector::Loop(){
       diPhoVtxX_ = vtxX[selectedVertex];
       diPhoVtxY_ = vtxY[selectedVertex];
       diPhoVtxZ_ = vtxZ[selectedVertex];
-      Mjj_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos);
+      float jpt[2];
+      Mjj_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
+      ptJet1_ = jpt[0];
+      ptJet2_ = jpt[1];
     }else{
       mPair_=-1;      
     }
@@ -223,11 +226,16 @@ void HggSelector::Loop(){
       diPhoVtxXPFCiC_ = vtxX[selectedVertex];
       diPhoVtxYPFCiC_ = vtxY[selectedVertex];
       diPhoVtxZPFCiC_ = vtxZ[selectedVertex];
-      MjjPFCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos);
+      float jpt[2];
+      MjjPFCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
+      ptJet1PFCiC_ = jpt[0];
+      ptJet2PFCiC_ = jpt[1];
     }else{
       mPairPFCiC_=-1;
     }
 
+    nOutPhotons_ = OutPhotons_.size();
+    nOutPhotonsPFCiC_ = OutPhotonsPFCiC_.size();
     outTree->Fill();
   }//while(fChain...
 
@@ -428,17 +436,26 @@ void HggSelector::fillGenInfo(){
 
 ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int selVtxI){
   ReducedPhotonData data;
-  data.p4 = pho->p4FromVtx(selVtx,pho->finalEnergy,false);
-  data.p4NoCorr = pho->p4FromVtx(selVtx,pho->energy,false);
-  if(pho->genMatch.index!=-1) 
-    data.p4Gen.SetPtEtaPhiE(pho->genMatch.pt,pho->genMatch.eta,pho->genMatch.phi,pho->genMatch.energy);
-  else
-    data.p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
+  TLorentzVector p4 = pho->p4FromVtx(selVtx,pho->finalEnergy,false);
+  TLorentzVector p4NoCorr = pho->p4FromVtx(selVtx,pho->energy,false);
+  TLorentzVector p4Gen;
+  if(pho->genMatch.index!=-1) {
+    p4Gen.SetPtEtaPhiE(pho->genMatch.pt,pho->genMatch.eta,pho->genMatch.phi,pho->genMatch.energy);
+    data.pt_Gen = p4Gen.Pt(); data.eta_Gen = p4Gen.Eta(); data.phi_Gen = p4Gen.Phi(); data.E_Gen = p4Gen.E();
+  }
+  else{
+    p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
+    data.pt_Gen = 0.; data.eta_Gen = 0.; data.phi_Gen = 0.; data.E_Gen = 0.;
+  
+  }
+  data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E();
+  data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
   data.index = pho->index;
   data.r9 = pho->SC.r9();
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtx,selVtxI); 
-  data.category = (data.r9 < 0.94)+2*(fabs(data.p4.Eta()) > 1.48); 
+  data.category = (data.r9 < 0.94)+2*(fabs(data.eta) > 1.48); 
   data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtx,selVtxI);
+  return data;
 }
 
 void HggSelector::setupTMVA(){
@@ -531,6 +548,8 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxY",&diPhoVtxY_,"diPhotonVtxY/F");
   outTree->Branch("diPhotonVtxZ",&diPhoVtxZ_,"diPhotonVtxZ/F");
   outTree->Branch("Mjj",&Mjj_,"Mjj");
+  outTree->Branch("ptJet1",&ptJet1_,"ptJet1");
+  outTree->Branch("ptJet2",&ptJet2_,"ptJet2");
 
   outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
   outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
@@ -541,8 +560,12 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxYPFCiC",&diPhoVtxYPFCiC_,"diPhotonVtxYPFCiC/F");
   outTree->Branch("diPhotonVtxZPFCiC",&diPhoVtxZPFCiC_,"diPhotonVtxZPFCiC/F");
   outTree->Branch("MjjPFCiC",&MjjPFCiC_,"MjjPFCiC");
+  outTree->Branch("ptJet1PFCiC",&ptJet1PFCiC_,"ptJet1PFCiC");
+  outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
   
+  outTree->Branch("nPhoton",nOutPhotons_);
   outTree->Branch("Photon",&OutPhotons_);
+  outTree->Branch("nPhotonPFCiC",nOutPhotonsPFCiC_);
   outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);
@@ -640,40 +663,48 @@ void HggSelector::fillMuMuGamma(){
   if(doMuMuGamma) outTreeMuMuG->Fill();
 }
 
-float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx){
+#define debugMjj 1
+float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,float *jetPts){
   TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
   TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
-  
+  jetPts[0]=0.; jetPts[1]=0.;
   if( max(p1.Pt(),p2.Pt()) < 60. ) return 0;
   if( min(p1.Pt(),p2.Pt()) < 25. ) return 0;
-
-  if( (p1+p2).M() > 120. ) return 0; 
+  if( (p1+p2).M() < 120. ) return 0; 
   if(nJets<2) return 0;
+  if(debugMjj) cout << "NJets: " << nJets << endl;
   int i1=-1,i2=-1;
   float maxSumPt=0;
   for(int iJ1=0;iJ1<nJets;iJ1++){
-    if(ptJets[iJ1] < 30.) continue;
-    for(int iJ2=0;iJ2<nJets;iJ2++){
-      if(ptJets[iJ2] < 30.) continue;
+    if(ptJets[iJ1] < 20.) continue;
+    for(int iJ2=iJ1+1;iJ2<nJets;iJ2++){
+      if(ptJets[iJ2] < 20.) continue;
+      //if(ptJets[iJ1] < 30. && ptJets[iJ2] < 30.) continue; // require 1 30 GeV jet
       if(ptJets[iJ1]+ptJets[iJ2] > maxSumPt){
 	maxSumPt = ptJets[iJ1]+ptJets[iJ2];
 	i1=iJ1; i2=iJ2;
       }
     }
   }
-
+  if(debugMjj) cout << "Selected Jet Indices: " << i1 << " " << i2 << endl;
   if(i1==-1 || i2==-1) return 0; //didn't find 2 30 GeV Jets
 
   float dEtaJ = fabs(etaJets[i1]-etaJets[i2]);
+  if(debugMjj) cout << "dEtaJ: " << dEtaJ << endl;
   if(dEtaJ < 3.) return 0;
   TLorentzVector ggSystem = p1+p2;
   float Z = ggSystem.Eta() - (etaJets[i1]+etaJets[i2])/2;
+  if(debugMjj) cout << "Z: " << Z << endl;
   if(fabs(Z)>2.5) return 0;
   TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
   TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
   TLorentzVector jjSystem = j1+j2;
+  if(debugMjj) cout << "dPhi jj gg: " << fabs(jjSystem.DeltaPhi(ggSystem)) << endl;
   if( fabs(jjSystem.DeltaPhi(ggSystem)) < 2.6 ) return 0;
 
+  jetPts[0] = j1.Pt();
+  jetPts[1] = j2.Pt();
+  if(debugMjj) cout << "jj Mass: " << jjSystem.M() <<endl;
   return jjSystem.M();
 }
 
