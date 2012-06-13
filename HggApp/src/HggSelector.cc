@@ -19,7 +19,8 @@ HggSelector::HggSelector():
   ggVerticesVertexIndex(0),
   Photons_(0),
   nSigma(3),
-  doMuMuGamma(false)
+  doMuMuGamma(false),
+  isData_(true)
 {
 }
 
@@ -29,7 +30,8 @@ HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName)
   doElectronVeto(true),
   Photons_(0),
   nSigma(3),
-  doMuMuGamma(false)
+  doMuMuGamma(false),
+  isData_(true)
 {
   this->loadChain(fNames,treeName);
   outputFile = outFName;
@@ -58,9 +60,6 @@ int HggSelector::init(){
 
   triggerDec = new int[triggers.size()];
 
-  massRes = new HggMassResolution();
-  massRes->setConfigFile(massResConfig);
-  massRes->init();
   
   this->setBranchAddresses();
   this->setupOutputTree();
@@ -79,9 +78,33 @@ int HggSelector::init(){
        << weightFile_diPho << endl
        << methodName_diPho << endl;
 
+  string MassResConfig = cfg.getParameter("MassResolutionConfig");
+  massRes = new HggMassResolution();
+  massRes->setConfigFile(MassResConfig);
+  massRes->init();
+
+
   PhotonID = new HggPhotonID();
   PhotonID->setConfig(configFile);
   PhotonID->Init();
+
+  //setup MVA inputs histograms
+  MVAInputs["massRes"] =  new TH1F("massRes","",200,0.,0.2);
+  MVAInputs["massResWrongVtx"] = new TH1F("massResWrongVtx","",200,0.,0.2);
+  MVAInputs["vtxProb"] = new TH1F("vtxProb","",100,0,1);
+  MVAInputs["p1_EtByM"] = new TH1F("p1_EtByM","",200,0,1);
+  MVAInputs["p2_EtByM"] = new TH1F("p2_EtByM","",200,0,1);
+  MVAInputs["p1_Eta"] = new TH1F("p1_Eta","",120,-3,3);
+  MVAInputs["p2_Eta"] = new TH1F("p2_Eta","",120,-3,3);
+  MVAInputs["CosDPhi"] = new TH1F("cosDPhi","",200,-1,1);
+  MVAInputs["p1_idMVA"] = new TH1F("p1_idMVA","",200,-1,1);
+  MVAInputs["p2_idMVA"] = new TH1F("p2_idMVA","",200,-1,1);
+
+  MjjDists["BeforeVBF"] = new TH1F("MjjBeforeVBF","",200,0,2000);
+  MjjDists["AfterDEta"] = new TH1F("MjjAfterDEta","",200,0,2000);
+  MjjDists["AfterZ"] = new TH1F("MjjAfterZ","",200,0,2000);
+  MjjDists["Final"] = new TH1F("Final","",200,0,2000);
+
 
   this->setupTMVA();
 }
@@ -242,6 +265,9 @@ void HggSelector::Loop(){
   TFile *f = new TFile(outputFile.c_str(),"RECREATE");
   outTree->Write();
   if(doMuMuGamma) outTreeMuMuG->Write();
+  std::map<std::string,TH1F*>::iterator it;
+  for(it = MVAInputs.begin(); it!=MVAInputs.end(); it++) (*it).second->Write();
+  for(it = MjjDists.begin();  it!=MjjDists.end();  it++) (*it).second->Write();
   f->Close();
 }
 
@@ -688,20 +714,22 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   }
   if(debugMjj) cout << "Selected Jet Indices: " << i1 << " " << i2 << endl;
   if(i1==-1 || i2==-1) return 0; //didn't find 2 30 GeV Jets
-
+  TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
+  TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
+  MjjDists["BeforeVBF"]->Fill((j1+j2).M());
   float dEtaJ = fabs(etaJets[i1]-etaJets[i2]);
   if(debugMjj) cout << "dEtaJ: " << dEtaJ << endl;
   if(dEtaJ < 3.) return 0;
+  MjjDists["AfterDEta"]->Fill( (j1+j2).M() );
   TLorentzVector ggSystem = p1+p2;
   float Z = ggSystem.Eta() - (etaJets[i1]+etaJets[i2])/2;
   if(debugMjj) cout << "Z: " << Z << endl;
   if(fabs(Z)>2.5) return 0;
-  TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
-  TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
+  MjjDists["AfterZ"]->Fill( (j1+j2).M() );
   TLorentzVector jjSystem = j1+j2;
   if(debugMjj) cout << "dPhi jj gg: " << fabs(jjSystem.DeltaPhi(ggSystem)) << endl;
   if( fabs(jjSystem.DeltaPhi(ggSystem)) < 2.6 ) return 0;
-
+  MjjDists["Final"]->Fill( (j1+j2).M() );
   jetPts[0] = j1.Pt();
   jetPts[1] = j2.Pt();
   if(debugMjj) cout << "jj Mass: " << jjSystem.M() <<endl;
@@ -791,18 +819,29 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
 
   float mPair = (p1+p2).M();
   //fill variables
-  smearedMassErrByMass = massRes->getMassResolution(&pho1,&pho2,vtxPos,false)/mPair;
+  smearedMassErrByMass = massRes->getMassResolutionEonly(&pho1,&pho2,vtxPos)/mPair;
   smearedMassErrByMassWrongVtx = massRes->getMassResolution(&pho1,&pho2,vtxPos,true)/mPair;
   if(debugSelector) cout << "Mass Erro resolved. Selected Vertex: " << selectedVertex << endl;
   vtxprob=1.-0.49*(getVertexMVA(indexPho1,indexPho2)+1.0);
   if(debugSelector) cout << "vtx prob: " << vtxprob << endl;
   pho1PtByMass = max(p1.Et(),p2.Et())/mPair;
   pho2PtByMass = min(p1.Et(),p2.Et())/mPair;
-  pho1Eta = scLead->eta; 
-  pho2Eta = scSubLead->eta;
+  pho1Eta = (p1.Et() > p2.Et() ? p1.Eta(): p2.Eta());
+  pho2Eta = (p1.Et() > p2.Et() ? p2.Eta(): p1.Eta());
   cosDPhi = TMath::Cos(DeltaPhi(scLead->phi,scSubLead->phi));
   pho1IdMVA = mvaLead;
   pho2IdMVA = mvaSubLead;
+
+  MVAInputs["massRes"]->Fill(smearedMassErrByMass);
+  MVAInputs["massResWrongVtx"]->Fill(smearedMassErrByMassWrongVtx);
+  MVAInputs["vtxProb"]->Fill(vtxprob);
+  MVAInputs["p1_EtByM"]->Fill(pho1PtByMass);
+  MVAInputs["p2_EtByM"]->Fill(pho2PtByMass);
+  MVAInputs["p1_Eta"]->Fill(pho1Eta);
+  MVAInputs["p2_Eta"]->Fill(pho2Eta);
+  MVAInputs["CosDPhi"]->Fill(cosDPhi);
+  MVAInputs["p1_idMVA"]->Fill(pho1IdMVA);
+  MVAInputs["p2_idMVA"]->Fill(pho2IdMVA);
 
   return diPhotonMVA->EvaluateMVA(methodName_diPho);
 }

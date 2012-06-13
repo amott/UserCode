@@ -10,6 +10,7 @@
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
+#include "TH1F.h"
 
 using namespace std;
 #include "HggVertexing.hh"
@@ -29,6 +30,8 @@ public:
   void setNSigma(int ns){nSigma=ns;}
 
   void suppressElectronVeto(){doElectronVeto=false;}
+
+  void setIsData(bool d){isData_=d;}
   void Loop();
 private:
   bool valid;
@@ -77,6 +80,8 @@ private:
   string methodName_diPho;
   TMVA::Reader *diPhotonMVA;
 
+  std::map<std::string,TH1F*> MVAInputs;
+  std::map<std::string,TH1F*> MjjDists;
   float getDiPhoMVA(int,int,float,float,bool);
 
   float getMPair(int,int);

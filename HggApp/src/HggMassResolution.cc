@@ -50,12 +50,22 @@ double HggMassResolution::getMassResolution(VecbosPho *leadPho,VecbosPho *sublea
   
   if(isWrongVtx){
     angleRes*=0.5*higgsMass;
-    double massResEOnly = 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(p4Pho1.E()*p4Pho1.E()) + (resPho2*resPho2)/(p4Pho2.E()*p4Pho2.E()) );
+    double massResEOnly = 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(leadPho->finalEnergy*leadPho->finalEnergy) + (resPho2*resPho2)/(subleadPho->finalEnergy*subleadPho->finalEnergy) );
     return TMath::Sqrt((massResEOnly*massResEOnly)+(angleRes*angleRes));
   }
   
   return 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(p4Pho1.E()*p4Pho1.E()) + (resPho2*resPho2)/(p4Pho2.E()*p4Pho2.E()) +
 				    + ((angleRes*angleRes)*(TMath::Sin(angle)/(1.-TMath::Cos(angle))) * (TMath::Sin(angle)/(1.-TMath::Cos(angle)))) );
+}
+
+double HggMassResolution::getMassResolutionEonly(VecbosPho *leadPho,VecbosPho *subleadPho,TVector3 vtx){
+  TLorentzVector p4Pho1 = leadPho->p4FromVtx(vtx,leadPho->finalEnergy);
+  TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,leadPho->finalEnergy);
+  double resPho1 = this->getResolution(leadPho);
+  double resPho2 = this->getResolution(subleadPho);
+  double higgsMass = (p4Pho1+p4Pho2).M();
+  
+  return 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(leadPho->finalEnergy*leadPho->finalEnergy) + (resPho2*resPho2)/(subleadPho->finalEnergy*subleadPho->finalEnergy) );
 }
 
 void HggMassResolution::init(){
@@ -64,22 +74,14 @@ void HggMassResolution::init(){
 
   char valString[400];
   for(int i=0;i<nCategories;i++){
-    strcpy(valString,cfg.getParameter(HggMassResolution::Categories[i]).c_str());
-    char *vs = strtok(valString,",");
-    int v=0;
-    pair<float,float> tmp;
-    while(vs){
-      if(debugMassRes) cout << "Region " << i << ": " << vs << endl;
-      if(v==0) tmp.first = atof(vs);
-      if(v==1) tmp.second = atof(vs);
-      if(v>1) { 
-	cout << "ERROR: INVALID smearing configuration" << endl;
-	throw -100;
-	return;
-      }
-      vs = strtok(NULL,",");
-      v++;
+    std::vector<string> thisSmear =  cfg.getTokens(Categories[i],",");
+    if(thisSmear.size()!=2){
+      cout << "ERROR: INVALID smearing configuration" << endl;
+      cout << i << "    " << Categories[i] << "   " << thisSmear[0] << endl;
+      throw -100;
+      return;
     }
+    smear[i] = pair<float,float>(atof(thisSmear[0].c_str()),atof(thisSmear[1].c_str()));
   }
 }
 
@@ -105,7 +107,7 @@ double HggMassResolution::getAngleResolution(VecbosPho* pho1,VecbosPho* pho2, TV
 float HggMassResolution::getResolution(VecbosPho* pho){
   pair<float,float> catRes = smear[this->getCategory(pho)];
   if(debugMassRes) cout << "got Res" << endl;
-  return TMath::Sqrt(pho->finalEnergyError*pho->finalEnergyError+catRes.second*catRes.second);
+  return TMath::Sqrt(pho->correctedEnergyError*pho->correctedEnergyError+catRes.second*catRes.second);
 }
 
 int HggMassResolution::getCategory(VecbosPho* pho){

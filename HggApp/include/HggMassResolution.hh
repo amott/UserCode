@@ -28,6 +28,7 @@ public:
   void init();
   double getMassResolution(VecbosPho*,VecbosPho*,TVector3,bool);
 
+  double getMassResolutionEonly(VecbosPho*,VecbosPho*,TVector3);
   const static int nCategories=9;
   std::vector<string>Categories;
   const static float r9Cut=0.94;
@@ -47,6 +48,7 @@ private:
   bool isSphericalPhoton(int,int);
 
   pair<float,float> smear[nCategories];
+
 };
 
 

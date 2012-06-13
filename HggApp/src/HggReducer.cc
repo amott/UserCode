@@ -454,7 +454,7 @@ void HggReducer::fillJets(){
     }
   if(jetCat>3) continue; //if its >4.7, reject the jet
   float pT = TMath::Sqrt(TMath::Power(pxAK5PFPUcorrJet[iJ],2)+TMath::Power(pyAK5PFPUcorrJet[iJ],2));
-  if(pT < 30.) continue;
+  if(pT < minPt) continue;
   if(betastarAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
   if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
 

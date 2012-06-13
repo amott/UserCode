@@ -97,20 +97,14 @@ void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
   Float_t           Mjj;
   Int_t            nPho;
   Float_t          pho_r9[2];
-  Float_t          pho_px[2];
-  Float_t          pho_py[2];
-  Float_t          pho_pz[2];
-  Float_t          pho_E[2];
+  Float_t          pho_eta[2];
   fChain->SetBranchAddress("mPair", &mPair);
   fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
   fChain->SetBranchAddress("trigger",&trigger);
   fChain->SetBranchAddress("Mjj",&Mjj);
   
   fChain->SetBranchAddress("Photon.r9",pho_r9);
-  fChain->SetBranchAddress("Photon.p4.fP.fX",pho_px);
-  fChain->SetBranchAddress("Photon.p4.fP.fY",pho_py);
-  fChain->SetBranchAddress("Photon.p4.fP.fZ",pho_pz);
-  fChain->SetBranchAddress("Photon.p4.fE",pho_E);
+  fChain->SetBranchAddress("Photon.eta",pho_eta);
 
   TTree *outTree = new TTree("HggOutputReduced","");
   Float_t         mPairOut;
@@ -120,11 +114,9 @@ void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
 
   Long64_t ientry = -1;
   while(fChain->GetEntry(++ientry)){
-    cout << pho_E[0] << endl;
-    TLorentzVector p1(1.,0.,0.,1.);//(pho_px[0],pho_py[0],pho_pz[0],pho_E[0]);
-    TLorentzVector p2(1.,0.,0.,1.);//(pho_px[1],pho_py[1],pho_pz[1],pho_E[1]);
+    if(ientry%1000==0) cout << "Processing Entry " << ientry << endl;
     int category;
-    if(doPFCiC) category = getCatPFCiC(pho_r9[0],pho_r9[1],p1.Eta(),p2.Eta(),Mjj);
+    if(doPFCiC) category = getCatPFCiC(pho_r9[0],pho_r9[1],pho_eta[0],pho_eta[1],Mjj);
     else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
     if(category == -1 || mPair < mMin || mPair > mMax) continue;
     mPairOut = mPair;
