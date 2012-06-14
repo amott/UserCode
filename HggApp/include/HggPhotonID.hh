@@ -7,6 +7,7 @@
 #include <string>
 
 #include <TChain.h>
+#include <TH1F.h>
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
@@ -25,12 +26,14 @@ public:
   bool getPreSelection(VecbosPho*,int,float,TVector3,int);
   float getIdMVA(VecbosPho*,int,float, TVector3, int);
   bool getIdCiCPF(VecbosPho*,int,float, TVector3, int);
+  bool getIdCiC(VecbosPho*,int,float, TVector3, int);
   
   int getCiCCat(VecbosPho*);
 
   bool getPreSelection2011(VecbosPho*,int,float,TVector3,int);
   bool getPreSelectionMay2012(VecbosPho*,int,float,TVector3,int);
 
+  std::map<std::string,TH1F*>* getHists(){return &InputDists;}
 private:
   string configFile;
   bool valid;
@@ -38,6 +41,7 @@ private:
   string version;
 
   const static float isoSumConst = 0;
+  const static float isoSumConstPF = 2.5;
   const static float rhoFac = 0.09;
   const static float rhoFacBad = 0.23;
 
@@ -53,13 +57,17 @@ private:
   TMVA::Reader *photonMVA_EE_2012;
   void setupTMVA();
 
+  std::map<std::string,TH1F*> InputDists;
+
   void fillVariables(VecbosPho*,int,float,TVector3,int);
   //photon ID MVA
   float hoe;
   float sigietaieta;
   float isosumoet;
+  float isosum;
   float trkisooet;
   float isosumoetbad;
+  float isosumbad;
   float r9;
   float ecalisodr03;
   float ecalisodr04;
@@ -72,12 +80,17 @@ private:
 
   float pfChargedIsoGood03;
   float pfChargedIsoBad03;
+  float pfChargedIsoGood03oet;
+  float pfChargedIsoBad03oet;
   float pfPhotonIso03;
+  float pfPhotonIso03oet;
   float sigietaiphi;
   float s4Ratio;
   float rho;
   float sigRR;
   float isosumoetPF;
   float isosumoetbadPF;
+  float isosumPF;
+  float isosumbadPF;
   
 };

@@ -119,6 +119,7 @@ void HggSelector::Loop(){
   Long64_t jentry=-1;
   int index1=-1,index2=-1;
   int index1PFCiC=-1,index2PFCiC=-1;
+  int index1CiC=-1,index2CiC=-1;
   while(fChain->GetEntry(++jentry)){
     if(jentry%500==0) cout << ">> Processing Entry " << jentry << "/" << nEntries << endl;
 
@@ -156,11 +157,18 @@ void HggSelector::Loop(){
 	  mPairSmear.push_back(getMPair(indices.first,indices.second));
 	}
 	//do the smearing for the PFCiC Analysis
-	indices = getBestPairPFCiC(iSmear,0);
+	indices = getBestPairCiC(iSmear,0,true);
 	if(indices.first == -1 || indices.second==-1){
 	  mPairSmearPFCiC.push_back(-1);
 	}else{
 	  mPairSmearPFCiC.push_back(getMPair(indices.first,indices.second));
+	}
+	//do the smearing for the CiC Analysis
+	indices = getBestPairCiC(iSmear,0,false);
+	if(indices.first == -1 || indices.second==-1){
+	  mPairSmearCiC.push_back(-1);
+	}else{
+	  mPairSmearCiC.push_back(getMPair(indices.first,indices.second));
 	}
       } // Done with smearing
 
@@ -176,15 +184,21 @@ void HggSelector::Loop(){
 	  mPairScale.push_back(getMPair(indices.first,indices.second));
 	}
 		//do the smearing for the PFCiC Analysis
-	indices = getBestPairPFCiC(-999,iScale);
+	indices = getBestPairCiC(-999,iScale,true);
 	if(indices.first == -1 || indices.second==-1){
 	  mPairScalePFCiC.push_back(-1);
 	}else{
 	  mPairScalePFCiC.push_back(getMPair(indices.first,indices.second));
 	}
 
+		//do the smearing for the CiC Analysis
+	indices = getBestPairCiC(-999,iScale,false);
+	if(indices.first == -1 || indices.second==-1){
+	  mPairScaleCiC.push_back(-1);
+	}else{
+	  mPairScaleCiC.push_back(getMPair(indices.first,indices.second));
+	}
       }
-
     }
     
     indices = getBestPair(&diPhoMVA_,0,0); // no scaling and default smearing
@@ -192,14 +206,21 @@ void HggSelector::Loop(){
     index2 = indices.second;
 
     //Do the PFCiC selection as well!
-    indices = getBestPairPFCiC(0,0); // no scaling and default smearing
+    indices = getBestPairCiC(0,0,true); // no scaling and default smearing
     index1PFCiC = indices.first;
     index2PFCiC = indices.second;
+
+    //Do the CiC selection as well!
+    indices = getBestPairCiC(0,0,false); // no scaling and default smearing
+    index1CiC = indices.first;
+    index2CiC = indices.second;
 
     if(debugSelector) cout << "LOOP DONE" << endl;	  
     
 
     if(debugSelector) cout << "indices: " << index1 << "  " << index2 << endl;
+    if(debugSelector) cout << "indicesPFCiC: " << index1PFCiC << "  " << index2PFCiC << endl;
+    if(debugSelector) cout << "indicesCiC: " << index1CiC << "  " << index2CiC << endl;
 
     if(index1 > -1 && index2 > -1){
       //fill MVA variables
@@ -257,8 +278,36 @@ void HggSelector::Loop(){
       mPairPFCiC_=-1;
     }
 
+    if(index1CiC > -1 && index2CiC > -1){
+      //fill CiC variables
+      int selectedVertex = getVertexIndex(index1CiC,index2CiC);
+      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      
+      TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
+      pho1_ = Photons_->at(index1);
+      pho2_ = Photons_->at(index2);
+      OutPhotonsCiC_.push_back(getReducedData(&pho1_,vtxPos,selectedVertex));
+      OutPhotonsCiC_.push_back(getReducedData(&pho2_,vtxPos,selectedVertex));
+
+      mPairCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
+      mPairNoCorrCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
+      mPairResCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,false);
+      mPairResWrongVtxCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,true);
+      diPhoVtxCiC_ = selectedVertex;
+      diPhoVtxXCiC_ = vtxX[selectedVertex];
+      diPhoVtxYCiC_ = vtxY[selectedVertex];
+      diPhoVtxZCiC_ = vtxZ[selectedVertex];
+      float jpt[2];
+      MjjCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
+      ptJet1CiC_ = jpt[0];
+      ptJet2CiC_ = jpt[1];
+    }else{
+      mPairCiC_=-1;
+    }
+
     nOutPhotons_ = OutPhotons_.size();
     nOutPhotonsPFCiC_ = OutPhotonsPFCiC_.size();
+    nOutPhotonsCiC_ = OutPhotonsCiC_.size();
     outTree->Fill();
   }//while(fChain...
 
@@ -268,6 +317,11 @@ void HggSelector::Loop(){
   std::map<std::string,TH1F*>::iterator it;
   for(it = MVAInputs.begin(); it!=MVAInputs.end(); it++) (*it).second->Write();
   for(it = MjjDists.begin();  it!=MjjDists.end();  it++) (*it).second->Write();
+  if(PhotonID->getHists()){
+    for(it = PhotonID->getHists()->begin();  it!=PhotonID->getHists()->end();  it++) (*it).second->Write();
+
+  }
+
   f->Close();
 }
 
@@ -281,7 +335,7 @@ float HggSelector::getMPair(int i1, int i2){
   return (pho1.p4FromVtx(vtxPos,pho1.finalEnergy) + pho2.p4FromVtx(vtxPos,pho2.finalEnergy)).M();
 }
 
-std::pair<int,int> HggSelector::getBestPairPFCiC(int smearShift,int scaleShift){
+std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,bool usePF=true){
   std::pair<int,int> indices(-1,-1);
   //int bestCat=-1;
   //float bestMass=-99;
@@ -317,8 +371,14 @@ std::pair<int,int> HggSelector::getBestPairPFCiC(int smearShift,int scaleShift){
 	  pho2->finalEnergy = pho2->finalEnergy*(1+rand);
 	}
 	int selVtxI = this->getVertexIndex(iPho1,iPho2);
-	bool CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
-	bool CiC2 = PhotonID->getIdCiCPF(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	bool CiC1,CiC2;
+	if(usePF){
+	  CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	  CiC2 = PhotonID->getIdCiCPF(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	}else{
+	  CiC1 = PhotonID->getIdCiC(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	  CiC2 = PhotonID->getIdCiC(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	}
 	if(!CiC1 || !CiC2) continue;
 	float thisPtSum = pho1->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho1->finalEnergy).Pt()
 	  + pho2->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho2->finalEnergy).Pt();	
@@ -329,9 +389,7 @@ std::pair<int,int> HggSelector::getBestPairPFCiC(int smearShift,int scaleShift){
 	}
       }// for(iPho2...
     }// for(iPho1...
-
     return indices;
-
 }
 
 std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int scaleShift){
@@ -413,6 +471,7 @@ void HggSelector::clear(){
   if(debugSelector) std::cout << "Clearing Output Variables" << std::endl;
   OutPhotons_.clear();
   OutPhotonsPFCiC_.clear();
+  OutPhotonsCiC_.clear();
 
   if(debugSelector) std::cout << "Clearing MMG Output Variables" << std::endl;
   if(doMuMuGamma){
@@ -589,10 +648,24 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("ptJet1PFCiC",&ptJet1PFCiC_,"ptJet1PFCiC");
   outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
   
+  outTree->Branch("mPairCiC",&mPairCiC_,"mPairCiC/F");
+  outTree->Branch("mPairNoCorrCiC",&mPairNoCorrCiC_,"mPairNoCorrCiC/F");
+  outTree->Branch("mPairResCiC",&mPairResCiC_,"mPairResCiC/F");
+  outTree->Branch("mPairResWrongVtxCiC",&mPairResWrongVtxCiC_,"mPairResWrongVtxCiC/F");
+  outTree->Branch("diPhotonVtxCiC",&diPhoVtxCiC_,"diPhotonVtxCiC/I");
+  outTree->Branch("diPhotonVtxXCiC",&diPhoVtxXCiC_,"diPhotonVtxXCiC/F");
+  outTree->Branch("diPhotonVtxYCiC",&diPhoVtxYCiC_,"diPhotonVtxYCiC/F");
+  outTree->Branch("diPhotonVtxZCiC",&diPhoVtxZCiC_,"diPhotonVtxZCiC/F");
+  outTree->Branch("MjjCiC",&MjjCiC_,"MjjCiC");
+  outTree->Branch("ptJet1CiC",&ptJet1CiC_,"ptJet1CiC");
+  outTree->Branch("ptJet2CiC",&ptJet2CiC_,"ptJet2CiC");
+  
   outTree->Branch("nPhoton",nOutPhotons_);
   outTree->Branch("Photon",&OutPhotons_);
   outTree->Branch("nPhotonPFCiC",nOutPhotonsPFCiC_);
   outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
+  outTree->Branch("nPhotonCiC",nOutPhotonsCiC_);
+  outTree->Branch("PhotonCiC",&OutPhotonsCiC_);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);
   outTree->Branch("genHiggsVx",&genHiggsVx);
@@ -694,9 +767,9 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
   TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
   jetPts[0]=0.; jetPts[1]=0.;
-  if( max(p1.Pt(),p2.Pt()) < 60. ) return 0;
+  if( max(p1.Pt(),p2.Pt())/(p1+p2).M() < 60./120. ) return 0;
   if( min(p1.Pt(),p2.Pt()) < 25. ) return 0;
-  if( (p1+p2).M() < 120. ) return 0; 
+  //if( (p1+p2).M() < 120. ) return 0; 
   if(nJets<2) return 0;
   if(debugMjj) cout << "NJets: " << nJets << endl;
   int i1=-1,i2=-1;

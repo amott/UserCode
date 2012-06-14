@@ -29,6 +29,7 @@
 #include "RooBernstein.h"
 
 #include "TTree.h"
+#include "TTreeFormula.h"
 #include "TFile.h"
 #include "TChain.h"
 #include "TCanvas.h"
@@ -66,11 +67,25 @@ int getCatMVA(float mva,float mjj,
   return -1;
 }
 
-int getCatPFCiC( float r9_1,  float r9_2,  float eta_1,  float eta_2,  float mjj){
-  if(mjj > 500.) return 0;
-  if(mjj > 250.) return 1;
-  return ( r9_1<0.94 || r9_2<0.94) + 2*( fabs(eta_1) > 1.48 || fabs(eta_2) > 1.48 );
+int getCatPFCiC(std::map<std::string,TTreeFormula*>* cats){
+  int VBF = (*cats)["VBF"]->EvalInstance();
+  if(VBF==2) return 0;
+  if(VBF==1) return 1;
+  int r9 = (*cats)["R9"]->EvalInstance();
+  int eta = (*cats)["eta"]->EvalInstance();
+  return r9+2*eta+2;
 }		
+
+std::map<std::string,TTreeFormula*> getCategoryCuts(TChain* fChain){
+  std::map<std::string,TTreeFormula*> categories;
+
+  //categories["multiplicity"] = new TTreeFormula("Mult","Photon>=2",fChain);
+  categories["VBF"] = new TTreeFormula("VBFCat"," (Mjj > 500) + (Mjj > 250)",fChain);  
+  categories["R9"] = new TTreeFormula ("R9Cat" ," (PhotonPFCiC[0].r9 < 0.94 || PhotonPFCiC[1].r9 < 0.94)",fChain);
+  categories["eta"] = new TTreeFormula("EtaCat"," ( abs(PhotonPFCiC[0].eta)>1.48 || abs(PhotonPFCiC[1].eta)>1.48 )",fChain);
+
+  return categories;
+}
 
 void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
 		      TString outputFile="rootFiles/smallTree.root", bool doPFCiC=false,bool applyTrigger=true){
@@ -96,30 +111,49 @@ void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
   Int_t           trigger;
   Float_t           Mjj;
   Int_t            nPho;
-  Float_t          pho_r9[2];
-  Float_t          pho_eta[2];
-  fChain->SetBranchAddress("mPair", &mPair);
-  fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
   fChain->SetBranchAddress("trigger",&trigger);
-  fChain->SetBranchAddress("Mjj",&Mjj);
+  if(doPFCiC){
+    fChain->SetBranchAddress("mPairPFCiC", &mPair);
+    fChain->SetBranchAddress("MjjPFCiC",&Mjj);
+  }else{
+    fChain->SetBranchAddress("mPair", &mPair);
+    fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
+    fChain->SetBranchAddress("Mjj",&Mjj);
+  }
   
-  fChain->SetBranchAddress("Photon.r9",pho_r9);
-  fChain->SetBranchAddress("Photon.eta",pho_eta);
-
   TTree *outTree = new TTree("HggOutputReduced","");
   Float_t         mPairOut;
   Int_t           catOut;
   outTree->Branch("mPair", &mPairOut);
   outTree->Branch("cat",&catOut,"cat/I");
 
+  std::map<std::string,TTreeFormula*> categories =  getCategoryCuts(fChain);
+
   Long64_t ientry = -1;
+  Int_t TreeNum=-9999;
+  Int_t nSelected[nCat];
+  for(int i=0;i<nCat;i++) nSelected[i]=0;
   while(fChain->GetEntry(++ientry)){
-    if(ientry%1000==0) cout << "Processing Entry " << ientry << endl;
+    //if(!categories["multiplicity"]->EvalInstance()) continue;
+    //if(nPho<2) continue;
+    if(fChain->GetTreeNumber() != TreeNum){
+      std::map<std::string,TTreeFormula*>::iterator it;
+      for(it = categories.begin();it != categories.end(); it++) it->second->UpdateFormulaLeaves();
+      TreeNum = fChain->GetTreeNumber(); 
+    }
+
     int category;
-    if(doPFCiC) category = getCatPFCiC(pho_r9[0],pho_r9[1],pho_eta[0],pho_eta[1],Mjj);
+    if(doPFCiC) category = getCatPFCiC(&categories);
     else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
+    if(ientry%1000==0){
+      cout << "Processing Entry " << ientry << "   Category " << category << endl;
+      for(int i=0;i<nCat;i++) cout << "\tcat " << i << ": " << nSelected[i];
+      cout << endl;
+    }      
+
     if(category == -1 || mPair < mMin || mPair > mMax) continue;
-    mPairOut = mPair;
+    nSelected[category]++;
+    mPairOut = mPair;  
     catOut   = category;
     outTree->Fill();
   }
@@ -129,7 +163,8 @@ void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
 }
 
 void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180,
-		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false,bool applyTrigger=true){
+		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false,
+		      bool applyTrigger=true,bool isMinimal=true){
 
   const int nCat = 6;
   const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
@@ -138,12 +173,13 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
   const float MjjMax[nCat] = {9999,500.,250.,250.,250.,250.};
   //gStyle->SetErrorX(0); 
   //gStyle->SetOptStat(0);
+  std::map<std::string,TTreeFormula*> categories =  getCategoryCuts(fChain);
 
 
   Float_t         mPair;
   Int_t           cat;
-  fChain->SetBranchAddress("mPair", &mPair);
-  fChain->SetBranchAddress("cat",&cat);
+  fChain->SetBranchAddress("mPair", &mPair); 
+  if(isMinimal) fChain->SetBranchAddress("cat",&cat);
   
   RooRealVar *rv_mass = new RooRealVar("mass","mass",100,mMin,mMax);
   //rv_mass->setRange(100,150);
@@ -176,6 +212,9 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
   for(int iEvent=0; iEvent< Nevents; iEvent++){
     fChain->GetEntry(iEvent);
 
+    if(!isMinimal){
+      if(doPFCiC) cat = getCatPFCiC(&categories);
+    }
     if(iEvent%500==0){
       cout << "Processing Event " << iEvent << "  Selected: " << endl;
       for(int i=0;i<nCat;i++) cout << "\t cat" << i  <<  ": " << nSelected[i];
@@ -183,6 +222,9 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
     }
 
     if(cat==-1) continue; // not a good diPhoton event
+    /// HACK!!!!
+    if(cat==0 && iEvent%2==0) cat =1;
+    /// REMOVE
     nSelected[cat]++;
     if(mPair >=mMin && mPair <= mMax){
       rv_mass->setVal(mPair);

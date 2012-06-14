@@ -43,7 +43,7 @@ private:
   string outputFile;
 
   std::pair<int,int> getBestPair(float*,int,int);
-  std::pair<int,int> getBestPairPFCiC(int,int);
+  std::pair<int,int> getBestPairCiC(int,int,bool);
   
   bool doElectronVeto;
   bool isData_;
@@ -131,11 +131,25 @@ private:
   float ptJet1PFCiC_;
   float ptJet2PFCiC_;
 
+  float mPairCiC_;
+  float mPairNoCorrCiC_;
+  float mPairResCiC_;
+  float mPairResWrongVtxCiC_;
+  int diPhoVtxCiC_;
+  float diPhoVtxXCiC_;
+  float diPhoVtxYCiC_;
+  float diPhoVtxZCiC_;
+  float MjjCiC_;
+  float ptJet1CiC_;
+  float ptJet2CiC_;
+
   
   Int_t nOutPhotons_;
   std::vector<ReducedPhotonData> OutPhotons_;
   Int_t nOutPhotonsPFCiC_;
   std::vector<ReducedPhotonData> OutPhotonsPFCiC_;
+  Int_t nOutPhotonsCiC_;
+  std::vector<ReducedPhotonData> OutPhotonsCiC_;
 
   VecbosPho pho1_;
   VecbosPho pho2_;
@@ -152,6 +166,9 @@ private:
 
   std::vector<float> mPairScalePFCiC;
   std::vector<float> mPairSmearPFCiC;
+
+  std::vector<float> mPairScaleCiC;
+  std::vector<float> mPairSmearCiC;
 
   //for mumuG
   const static int maxMuMuG = 500;

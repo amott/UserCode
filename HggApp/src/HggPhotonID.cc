@@ -36,10 +36,21 @@ void HggPhotonID::Init(){
   photonMVA_EE_2011 = new TMVA::Reader( "!Color:!Silent" );;
   photonMVA_EB_2012 = new TMVA::Reader( "!Color:!Silent" );;
   photonMVA_EE_2012 = new TMVA::Reader( "!Color:!Silent" );;
+
+  InputDists["pfPhotonIsooet"] = new TH1F("pfPhotonIsooet","",200,0,100);
+  InputDists["pfChargedIsooet"] = new TH1F("pfChargedIsooet","",200,0,100);
+  InputDists["pfChargedIsoWorstoet"] = new TH1F("pfChargedIsoWorstoet","",200,0,100);
+  InputDists["isosumoet"] = new TH1F("isosumoet","",200,0,100);
+  InputDists["isosumoetbad"] = new TH1F("isosumoetbad","",200,0,100);
+  InputDists["isosumoetPF"] = new TH1F("isosumoetPF","",200,0,100);
+  InputDists["isosumoetbadPF"] = new TH1F("isosumoetbadPF","",200,0,100);
+
   this->setupTMVA();
 }
 
 void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+
   hoe = pho->HoverE;
   sigietaieta=pho->SC.sigmaIEtaIEta;
   r9 = pho->SC.r9();
@@ -53,6 +64,7 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
   scphiwidth = pho->SC.phiWidth;
                                                                                                                              
   pfPhotonIso03 = pho->photonIso;
+  pfPhotonIso03oet = pfPhotonIso03*50./eT;
   sigietaiphi = pho->SC.sigmaIEtaIPhi;
   s4Ratio = pho->SC.e2x2/pho->SC.e5x5;
   rho = rhoFastJet;                                                                                                                 
@@ -63,19 +75,32 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
   pfChargedIsoGood03 = pho->chargedHadronIso.at(selVtxIndex);
   std::vector<float>::iterator maxElement =  std::max_element(pho->chargedHadronIso.begin(), pho->chargedHadronIso.end());
   pfChargedIsoBad03  = *maxElement;
-  
-  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+
+  pfChargedIsoGood03oet = pfChargedIsoGood03*50./eT;
+  pfChargedIsoBad03oet  = pfChargedIsoBad03*50./eT;  
   
   trkisooet = pho->photonTrkIsoFromVtx.at(selVtxIndex)/eT;
-  isosumoet = (pho->photonTrkIsoFromVtx.at(selVtxIndex) 
+  isosum = (pho->photonTrkIsoFromVtx.at(selVtxIndex) 
+	    + pho->dr03EcalRecHitSumEtCone 
+	    + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac);
+  isosumoet = isosum/eT;
+  isosumbad = (pho->photonWorstIsoDR04.first
 	       + pho->dr03EcalRecHitSumEtCone 
-	       + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac)/eT;
-  isosumoetbad = (pho->photonWorstIsoDR04.first
-		  + pho->dr03EcalRecHitSumEtCone 
-		  + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac)/eT;
+	       + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac);
+  isosumoetbad = isosumoet/eT; 
+  isosumPF = (pfChargedIsoGood03 + pfPhotonIso03 + isoSumConstPF - rho*rhoFac); 
+  isosumbadPF = (pfChargedIsoBad03 + pfPhotonIso03 + isoSumConstPF - rho*rhoFacBad); 
+  isosumoetPF = isosumPF*50./eT; 
+  isosumoetbadPF = isosumbadPF*50./eT;
 
-  isosumoetPF = (pfChargedIsoGood03 + ecalisodr03 - rho*rhoFac) *50./eT; //don't know why there is the 50, but its in globe
-  isosumoetbadPF = (pfChargedIsoBad03 + ecalisodr04 - rho*rhoFacBad) *50./eT; //don't know why there is the 50, but its in globe
+  InputDists["pfPhotonIsooet"]->Fill(pfPhotonIso03oet);
+  InputDists["pfChargedIsooet"]->Fill(pfChargedIsoGood03oet);
+  InputDists["pfChargedIsoWorstoet"]->Fill(pfChargedIsoBad03oet);
+  InputDists["isosumoet"]->Fill(isosumoet);
+  InputDists["isosumoetbad"]->Fill(isosumoetbad);
+  InputDists["isosumoetPF"]->Fill(isosumoetPF);
+  InputDists["isosumoetbadPF"]->Fill(isosumoetbadPF);
+
 }
 
 void HggPhotonID::setupTMVA(){
@@ -121,9 +146,9 @@ void HggPhotonID::setupTMVA(){
   //   2012 Photon ID MVA
   //
 
-  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03 );
-  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03 );
-  photonMVA_EB_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03 );
+  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03oet );
+  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03oet );
+  photonMVA_EB_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03oet );
 
   photonMVA_EB_2012->AddVariable("myphoton_sieie",   &sigietaieta );
   photonMVA_EB_2012->AddVariable("myphoton_sieip",   &sigietaiphi );
@@ -166,11 +191,33 @@ float HggPhotonID::getIdMVA(VecbosPho* pho, int nVertex, float rhoFastJet,TVecto
   else return (pho->isBarrel() ? photonMVA_EB_2011->EvaluateMVA(methodName_Id) : photonMVA_EE_2011->EvaluateMVA(methodName_Id) );    
 }
 
+bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  //2011 CiC Cuts
+  const int nCats=4;
+  float cut_r9[nCats]         = {0.94,0.36,0.94,0.32};
+  float cut_hoe[nCats]        = {0.082, 0.062,0.065,0.048};
+  float cut_sieie[nCats]      = {0.0106,0.0097,0.028,0.027};
+  float cut_combIso[nCats]    = {3.8,2.2,1.77,1.29};
+  float cut_combIsoBad[nCats] = {11.7,3.4,3.9,1.84};
+  float cut_trackIso[nCats]   = {3.5,2.2,2.3,1.45};
+
+  int cat = this->getCiCCat(pho);
+
+  if(pho->SC.r9() < cut_r9[cat]) return false;
+  if(pho->HoverE > cut_hoe[cat]) return false;
+  if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
+  if(trkisooet > cut_trackIso[cat]) return false;
+  if(isosumoet > cut_combIso[cat]) return false;
+  if(isosumoetbad > cut_combIsoBad[cat]) return false;
+
+  return true;
+}
+
 bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
 
   //2012 CiC Cuts:
   const int nCats=4;
-  float cut_r9[nCats]       = {0.94,0.298,0.94,0.298};
+  float cut_r9[nCats]       = {0.94,0.298,0.94,0.24};
   float cut_hoe[nCats]      = {0.124, 0.092,0.142,0.063};
   float cut_sieie[nCats]    = {0.0108,0.0102,0.028,0.028};
   float cut_pfiso[nCats]    = {3.8,2.5,3.1,2.2};
@@ -182,7 +229,7 @@ bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVect
   if(pho->SC.r9() < cut_r9[cat]) return false;
   if(pho->HoverE > cut_hoe[cat]) return false;
   if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
-  if(pho->chargedHadronIso.at(selVtxIndex) > cut_pfiso[cat]) return false;
+  if(pfChargedIsoGood03oet > cut_pfiso[cat]) return false;
   if(isosumoetPF > cut_isoGood[cat]) return false;
   if(isosumoetbadPF > cut_isoBad[cat]) return false;
 
