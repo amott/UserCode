@@ -3,7 +3,7 @@
 # Get's the latest version of Fastjet that Maurizio has in his area,
 # and do some preparation.
 echo "Getting Fastjet from Maurizio area."
-scp /afs/cern.ch/user/m/mpierini/public/fastjet-2.4.1.tar.gz .
+#scp /afs/cern.ch/user/m/mpierini/public/fastjet-2.4.1.tar.gz .
 tar -xzf fastjet-2.4.1.tar.gz 
 mkdir FASTJET
 
