@@ -76,19 +76,50 @@ int getCatPFCiC(std::map<std::string,TTreeFormula*>* cats){
   return r9+2*eta+2;
 }		
 
-std::map<std::string,TTreeFormula*> getCategoryCuts(TChain* fChain){
-  std::map<std::string,TTreeFormula*> categories;
+int getCat(std::map<TString,TTreeFormula*>* cats, TString type, const int nCat){
+  if( (*cats)[ Form("%s_R",type.Data()) ]->EvalInstance() ){
+    return -1; // rejections
+  }
+  for(int iCat=0;iCat<nCat;iCat++){
+    if( (*cats)[ Form("%s_%d",type.Data(),iCat) ]->EvalInstance() ) return iCat;
+  }
+  return -1;
+}
+
+std::map<TString,TTreeFormula*> getCategoryCuts(TChain* fChain){
+  std::map<TString,TTreeFormula*> categories;
 
   //categories["multiplicity"] = new TTreeFormula("Mult","Photon>=2",fChain);
-  categories["VBF"] = new TTreeFormula("VBFCat"," (Mjj > 500) + (Mjj > 250)",fChain);  
-  categories["R9"] = new TTreeFormula ("R9Cat" ," (PhotonPFCiC[0].r9 < 0.94 || PhotonPFCiC[1].r9 < 0.94)",fChain);
-  categories["eta"] = new TTreeFormula("EtaCat"," ( abs(PhotonPFCiC[0].eta)>1.48 || abs(PhotonPFCiC[1].eta)>1.48 )",fChain);
+  categories["MVA_R"] = new TTreeFormula("MVA_0","mPair<0 || diPhotonMVA<0.05",fChain); // rejection criterion
+  categories["MVA_0"] = new TTreeFormula("MVA_0"," (Mjj >= 500) && (diPhotonMVA>0.05)",fChain);  
+  categories["MVA_1"] = new TTreeFormula("MVA_1"," (Mjj < 500) && (Mjj >= 250) && (diPhotonMVA>0.05)",fChain);  
+  categories["MVA_2"] = new TTreeFormula("MVA_2"," (Mjj < 250) && (diPhotonMVA>=0.89)",fChain);  
+  categories["MVA_3"] = new TTreeFormula("MVA_3"," (Mjj < 250) && (diPhotonMVA>=0.72) && (diPhotonMVA<0.89)",fChain);  
+  categories["MVA_4"] = new TTreeFormula("MVA_4"," (Mjj < 250) && (diPhotonMVA>=0.55) && (diPhotonMVA<0.72)",fChain);  
+  categories["MVA_5"] = new TTreeFormula("MVA_5"," (Mjj < 250) && (diPhotonMVA>=0.05) && (diPhotonMVA<0.55)",fChain);  
+  
+  categories["PFCiC_R"] = new TTreeFormula("PFCiC_R","mPairPFCiC==-1",fChain); // rejection criterion
+  categories["PFCiC_0"] = new TTreeFormula("PFCiC_0","(MjjPFCiC >= 500)",fChain);
+  categories["PFCiC_1"] = new TTreeFormula("PFCiC_1","(MjjPFCiC < 500) && (MjjPFCiC >= 250)",fChain);
+  categories["PFCiC_2"] = new TTreeFormula("PFCiC_2","(MjjPFCiC < 250) && (PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && (abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
+  categories["PFCiC_3"] = new TTreeFormula("PFCiC_3","(MjjPFCiC < 250) && !(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && (abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
+  categories["PFCiC_4"] = new TTreeFormula("PFCiC_4","(MjjPFCiC < 250) && (PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
+  categories["PFCiC_5"] = new TTreeFormula("PFCiC_5","(MjjPFCiC < 250) && !(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
 
+  categories["CiC_R"] = new TTreeFormula("CiC_R","mPairCiC==-1",fChain); // rejection criterion
+  categories["CiC_0"] = new TTreeFormula("CiC_0","(MjjCiC >= 500)",fChain);
+  categories["CiC_1"] = new TTreeFormula("CiC_1","(MjjCiC < 500) && (MjjCiC >= 250)",fChain);
+  categories["CiC_2"] = new TTreeFormula("CiC_2","(MjjCiC < 250) && (PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && (abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
+  categories["CiC_3"] = new TTreeFormula("CiC_3","(MjjCiC < 250) && !(PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && (abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
+  categories["CiC_4"] = new TTreeFormula("CiC_4","(MjjCiC < 250) && (PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && !(abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
+  categories["CiC_5"] = new TTreeFormula("CiC_5","(MjjCiC < 250) && !(PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && !(abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);  
+
+  cout << "Done" <<endl;
   return categories;
 }
 
-void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
-		      TString outputFile="rootFiles/smallTree.root", bool doPFCiC=false,bool applyTrigger=true){
+void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float mMax=180,
+		      bool applyTrigger=true){
   
   const int nCat = 6;
   const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
@@ -104,57 +135,95 @@ void makeMinimalTrees(string inputFiles,float mMin=100.,float mMax=180,
     getline(st,file);
     if(file.empty()) continue;
     if(file.find("/castor/cern.ch")!=string::npos) file.insert(0,"rfio://");
+    cout << "Chaining File:    " << file.c_str() << endl;
     fChain->AddFile(file.c_str());
   }
   Float_t         mPair;
+  Float_t         mPairPFCiC;
+  Float_t         mPairCiC;
   Float_t         diPhotonMVA;
   Int_t           trigger;
   Float_t           Mjj;
+  Float_t           MjjPFCiC;
+  Float_t           MjjCiC;
   Int_t            nPho;
+  Int_t            nPhoPFCiC;
+  Int_t            nPhoCiC;
   fChain->SetBranchAddress("trigger",&trigger);
-  if(doPFCiC){
-    fChain->SetBranchAddress("mPairPFCiC", &mPair);
-    fChain->SetBranchAddress("MjjPFCiC",&Mjj);
-  }else{
-    fChain->SetBranchAddress("mPair", &mPair);
-    fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
-    fChain->SetBranchAddress("Mjj",&Mjj);
-  }
+  fChain->SetBranchAddress("mPair", &mPair);
+  fChain->SetBranchAddress("diPhotonMVA", &diPhotonMVA);
+  fChain->SetBranchAddress("Mjj",&Mjj);
+  fChain->SetBranchAddress("mPairPFCiC", &mPairPFCiC);
+  fChain->SetBranchAddress("MjjPFCiC",&MjjPFCiC);
+  fChain->SetBranchAddress("mPairCiC", &mPairCiC);
+  fChain->SetBranchAddress("MjjCiC",&MjjCiC);
+
   
   TTree *outTree = new TTree("HggOutputReduced","");
   Float_t         mPairOut;
   Int_t           catOut;
   outTree->Branch("mPair", &mPairOut);
   outTree->Branch("cat",&catOut,"cat/I");
+  Float_t         mPairOutPFCiC;
+  Int_t           catOutPFCiC;
+  outTree->Branch("mPairPFCiC", &mPairOutPFCiC);
+  outTree->Branch("catPFCiC",&catOutPFCiC,"catPFCiC/I");
+  Float_t         mPairOutCiC;
+  Int_t           catOutCiC;
+  outTree->Branch("mPairCiC", &mPairOutCiC);
+  outTree->Branch("catCiC",&catOutCiC,"catCiC/I");
 
-  std::map<std::string,TTreeFormula*> categories =  getCategoryCuts(fChain);
+  cout << "Getting Categories" << endl;
+  std::map<TString,TTreeFormula*> categories =  getCategoryCuts(fChain);
 
   Long64_t ientry = -1;
   Int_t TreeNum=-9999;
   Int_t nSelected[nCat];
-  for(int i=0;i<nCat;i++) nSelected[i]=0;
+  Int_t nSelectedPFCiC[nCat];
+  Int_t nSelectedCiC[nCat];
+  for(int i=0;i<nCat;i++) {nSelected[i]=0; nSelectedPFCiC[i]=0; nSelectedCiC[i]=0;}
+  cout << "Starting" << endl;
   while(fChain->GetEntry(++ientry)){
     //if(!categories["multiplicity"]->EvalInstance()) continue;
     //if(nPho<2) continue;
     if(fChain->GetTreeNumber() != TreeNum){
-      std::map<std::string,TTreeFormula*>::iterator it;
+      cout << "Getting New Tree: " << fChain->GetTreeNumber() << endl;
+      std::map<TString,TTreeFormula*>::iterator it;
       for(it = categories.begin();it != categories.end(); it++) it->second->UpdateFormulaLeaves();
       TreeNum = fChain->GetTreeNumber(); 
     }
-
-    int category;
-    if(doPFCiC) category = getCatPFCiC(&categories);
-    else category = getCatMVA(diPhotonMVA,Mjj,nCat,CatMin,CatMax,MjjMin,MjjMax);
     if(ientry%1000==0){
-      cout << "Processing Entry " << ientry << "   Category " << category << endl;
+      cout << "Processing Entry " << ientry << endl;
+      cout << "MVA:   ";
       for(int i=0;i<nCat;i++) cout << "\tcat " << i << ": " << nSelected[i];
       cout << endl;
+      cout << "PFCiC: ";
+      for(int i=0;i<nCat;i++) cout << "\tcat " << i << ": " << nSelectedPFCiC[i];
+      cout << endl;
+      cout << "CiC:   ";
+      for(int i=0;i<nCat;i++) cout << "\tcat " << i << ": " << nSelectedCiC[i];
+      cout << endl;      
     }      
-
-    if(category == -1 || mPair < mMin || mPair > mMax) continue;
-    nSelected[category]++;
+    //if(ientry > 1000) exit(0);
+    if(applyTrigger && !trigger) continue;
+    int category = getCat(&categories,"MVA",nCat); // MVA
     mPairOut = mPair;  
     catOut   = category;
+    int categoryPFCiC = getCat(&categories,"PFCiC",nCat); // MVA
+    mPairOutPFCiC = mPairPFCiC;  
+    catOutPFCiC   = categoryPFCiC;
+    int categoryCiC = getCat(&categories,"CiC",nCat); // MVA
+    mPairOutCiC = mPairCiC;  
+    catOutCiC   = categoryCiC;
+
+    if(category == -1 && categoryPFCiC == -1 && categoryCiC == -1) continue;
+    if(mPair < mMin && mPairPFCiC < mMin && mPairCiC < mMin) continue;
+    if(mPair > mMax && mPairPFCiC > mMax && mPairCiC > mMax) continue;
+
+    nSelected[category]++;
+    nSelectedPFCiC[categoryPFCiC]++;
+    nSelectedCiC[categoryCiC]++;
+    
     outTree->Fill();
   }
   TFile *f = new TFile(outputFile,"RECREATE");
@@ -173,7 +242,7 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
   const float MjjMax[nCat] = {9999,500.,250.,250.,250.,250.};
   //gStyle->SetErrorX(0); 
   //gStyle->SetOptStat(0);
-  std::map<std::string,TTreeFormula*> categories =  getCategoryCuts(fChain);
+  std::map<TString,TTreeFormula*> categories =  getCategoryCuts(fChain);
 
 
   Float_t         mPair;
@@ -213,7 +282,7 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
     fChain->GetEntry(iEvent);
 
     if(!isMinimal){
-      if(doPFCiC) cat = getCatPFCiC(&categories);
+      cat = getCat(&categories,"MVA",nCat);
     }
     if(iEvent%500==0){
       cout << "Processing Event " << iEvent << "  Selected: " << endl;

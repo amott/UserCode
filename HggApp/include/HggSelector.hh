@@ -2,6 +2,10 @@
 #include <HggMassResolution.hh>
 #include <HggPhotonID.hh>
 
+#include <HggEGEnergyCorrector.hh>
+#include <HggVertexing.hh>
+#include <HggEnergyScale.hh>
+
 #include <vector>
 #include <iostream>
 #include <string>
@@ -52,6 +56,15 @@ private:
   HggMassResolution *massRes;
 
   HggPhotonID *PhotonID;
+
+  //incase we want to redo the regression/scaling/smearing
+  bool doRegression;
+  bool doScale;
+  bool doSmear;
+  HggEGEnergyCorrector* corrector;
+  HggEnergyScale* scale;
+  int applyScaleSmear;
+  HggEnergyScale* smear;
 
   const static float rhoFac    = 0.17;
   const static float rhoFacBad = 0.52;

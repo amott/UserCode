@@ -70,10 +70,25 @@ int HggSelector::init(){
     return -1;
   }
   weightFile_diPho = cfg.getParameter("weightFile_diPho");
-
   methodName_diPho  = cfg.getParameter("methodName_diPho");
-
   triggers = cfg.getTokens("Triggers",",");
+  doRegression = cfg.getParameter("redoRegression").compare("yes")==0;
+  doScale      = cfg.getParameter("redoScale").compare("yes")==0;
+  doSmear      = cfg.getParameter("redoSmear").compare("yes")==0;
+
+  if(doRegression){
+    //corrector = new HggEGEnergyCorrector(this,
+  }
+  if(doScale){
+    std::string scaleCFG = cfg.getParameter("EnergyScaleCFG");
+    scale = new HggEnergyScale(scaleCFG);
+  }
+  if(doSmear){
+    std::string smearCFG = cfg.getParameter("EnergySmearCFG");
+    smear = new HggEnergyScale(smearCFG);    
+    applyScaleSmear = atoi(cfg.getParameter("ScaleSmear").c_str());
+  }
+
   cout << "Parameters: " << endl
        << weightFile_diPho << endl
        << methodName_diPho << endl;
@@ -130,6 +145,26 @@ void HggSelector::Loop(){
     
     if(debugSelector) cout << "requiring triggers ... " << flush;
     trigger_ = this->requireTrigger();
+
+    for(int iPho=0; iPho<nPho_;iPho++){ //redo the scaling and smearing if needed
+      VecbosPho pho = Photons_->at(iPho);
+      if(doScale){
+	std::pair<float,float> dE = scale->getDEoE(pho,runNumber);
+	pho.dEoE    = dE.first;
+        pho.dEoEErr = 0;
+        pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
+        pho.scaledEnergyError = pho.correctedEnergyError*(1-(pho.dEoE+pho.dEoEErr));
+      }
+      if(doSmear){
+	pho.scaledEnergy = pho.correctedEnergy;
+        pho.scaledEnergyError = pho.scaledEnergy*smear->getMCScaleErr(pho,applyScaleSmear);              
+	std::pair<float,float> dE = smear->getDEoE(pho,applyScaleSmear);
+        pho.dEoE    = dE.first;
+        pho.dEoEErr = dE.second;
+      }
+      pho.finalEnergy = pho.scaledEnergy;
+      pho.finalEnergyError = pho.scaledEnergyError;
+    }
     //    if(!trigger_){
     //  outTree->Fill();
     //  continue; // don't bother doing the MVA 
