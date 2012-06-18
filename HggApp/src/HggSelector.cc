@@ -462,8 +462,11 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 	pho2->finalEnergy = pho2->finalEnergy*(1+rand);
       }
       int selVtxI = this->getVertexIndex(iPho1,iPho2);
+      if(debugSelector) cout << "Getting Photon ID:" << endl;
       float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      if(debugSelector) cout << "Getting Photon ID:" << endl;
       float mva2 = PhotonID->getIdMVA(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      if(debugSelector) cout << "Getting Double Photon MVA" << endl;
       float diPhoMVA =  getDiPhoMVA(iPho1,iPho2,mva1,mva2,false);
       if(debugSelector) cout << "\t\t" << mva1 << "  " << mva2 << "  " << diPhoMVA << endl;
       if(diPhoMVA > diPhoMVAMax && diPhoMVA>=-1){
@@ -871,6 +874,7 @@ int HggSelector::getVertexIndex(int indexPho1,int indexPho2){
       break;
     }
   }
+  if(debugSelector) cout << "Returning Vertex Index: " << selectedVertex <<endl;
   return selectedVertex;
 }
 float HggSelector::getVertexMVA(int indexPho1,int indexPho2){

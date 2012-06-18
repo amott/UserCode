@@ -9,7 +9,7 @@
 using namespace std;
 using namespace TMVA;
 
-#define debugSelector 0
+#define debugPhotonID 0
 
 HggPhotonID::HggPhotonID()
 {
@@ -50,7 +50,7 @@ void HggPhotonID::Init(){
 
 void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
-
+  if(debugPhotonID) cout << "eT: " << eT << endl;
   hoe = pho->HoverE;
   sigietaieta=pho->SC.sigmaIEtaIEta;
   r9 = pho->SC.r9();
@@ -63,8 +63,10 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
   scetawidth = pho->SC.etaWidth;
   scphiwidth = pho->SC.phiWidth;
                                                                                                                              
-  pfPhotonIso03 = pho->photonIso;
+  pfPhotonIso03 = pho->dr03PhotonPFIso;
   pfPhotonIso03oet = pfPhotonIso03*50./eT;
+  pfPhotonIso04 = pho->dr04PhotonPFIso;
+  pfPhotonIso04oet = pfPhotonIso04*50./eT;
   sigietaiphi = pho->SC.sigmaIEtaIPhi;
   s4Ratio = pho->SC.e2x2/pho->SC.e5x5;
   rho = rhoFastJet;                                                                                                                 
@@ -72,12 +74,13 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
 
   //We need some computation for these:
 
-  pfChargedIsoGood03 = pho->chargedHadronIso.at(selVtxIndex);
-  std::vector<float>::iterator maxElement =  std::max_element(pho->chargedHadronIso.begin(), pho->chargedHadronIso.end());
-  pfChargedIsoBad03  = *maxElement;
+  pfChargedIsoGood03 = pho->dr03ChargedHadronPFIso[selVtxIndex];
+  float maxIso=0;
+  for(int i=0; i<pho->nPV;i++) if(pho->dr04ChargedHadronPFIso[i] > maxIso) maxIso = pho->dr04ChargedHadronPFIso[i];
+  pfChargedIsoBad04  = maxIso;
 
   pfChargedIsoGood03oet = pfChargedIsoGood03*50./eT;
-  pfChargedIsoBad03oet  = pfChargedIsoBad03*50./eT;  
+  pfChargedIsoBad04oet  = pfChargedIsoBad04*50./eT;  
   
   trkisooet = pho->photonTrkIsoFromVtx.at(selVtxIndex)/eT;
   isosum = (pho->photonTrkIsoFromVtx.at(selVtxIndex) 
@@ -89,13 +92,13 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
 	       + pho->dr04HcalTowerSumEtCone + isoSumConst - rho*rhoFac);
   isosumoetbad = isosumoet/eT; 
   isosumPF = (pfChargedIsoGood03 + pfPhotonIso03 + isoSumConstPF - rho*rhoFac); 
-  isosumbadPF = (pfChargedIsoBad03 + pfPhotonIso03 + isoSumConstPF - rho*rhoFacBad); 
+  isosumbadPF = (pfChargedIsoBad04 + pfPhotonIso04 + isoSumConstPF - rho*rhoFacBad); 
   isosumoetPF = isosumPF*50./eT; 
   isosumoetbadPF = isosumbadPF*50./eT;
 
   InputDists["pfPhotonIsooet"]->Fill(pfPhotonIso03oet);
   InputDists["pfChargedIsooet"]->Fill(pfChargedIsoGood03oet);
-  InputDists["pfChargedIsoWorstoet"]->Fill(pfChargedIsoBad03oet);
+  InputDists["pfChargedIsoWorstoet"]->Fill(pfChargedIsoBad04oet);
   InputDists["isosumoet"]->Fill(isosumoet);
   InputDists["isosumoetbad"]->Fill(isosumoetbad);
   InputDists["isosumoetPF"]->Fill(isosumoetPF);
@@ -147,7 +150,7 @@ void HggPhotonID::setupTMVA(){
   //
 
   photonMVA_EB_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03oet );
-  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03oet );
+  photonMVA_EB_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad04oet );
   photonMVA_EB_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03oet );
 
   photonMVA_EB_2012->AddVariable("myphoton_sieie",   &sigietaieta );
@@ -161,9 +164,9 @@ void HggPhotonID::setupTMVA(){
   photonMVA_EB_2012->AddVariable("myphoton_SCeta",   &etasc );
   photonMVA_EB_2012->AddVariable("event_rho",   &rho );
   
-  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03 );
-  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad03 );
-  photonMVA_EE_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03 );
+  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisogood03",   &pfChargedIsoGood03oet );
+  photonMVA_EE_2012->AddVariable("myphoton_pfchargedisobad03",   &pfChargedIsoBad04oet );
+  photonMVA_EE_2012->AddVariable("myphoton_pfphotoniso03",   &pfPhotonIso03oet );
 
   photonMVA_EE_2012->AddVariable("myphoton_sieie",   &sigietaieta );
   photonMVA_EE_2012->AddVariable("myphoton_sieip",   &sigietaiphi );
@@ -184,9 +187,14 @@ void HggPhotonID::setupTMVA(){
   }
 
 float HggPhotonID::getIdMVA(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+  if(pho->index <0) return -9999;
+  if(debugPhotonID) cout << "Filling Variables" << endl;
   this->fillVariables(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+  
+  if(debugPhotonID) cout << "Preselection" << endl;
   if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex) ) return -9999;
 
+  if(debugPhotonID) cout << "Version: " << version << endl;
   if(version.compare("May2012")==0) return (pho->isBarrel() ? photonMVA_EB_2012->EvaluateMVA(methodName_Id) : photonMVA_EE_2012->EvaluateMVA(methodName_Id) );    
   else return (pho->isBarrel() ? photonMVA_EB_2011->EvaluateMVA(methodName_Id) : photonMVA_EE_2011->EvaluateMVA(methodName_Id) );    
 }

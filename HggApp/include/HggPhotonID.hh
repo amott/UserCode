@@ -79,11 +79,13 @@ private:
   float scphiwidth;
 
   float pfChargedIsoGood03;
-  float pfChargedIsoBad03;
+  float pfChargedIsoBad04;
   float pfChargedIsoGood03oet;
-  float pfChargedIsoBad03oet;
+  float pfChargedIsoBad04oet;
   float pfPhotonIso03;
   float pfPhotonIso03oet;
+  float pfPhotonIso04;
+  float pfPhotonIso04oet;
   float sigietaiphi;
   float s4Ratio;
   float rho;

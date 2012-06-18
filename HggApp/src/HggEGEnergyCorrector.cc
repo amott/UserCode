@@ -69,8 +69,8 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   fVals[14] = BC.e3x3/BC.energy;
   fVals[15] = BC.e5x5/BC.energy;
 
-  fVals[16] = sqrt(BC.sigmaIEtaIEta); // do these need to have sqrts???
-  fVals[17] = sqrt(BC.sigmaIPhiIPhi);
+  fVals[16] = BC.sigmaIEtaIEta;
+  fVals[17] = BC.sigmaIPhiIPhi;
   fVals[18] = BC.sigmaIEtaIPhi;
 
   fVals[19] = BC.eMax/BC.energy;
@@ -284,8 +284,8 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
     fVals[10]  = BC1.energy/ele.SC.rawE;
     fVals[11]  = BC1.e3x3/BC1.energy;
     fVals[12]  = BC1.e5x5/BC1.energy;
-    fVals[13] = sqrt(BC1.sigmaIEtaIEta);
-    fVals[14] = sqrt(BC1.sigmaIPhiIPhi);
+    fVals[13] = BC1.sigmaIEtaIEta;
+    fVals[14] = BC1.sigmaIPhiIPhi;
     fVals[15] = BC1.sigmaIEtaIPhi;
     fVals[16] = BC1.eMax/BC1.energy;
     fVals[17] = log(BC1.e2nd/BC1.eMax);
@@ -303,8 +303,8 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
       fVals[26]  = BC2.energy/ele.SC.rawE;
       fVals[27]  = BC2.e3x3/BC2.energy;
       fVals[28]  = BC2.e5x5/BC2.energy;
-      fVals[29] = sqrt(BC2.sigmaIEtaIEta);
-      fVals[30] = sqrt(BC2.sigmaIPhiIPhi);
+      fVals[29] = BC2.sigmaIEtaIEta;
+      fVals[30] = BC2.sigmaIPhiIPhi;
       fVals[31] = BC2.sigmaIEtaIPhi;
       fVals[32] = BC2.eMax/BC2.energy;
       fVals[33] = log(BC2.e2nd/BC2.eMax);
@@ -325,8 +325,8 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
       fVals[42] = BCL.energy/ele.SC.rawE;
       fVals[43] = BCL.e3x3/BCL.energy;
       fVals[44] = BCL.e5x5/BCL.energy;
-      fVals[45] = sqrt(BCL.sigmaIEtaIEta);
-      fVals[46] = sqrt(BCL.sigmaIPhiIPhi);
+      fVals[45] = BCL.sigmaIEtaIEta;
+      fVals[46] = BCL.sigmaIPhiIPhi;
       fVals[47] = BCL.sigmaIEtaIPhi;
     }else{ //only 2 or fewer clusters
       for(int i=40;i<48;i++) fVals[i] = 0;
@@ -339,8 +339,8 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
       fVals[50] = BC2L.energy/ele.SC.rawE;
       fVals[51] = BC2L.e3x3/BC2L.energy;
       fVals[52] = BC2L.e5x5/BC2L.energy;
-      fVals[53] = sqrt(BC2L.sigmaIEtaIEta);
-      fVals[54] = sqrt(BC2L.sigmaIPhiIPhi);
+      fVals[53] = BC2L.sigmaIEtaIEta;
+      fVals[54] = BC2L.sigmaIPhiIPhi;
       fVals[55] = BC2L.sigmaIEtaIPhi;
     }else{ //only 2 or fewer clusters
       for(int i=48;i<56;i++) fVals[i] = 0;
@@ -465,8 +465,8 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
     fVals[10]  = BC1.energy/pho.SC.rawE;
     fVals[11]  = BC1.e3x3/BC1.energy;
     fVals[12]  = BC1.e5x5/BC1.energy;
-    fVals[13] = sqrt(BC1.sigmaIEtaIEta);
-    fVals[14] = sqrt(BC1.sigmaIPhiIPhi);
+    fVals[13] = BC1.sigmaIEtaIEta;
+    fVals[14] = BC1.sigmaIPhiIPhi;
     fVals[15] = BC1.sigmaIEtaIPhi;
     fVals[16] = BC1.eMax/BC1.energy;
     fVals[17] = log(BC1.e2nd/BC1.eMax);
@@ -501,8 +501,8 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
       fVals[26]  = BC2.energy/pho.SC.rawE;
       fVals[27]  = BC2.e3x3/BC2.energy;
       fVals[28]  = BC2.e5x5/BC2.energy;
-      fVals[29] = sqrt(BC2.sigmaIEtaIEta);
-      fVals[30] = sqrt(BC2.sigmaIPhiIPhi);
+      fVals[29] = BC2.sigmaIEtaIEta;
+      fVals[30] = BC2.sigmaIPhiIPhi;
       fVals[31] = BC2.sigmaIEtaIPhi;
       fVals[32] = BC2.eMax/BC2.energy;
       fVals[33] = log(BC2.e2nd/BC2.eMax);
@@ -540,8 +540,8 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
       fVals[42] = BCL.energy/pho.SC.rawE;
       fVals[43] = BCL.e3x3/BCL.energy;
       fVals[44] = BCL.e5x5/BCL.energy;
-      fVals[45] = sqrt(BCL.sigmaIEtaIEta);
-      fVals[46] = sqrt(BCL.sigmaIPhiIPhi);
+      fVals[45] = BCL.sigmaIEtaIEta;
+      fVals[46] = BCL.sigmaIPhiIPhi;
       fVals[47] = BCL.sigmaIEtaIPhi;
     }else{ //only 2 or fewer clusters
       for(int i=40;i<48;i++) fVals[i] = 0;
@@ -571,8 +571,8 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
       fVals[50] = BC2L.energy/pho.SC.rawE;
       fVals[51] = BC2L.e3x3/BC2L.energy;
       fVals[52] = BC2L.e5x5/BC2L.energy;
-      fVals[53] = sqrt(BC2L.sigmaIEtaIEta);
-      fVals[54] = sqrt(BC2L.sigmaIPhiIPhi);
+      fVals[53] = BC2L.sigmaIEtaIEta;
+      fVals[54] = BC2L.sigmaIPhiIPhi;
       fVals[55] = BC2L.sigmaIEtaIPhi;
     }else{ //only 2 or fewer clusters
       for(int i=48;i<56;i++) fVals[i] = 0;

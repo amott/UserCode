@@ -447,6 +447,7 @@ vector<Jet> Vecbos::GetUncorrPFJets() {
 
   vector<Jet> jets;
   jets.clear();
+  /*
   for(int j=0; j<nAK5PFNoPUJet; j++) {
     float uncorrEt = uncorrEnergyAK5PFNoPUJet[j]*fabs(sin(thetaAK5PFNoPUJet[j]));
     TLorentzVector p4;
@@ -470,7 +471,7 @@ vector<Jet> Vecbos::GetUncorrPFJets() {
     //chargedHadFraction,chargedMultiplicity,chargedEmFraction);
     jets.push_back(sisconej);
   }
-
+  */
   return jets;
 
 }
@@ -546,6 +547,7 @@ vector<Jet> Vecbos::GetUncorrPUPFJets() {
 
   vector<Jet> jets;
   jets.clear();
+  /*
   for(int j=0; j<nAK5PFPUcorrJet; j++) {
     float uncorrEt = uncorrEnergyAK5PFPUcorrJet[j]*fabs(sin(thetaAK5PFPUcorrJet[j]));
     TLorentzVector p4;
@@ -569,7 +571,7 @@ vector<Jet> Vecbos::GetUncorrPUPFJets() {
     //                    chargedHadFraction,chargedMultiplicity,chargedEmFraction);
     jets.push_back(sisconej);
   }
-
+  */
   return jets;
 
 }

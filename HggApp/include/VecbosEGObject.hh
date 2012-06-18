@@ -101,9 +101,8 @@ public:
   float HoverE;
 
   //for Hgg corrector
-  float r9Scale;
 
-  float r9(){return e3x3/rawE*r9Scale;}
+  float r9;
   //  SCInfo getStruct();
 };
 
@@ -233,9 +232,26 @@ public:
   float dr04TrkSumPtHollowCone;
 
   //pfIsolation
-  std::vector<float>         chargedHadronIso; // charged hadron iso PER VERTEX
-  float                      neutralHadronIso;
-  float                      photonIso;
+  int           nPV;
+  float         dr01ChargedHadronPFIso[100];
+  float         dr02ChargedHadronPFIso[100];
+  float         dr03ChargedHadronPFIso[100];
+  float         dr04ChargedHadronPFIso[100];
+  float         dr05ChargedHadronPFIso[100];
+  float         dr06ChargedHadronPFIso[100];
+
+  float                      dr01NeutralHadronPFIso;
+  float                      dr02NeutralHadronPFIso;
+  float                      dr03NeutralHadronPFIso;
+  float                      dr04NeutralHadronPFIso;
+  float                      dr05NeutralHadronPFIso;
+  float                      dr06NeutralHadronPFIso;
+  float                      dr01PhotonPFIso;
+  float                      dr02PhotonPFIso;
+  float                      dr03PhotonPFIso;
+  float                      dr04PhotonPFIso;
+  float                      dr05PhotonPFIso;
+  float                      dr06PhotonPFIso;
 
   bool isBarrel(){return (fabs(this->SC.eta) < 1.48);}
   int  getCategory(){ (SC.r9()>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon

@@ -1,6 +1,12 @@
 #include <VecbosEGObject.hh>
 #include "CommonTools/include/Utils.hh"
 
+#define debugEGObject 0
+#if debugEGObject
+#include <iostream>
+using namespace std;
+#endif
+
 VecbosBC::VecbosBC(){
 
 }
@@ -40,9 +46,9 @@ void VecbosBC::Init(VecbosBase* o, int i){
   thetaTilt = o->thetaTiltBC[i];
   phiTilt   = o->phiTiltBC[i];
 
-  sigmaIEtaIEta = o->covIEtaIEtaBC[i];
+  sigmaIEtaIEta = sqrt(o->covIEtaIEtaBC[i]);
   sigmaIEtaIPhi = o->covIEtaIPhiBC[i];
-  sigmaIPhiIPhi = o->covIPhiIPhiBC[i];
+  sigmaIPhiIPhi = sqrt(o->covIPhiIPhiBC[i]);
 };
 
 /*
@@ -128,7 +134,7 @@ VecbosSC::VecbosSC(VecbosBase* o, int i){
 }
 
 void VecbosSC::Init(VecbosBase* o, int i){
-  if(i>o->nSC){
+  if(i>o->nSC || i<0){
     index = -1;
     return;
   }    
@@ -159,9 +165,9 @@ void VecbosSC::Init(VecbosBase* o, int i){
   eBottom  = o->eBottomSC[i];
 
 
-  sigmaIEtaIEta = o->covIEtaIEtaSC[i];
+  sigmaIEtaIEta = sqrt(o->covIEtaIEtaSC[i]);
   sigmaIEtaIPhi = o->covIEtaIPhiSC[i];
-  sigmaIPhiIPhi = o->covIPhiIPhiSC[i];
+  sigmaIPhiIPhi = sqrt(o->covIPhiIPhiSC[i]);
 
   esEffSigRR = TMath::Sqrt( TMath::Power(o->esEffsIxIxSC[i],2) +
 			    TMath::Power(o->esEffsIyIySC[i],2) );
@@ -395,7 +401,7 @@ VecbosPho::VecbosPho(VecbosBase* o, int i):
 }
 
 void VecbosPho::Init(VecbosBase* o, int i){
-  if(i>o->nPho){
+  if(i>o->nPho || i<0){
     index  = -1;
     return;
   }
@@ -410,6 +416,8 @@ void VecbosPho::Init(VecbosBase* o, int i){
   HTowOverE = o->hTowOverEPho[i];
   hasPixel = o->hasPixelSeedPho[i];
 
+  r9 = SC.e3x3/SC.rawE;
+
   dr03EcalRecHitSumEtCone = o->dr03EcalRecHitSumEtPho[i];
   dr03HcalTowerSumEtCone  = o->dr03HcalTowerSumEtPho[i];
   dr03TrkSumPtCone        = o->dr03TkSumPtPho[i];
@@ -420,11 +428,32 @@ void VecbosPho::Init(VecbosBase* o, int i){
   dr04TrkSumPtCone        = o->dr04TkSumPtPho[i];
   dr04TrkSumPtHollowCone  = o->dr04HollowTkSumPtPho[i]; 
 
+#if debugEGObject
+  cout << "VecbosEGObject nPV: " << o->nPV << endl;;
+#endif
+  nPV=o->nPV;
   for(int iPV=0;iPV<o->nPV;iPV++){
-    chargedHadronIso.push_back( o->dr03chPFIsoPho[i*o->nPV+iPV] );
+    dr01ChargedHadronPFIso[iPV] = o->dr01ChargedHadronPFIsoPho[i*o->nPV+iPV];
+    dr02ChargedHadronPFIso[iPV] = o->dr02ChargedHadronPFIsoPho[i*o->nPV+iPV];
+    dr03ChargedHadronPFIso[iPV] = o->dr03ChargedHadronPFIsoPho[i*o->nPV+iPV];
+    dr04ChargedHadronPFIso[iPV] = o->dr04ChargedHadronPFIsoPho[i*o->nPV+iPV];
+    dr05ChargedHadronPFIso[iPV] = o->dr05ChargedHadronPFIsoPho[i*o->nPV+iPV];
+    dr06ChargedHadronPFIso[iPV] = o->dr06ChargedHadronPFIsoPho[i*o->nPV+iPV];
   }
-  neutralHadronIso        = o->dr03nhPFIsoPho[i*o->nPV];
-  photonIso               = o->dr03phPFIsoPho[i*o->nPV];
+  dr01NeutralHadronPFIso  = o->dr01NeutralHadronPFIsoPho[i];
+  dr02NeutralHadronPFIso  = o->dr02NeutralHadronPFIsoPho[i];
+  dr03NeutralHadronPFIso  = o->dr03NeutralHadronPFIsoPho[i];
+  dr04NeutralHadronPFIso  = o->dr04NeutralHadronPFIsoPho[i];
+  dr05NeutralHadronPFIso  = o->dr05NeutralHadronPFIsoPho[i];
+  dr06NeutralHadronPFIso  = o->dr06NeutralHadronPFIsoPho[i];
+
+  dr01PhotonPFIso  = o->dr01PhotonPFIsoPho[i];
+  dr02PhotonPFIso  = o->dr02PhotonPFIsoPho[i];
+  dr03PhotonPFIso  = o->dr03PhotonPFIsoPho[i];
+  dr04PhotonPFIso  = o->dr04PhotonPFIsoPho[i];
+  dr05PhotonPFIso  = o->dr05PhotonPFIsoPho[i];
+  dr06PhotonPFIso  = o->dr06PhotonPFIsoPho[i];
+
   int SCI = o->superClusterIndexPho[i];
   CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
 

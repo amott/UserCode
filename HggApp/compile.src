@@ -1,4 +1,4 @@
-source setup_fastjet_x64.sh
+#source setup_fastjet_x64.sh
 #source setup_TMVA.sh
 #project CMSSW
 #source /afs/cern.ch/cms/sw/slc4_ia32_gcc345/cms/cms-cvs-utils/1.0-cms/bin/projch.csh CMSSW

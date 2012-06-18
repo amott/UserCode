@@ -115,8 +115,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     lumiBlockO=lumiBlock;
 
     //filters:
-    if(nTrack > 350 || nPV > 40) {
-      if(debugReducer) cout << "dropping event: too many tracks/PVs" << endl; 
+    if(nTrack > 600 || nPV > 40) {
+      if(debugReducer) cout << "dropping event: too many tracks/PVs: " << nTrack << "  " << nPV << endl; 
       continue;
     }
 
@@ -131,9 +131,10 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     }
 
     //Good Run selection
-
     if (_isData && _goodRunLS && !isGoodRunLS()) {
       if ( lastRun != runNumber || lastLumi != lumiBlock) {
+	lastRun = runNumber;
+	lastLumi = lumiBlock;
 	std::cout << "[GoodRunLS]::Run " << lastRun << " LS " << lastLumi << " is rejected" << std::endl;
       }
       if(debugReducer) cout << "Dropping: " << runNumber << ":" << lumiBlock << endl;
@@ -431,6 +432,7 @@ bool HggReducer::passPreselection(VecbosPho *pho){
 }
 
 void HggReducer::fillMuons(){
+  return;
   nMu_=0;
   for(int iMuon = 0; iMuon<nMuon;iMuon++){
     VecbosMu mu(this,iMuon);

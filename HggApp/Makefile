@@ -156,7 +156,6 @@ $(OUTLIB)HggMakePhotonTree.o: $(SRCDIR)HggMakePhotonTree.cc \
 
 $(OUTLIB)HggEnergyScale.o: $(SRCDIR)HggEnergyScale.cc \
 			$(OUTLIB)Vecbos.o \
-			$(H2GLIB)pluginCondFormatsEgammaObjectsCapabilities.so \
 			$(OUTLIB)MitDict.o \
 			$(OUTLIB)VecbosEGObject.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggEnergyScale.o $<

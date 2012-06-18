@@ -19,6 +19,7 @@ class ReadConfig{
   string getParameter(string s);
   vector<string> getTokens(string s,const char *tok);
   void printAll();
+  vector<string> getAllParameters();
  private:
   int parseLine(string);  // returns 0 if no error, >0 for specific errors (defined in function)
   string stripComments(string);  //removes comments from the string
@@ -127,5 +128,11 @@ void ReadConfig::printAll(){
   for(it = parameters_.begin();it !=parameters_.end(); it++){
     cout << ">> k: " << it->first << "   v: " << it->second << endl;
   }
+}
+
+vector<string> ReadConfig::getAllParameters(){
+  vector<string> out;
+  for(it = parameters_.begin();it !=parameters_.end(); it++) out.push_bakc(it->first);
+  return out;
 }
 #endif
