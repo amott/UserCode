@@ -61,7 +61,7 @@ void HggVertexing::init(){
   photontrkisoselvtxdr03 = new vector< vector<float> >;
 
   //configure vertex analyzer
-  vAna.setupWithDefaultOptions(perVtxMvaWeights, perEvtMvaWeights, rankVariables, perVtxReader, perVtxMvaMethod, perEvtReader, perEvtMvaMethod);
+  vAna.setupWithDefaultOptions(true,perVtxMvaWeights, perEvtMvaWeights, rankVariables, perVtxReader, perVtxMvaMethod, perEvtReader, perEvtMvaMethod);
   isInit=true;
 }
 

@@ -192,12 +192,12 @@ float HggEnergyScale::getMCScaleErr(VecbosPho pho, int run){
 float HggEnergyScale::getCategory(VecbosPho pho){
   if(debugEnergyScale) cout << "getCategory" << endl;
   int selectRegion=-1;
-  //cout << pho.eta << "  " << pho.SC.r9() << endl;
+  //cout << pho.eta << "  " << pho.SC.r9 << endl;
   for(int iReg = 0; iReg< nRegions; iReg++){
     //cout << ">> " << minEta[iReg] << "  " << maxEta[iReg] << "  " << r9Cut << "  " << highR9[iReg] << endl; 
     if( fabs(pho.eta) >= minEta[iReg] 
 	&& fabs(pho.eta) <maxEta[iReg] 
-	&& ((pho.SC.r9() > r9Cut) == highR9[iReg]) ){
+	&& ((pho.SC.r9 > r9Cut) == highR9[iReg]) ){
       selectRegion = iReg;
       break;
     }

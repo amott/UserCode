@@ -574,7 +574,7 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
   data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E();
   data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
   data.index = pho->index;
-  data.r9 = pho->SC.r9();
+  data.r9 = pho->SC.r9;
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtx,selVtxI); 
   data.category = (data.r9 < 0.94)+2*(fabs(data.eta) > 1.48); 
   data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtx,selVtxI);

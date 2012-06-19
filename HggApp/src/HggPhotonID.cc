@@ -53,7 +53,7 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
   if(debugPhotonID) cout << "eT: " << eT << endl;
   hoe = pho->HoverE;
   sigietaieta=pho->SC.sigmaIEtaIEta;
-  r9 = pho->SC.r9();
+  r9 = pho->SC.r9;
   ecalisodr03 = pho->dr03EcalRecHitSumEtCone;
   ecalisodr04 = pho->dr04EcalRecHitSumEtCone;
   hcalisodr03 = pho->dr03HcalTowerSumEtCone;
@@ -211,7 +211,7 @@ bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,TVector
 
   int cat = this->getCiCCat(pho);
 
-  if(pho->SC.r9() < cut_r9[cat]) return false;
+  if(pho->SC.r9 < cut_r9[cat]) return false;
   if(pho->HoverE > cut_hoe[cat]) return false;
   if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
   if(trkisooet > cut_trackIso[cat]) return false;
@@ -234,7 +234,7 @@ bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVect
 
   int cat = this->getCiCCat(pho);
 
-  if(pho->SC.r9() < cut_r9[cat]) return false;
+  if(pho->SC.r9 < cut_r9[cat]) return false;
   if(pho->HoverE > cut_hoe[cat]) return false;
   if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
   if(pfChargedIsoGood03oet > cut_pfiso[cat]) return false;
@@ -245,7 +245,7 @@ bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVect
 }
 
 int HggPhotonID::getCiCCat(VecbosPho* pho){
-  return (pho->SC.r9()<0.94)+2*(fabs(pho->SC.eta) > 1.48);
+  return (pho->SC.r9<0.94)+2*(fabs(pho->SC.eta) > 1.48);
 }
 
 bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
@@ -256,13 +256,13 @@ bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,
 bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
 
-  if(pho->SC.r9() < 0.9){
+  if(pho->SC.r9 < 0.9){
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
         || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 4
         || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 4) return false;
     if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
         || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
-  }else{ //(SC->r9() > 0.9
+  }else{ //(SC->r9 > 0.9
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
         || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 50
         || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 50 ) false;
@@ -275,7 +275,7 @@ bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoF
 bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
 
-  if(pho->SC.r9() < 0.9){
+  if(pho->SC.r9 < 0.9){
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
         || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 4
         || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 4
@@ -285,7 +285,7 @@ bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFast
         || pho->dr03TrkSumPtHollowCone > 4) return false;
     if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
         || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
-  }else{ //(SC->r9() > 0.9
+  }else{ //(SC->r9 > 0.9
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
         || (pho->dr04HcalTowerSumEtCone - 0.005*eT) > 50
         || (pho->photonTrkIsoFromVtx.at(selVtxIndex) - 0.002*eT) > 50

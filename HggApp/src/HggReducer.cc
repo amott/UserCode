@@ -168,7 +168,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       pho.correctedEnergy = cor.first;
       pho.correctedEnergyError = cor.second;
             if(debugReducer) cout << "Corrected Photon: E=" << pho.energy << "  CorE=" << pho.correctedEnergy << "  eta=" 
-      	   << pho.SC.eta << "  r9=" << pho.SC.r9() << endl;
+      	   << pho.SC.eta << "  r9=" << pho.SC.r9 << endl;
       
 
 
@@ -185,7 +185,6 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       if(debugReducer) cout << pho.dEoE <<"   " << pho.scaledEnergy << endl;
 
       if(!_isData){ // monte carlo, get energy smearing and scale error
-	pho.SC.r9Scale = (pho.isBarrel() ? 1.0048 : 1.00492);
 	//first get the scale error
 	pho.scaledEnergy = pho.correctedEnergy;
 	pho.scaledEnergyError = pho.scaledEnergy*energySmear->getMCScaleErr(pho,applyScaleSmear);

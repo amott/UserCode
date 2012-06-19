@@ -178,7 +178,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
   phiWidth = o->phiWidthSC[i];
   etaWidth = o->etaWidthSC[i];
   HoverE   = o->hOverESC[i];
-  r9Scale  = 1;
+  r9       = e3x3/rawE;
   //get the basic clusters
   
   std::vector< std::pair<int,float> > indexEnergyMap;
@@ -277,7 +277,7 @@ void VecbosPFSC::Init(VecbosBase* o, int i){
   phiWidth = o->phiWidthPhoPFSC[i];
   etaWidth = o->etaWidthPhoPFSC[i];
   HoverE   = o->hOverEPhoPFSC[i];
-  r9Scale  = 1;  
+  r9       = e3x3/rawE;
 
   //get the basic clusters
   std::vector< std::pair<int,float> > indexEnergyMap;
@@ -415,8 +415,6 @@ void VecbosPho::Init(VecbosBase* o, int i){
   HoverE = o->hOverEPho[i];
   HTowOverE = o->hTowOverEPho[i];
   hasPixel = o->hasPixelSeedPho[i];
-
-  r9 = SC.e3x3/SC.rawE;
 
   dr03EcalRecHitSumEtCone = o->dr03EcalRecHitSumEtPho[i];
   dr03HcalTowerSumEtCone  = o->dr03HcalTowerSumEtPho[i];

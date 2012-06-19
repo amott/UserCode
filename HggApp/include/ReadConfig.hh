@@ -132,7 +132,8 @@ void ReadConfig::printAll(){
 
 vector<string> ReadConfig::getAllParameters(){
   vector<string> out;
-  for(it = parameters_.begin();it !=parameters_.end(); it++) out.push_bakc(it->first);
+  map<string,string>::const_iterator it;
+  for(it = parameters_.begin();it !=parameters_.end(); it++) out.push_back(it->first);
   return out;
 }
 #endif

@@ -254,7 +254,7 @@ public:
   float                      dr06PhotonPFIso;
 
   bool isBarrel(){return (fabs(this->SC.eta) < 1.48);}
-  int  getCategory(){ (SC.r9()>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon
+  int  getCategory(){ (SC.r9>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon
   //PhoInfo getStruct();
 
   VecbosGen genMatch;

@@ -52,7 +52,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   fVals[0] = pho.SC.rawE;
   fVals[1] = pho.SC.eta;
   fVals[2] = pho.SC.phi;
-  fVals[3] = pho.SC.r9();
+  fVals[3] = pho.SC.r9;
   fVals[4] = pho.SC.e5x5/pho.SC.rawE;
   fVals[5] = pho.SC.etaWidth;
   fVals[6] = pho.SC.phiWidth;
@@ -131,7 +131,7 @@ std::pair<double,double> HggEGEnergyCorrector::CorrectedEnergyWithError(int j){
   THIS_ECAL_GEO thisGeometry = getGapCoordinates(ecalGeometry,pho.SC.eta,pho.SC.phi);
   
   fVals[0]  = pho.SC.rawE;
-  fVals[1]  = pho.SC.r9();
+  fVals[1]  = pho.SC.r9;
   fVals[2]  = pho.SC.eta;
   fVals[3]  = pho.SC.phi;
   fVals[4]  = pho.SC.e5x5/pho.SC.rawE;
@@ -194,7 +194,7 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
   THIS_ECAL_GEO thisGeometry = getGapCoordinates(ecalGeometry,ele.SC.eta,ele.SC.phi);
   
   fVals[0]  = ele.SC.rawE;
-  fVals[1]  = ele.SC.r9();
+  fVals[1]  = ele.SC.r9;
   fVals[2]  = ele.SC.eta;
   fVals[3]  = ele.SC.phi;
   fVals[4]  = ele.SC.e5x5/ele.SC.rawE;
@@ -269,7 +269,7 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
     
 
     fVals[0]  = ele.SC.rawE;
-    fVals[1]  = ele.SC.r9();
+    fVals[1]  = ele.SC.r9;
     fVals[2]  = ele.SC.eta;
     fVals[3]  = ele.SC.phi;
     fVals[4]  = ele.SC.e5x5/ele.SC.rawE;
@@ -381,7 +381,7 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
   }else{
     
     fVals[0]  = ele.SC.rawE;
-    fVals[1]  = ele.SC.r9();
+    fVals[1]  = ele.SC.r9;
     fVals[2]  = ele.SC.eta;
     fVals[3]  = ele.SC.phi;
     fVals[4]  = ele.SC.e5x5/ele.SC.rawE;
@@ -434,7 +434,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
   if( isbarrel){
         
     fVals[0]  = pho.SC.rawE;
-    fVals[1]  = pho.SC.r9();
+    fVals[1]  = pho.SC.r9;
     fVals[2]  = pho.SC.eta;
     fVals[3]  = pho.SC.phi;
     fVals[4]  = pho.SC.e5x5/pho.SC.rawE;
@@ -615,7 +615,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
   }else{
     
     fVals[0]  = pho.SC.rawE;
-    fVals[1]  = pho.SC.r9();
+    fVals[1]  = pho.SC.r9;
     fVals[2]  = pho.SC.eta;
     fVals[3]  = pho.SC.phi;
     fVals[4]  = pho.SC.e5x5/pho.SC.rawE;
