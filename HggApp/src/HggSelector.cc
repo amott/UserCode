@@ -698,11 +698,11 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("ptJet1CiC",&ptJet1CiC_,"ptJet1CiC");
   outTree->Branch("ptJet2CiC",&ptJet2CiC_,"ptJet2CiC");
   
-  outTree->Branch("nPhoton",nOutPhotons_);
+  outTree->Branch("nPhoton",&nOutPhotons_,"nPhoton/I");
   outTree->Branch("Photon",&OutPhotons_);
-  outTree->Branch("nPhotonPFCiC",nOutPhotonsPFCiC_);
+  outTree->Branch("nPhotonPFCiC",&nOutPhotonsPFCiC_,"nPhotonPFCiC/I");
   outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
-  outTree->Branch("nPhotonCiC",nOutPhotonsCiC_);
+  outTree->Branch("nPhotonCiC",&nOutPhotonsCiC_,"nPhotonCiC/I");
   outTree->Branch("PhotonCiC",&OutPhotonsCiC_);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);

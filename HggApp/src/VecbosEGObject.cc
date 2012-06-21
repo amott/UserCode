@@ -2,10 +2,8 @@
 #include "CommonTools/include/Utils.hh"
 
 #define debugEGObject 0
-#if debugEGObject
 #include <iostream>
 using namespace std;
-#endif
 
 VecbosBC::VecbosBC(){
 
@@ -455,6 +453,7 @@ void VecbosPho::Init(VecbosBase* o, int i){
   int SCI = o->superClusterIndexPho[i];
   CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
 
+  this->matchConversion(o,true);
   genMatch.Init(o,-1);
 };
 
@@ -466,25 +465,26 @@ TLorentzVector VecbosPho::p4FromVtx(TVector3 vtx,float E,bool pf){
   TLorentzVector p4(p.x(),p.y(),p.z(),E);
   return p4;
 }
-
+#define debugConversionMatch 0
 void VecbosPho::matchConversion(VecbosBase *o,bool dR){ //for some reason, the h2gglobe code doesn't always use dR
   float minDR   = 999; int iMinDR   = -1;
   float minDeta = 999; 
   float minDphi = 999; int iMinDetaDphi = -1;
+  if(debugConversionMatch) cout << "nConv: " << o->nConv << endl;
   for(int i=0; i<o->nConv; i++){
     if(o->ptRefittedPairConv[i] < 1 ||
        !o->isValidVtxConv[i] ||
-       o->nTracksVtxConv[i] < 2 ||
+       o->nTracksVtxConv[i] != 2 ||
        o->chi2ProbVtxConv[i]< 1e-6) continue;  //skip bad conversions
-
+    if(debugConversionMatch) cout << "Conversion " << i << " valid" << endl;
     float convPhi = o->phiRefittedPairConv[i];
     //convert the eta based on the z or the PV
     float convEta = etaTransformation(o->etaRefittedPairConv[i], o->zOfPVFromTracksConv[i] ); 
-    
+    if(debugConversionMatch) cout << "eta/phi: " << convEta << " / " << convPhi << endl;
     float Deta = fabs(convEta - this->eta);
     float Dphi = DeltaPhi(convPhi,this->phi);
     float DR   = DeltaR(convEta,this->eta,convPhi,this->phi);
-
+    if(debugConversionMatch) cout << "dEta/dPhi: " << Deta << " / " << Dphi << endl;
     if(DR < minDR){
       minDR = DR;
       iMinDR = i;
@@ -501,8 +501,7 @@ void VecbosPho::matchConversion(VecbosBase *o,bool dR){ //for some reason, the h
     if(minDeta<0.1 && minDphi < 0.1) matchIndex = iMinDetaDphi;
   }
 
-  VecbosConversion c(o,-1);
-  conversion = c;
+  conversion.Init(o,matchIndex);
 }
 
 void VecbosPho::doGenMatch(VecbosBase* o){

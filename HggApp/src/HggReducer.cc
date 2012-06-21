@@ -64,6 +64,12 @@ void HggReducer::SetWeight(double weight) {
   _weight = weight;
 }
 
+struct less_than_pt_photon{
+  inline bool operator() (const VecbosPho& p1, const VecbosPho& p2){ 
+    return p1.finalEnergy/cosh(p1.eta) < p2.finalEnergy/cosh(p2.eta);
+  }
+};
+
 void HggReducer::Loop(string outFileName, int start, int stop) {
   if(fChain == 0){
     cout << "fChain Not defined! QUITTING" << endl;
@@ -178,8 +184,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	if(debugReducer) cout << "Done" << endl;;	
 	pho.dEoE    = dE.first;
 	pho.dEoEErr = 0; 
-	pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
-	pho.scaledEnergyError = pho.correctedEnergyError*(1-(pho.dEoE+pho.dEoEErr));
+	pho.scaledEnergy = pho.correctedEnergy*(1+pho.dEoE);
+	pho.scaledEnergyError = pho.correctedEnergyError*(1+(pho.dEoE+pho.dEoEErr));
       }
 
       if(debugReducer) cout << pho.dEoE <<"   " << pho.scaledEnergy << endl;
@@ -224,6 +230,10 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       //end of photon loop
     }//for(int iPho=0; ...
 
+    //now sort the photons by pT
+    std::sort(Photons_.begin(),Photons_.end(),less_than_pt_photon());
+
+
     if(nSelectedPho<minPhoSel){
       if(debugReducer) cout << "Fewer than " << minPhoSel << " selected photons" << endl;
       continue; // skip the event if there are fewer than 2 photons
@@ -243,12 +253,14 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	if(debugReducer) cout << ">>>>" << endl;
 	//VecbosPho pho2 = *iPho2;
 	if(debugReducer) cout << "Doing Vertexing ... " << endl;
-	pair<int,float> vtxPair = vertexer->vertex_tmva(&*iPho2,&*iPho2);
-	int vtx = vtxPair.first;
-	if(debugReducer) cout << "Done!  Vtx Index: " << vtx << endl;
-	std::pair<unsigned int,int> tmp;
+	vector<pair<int,float> > vtxPair = vertexer->vertex_tmva(&*iPho2,&*iPho2);
 	ggVerticesPhotonIndices.push_back(pair<int,int>(iPho1->index,iPho2->index) );
-	ggVerticesVertexIndex.push_back(vtxPair);
+	ggVerticesVertexIndex01.push_back(vtxPair[0]);
+	ggVerticesVertexIndex02.push_back(vtxPair[1]);
+	ggVerticesVertexIndex03.push_back(vtxPair[2]);
+	ggVerticesVertexIndexOld01.push_back(vtxPair[3]);
+	ggVerticesVertexIndexOld02.push_back(vtxPair[4]);
+	ggVerticesVertexIndexOld03.push_back(vtxPair[5]);
 	nPair_++;
       }
     }
@@ -353,7 +365,12 @@ void HggReducer::clearAll(){
   pileupNInteraction->clear();
   
   ggVerticesPhotonIndices.clear();
-  ggVerticesVertexIndex.clear();
+  ggVerticesVertexIndex01.clear();
+  ggVerticesVertexIndex02.clear();
+  ggVerticesVertexIndex03.clear();
+  ggVerticesVertexIndexOld01.clear();
+  ggVerticesVertexIndexOld02.clear();
+  ggVerticesVertexIndexOld03.clear();
 
   nGenPho=0;
   nGenMu =0;
@@ -668,7 +685,12 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("nPair",&nPair_);
  outTree->Branch("Photons",&Photons_);
  outTree->Branch("ggVerticesPhotonIndices",&ggVerticesPhotonIndices);
- outTree->Branch("ggVerticesVertexIndex",&ggVerticesVertexIndex);
+ outTree->Branch("ggVerticesVertexIndex",&ggVerticesVertexIndex01);
+ outTree->Branch("ggVerticesVertexIndexOld",&ggVerticesVertexIndexOld01);
+ outTree->Branch("ggVerticesVertexIndex2nd",&ggVerticesVertexIndex02);
+ outTree->Branch("ggVerticesVertexIndex2ndOld",&ggVerticesVertexIndexOld02);
+ outTree->Branch("ggVerticesVertexIndex3rd",&ggVerticesVertexIndex03);
+ outTree->Branch("ggVerticesVertexIndex3rdOld",&ggVerticesVertexIndexOld03);
  outTree->Branch("photonMatchedElectron",photonMatchedElectron,"photonMatchedElectron[nPho]/O");
 
  outTree->Branch("nMu",&nMu_,"nMu/I");

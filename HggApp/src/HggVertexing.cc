@@ -22,11 +22,14 @@ using namespace std;
 #include "CommonTools/include/TriggerMask.hh"
 #include "HggVertexing.hh"
 
+#define debugVertexing 0
+
 HggVertexing::HggVertexing(VecbosBase *b):
   base(b),
-  vAna(vtxAlgoParams)
+  vAna(vtxAlgoParams),
+  vConv(vtxAlgoParams)
 {
-  useConversion = false;
+  useConversion = true;
   isInit=false;
 }
 
@@ -67,10 +70,10 @@ void HggVertexing::init(){
 
 
 //method to do the vertexing
-pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
+vector<pair<int,float> > HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
   
-  if(base->nPV == 1) return pair<int,float>(0,1); 
-  if(base->nPV == 0) return pair<int,float>(-1,1); 
+  //if(base->nPV == 1) return pair<int,float>(0,1); 
+  if(base->nPV == 0) return std::vector<pair<int,float> >();
 
   vAna.clear();
   if(useConversion){ 
@@ -89,7 +92,7 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
 				      beamspot,
 				      pho1->conversion.vtx,
 				      pho1->conversion.pRefittedPair,
-				      pho1->energy,
+				      pho1->correctedEnergy,
 				      (int)pho1->isBarrel(),
 				      pho1->conversion.vtxNTracks,
 				      pho1->conversion.vtxIsValid,
@@ -102,7 +105,7 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
 				      beamspot,
 				      pho2->conversion.vtx,
 				      pho2->conversion.pRefittedPair,
-				      pho2->energy,
+				      pho2->correctedEnergy,
 				      (int)pho2->isBarrel(),
 				      pho2->conversion.vtxNTracks,
 				      pho2->conversion.vtxIsValid,
@@ -130,7 +133,7 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
   
   //cout << "Done" << endl;
   //It looks like we have to explicitly fill these arrays, gah!
-  const int maxPV = 40;
+  const int maxPV = 80;
   int nPV;
   float PVxPV[maxPV],PVyPV[maxPV],PVzPV[maxPV];
   nPV = base->nPV;
@@ -141,7 +144,7 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
     PVzPV[i] = base->PVzPV[i];
   }
 
-  const int maxTracks = 1000;
+  const int maxTracks = 2000;
   int nTracks;
   float pxTrack[maxTracks],pyTrack[maxTracks],pzTrack[maxTracks];
   float ptErrorTrack[maxTracks],vtxWeightTrack[maxTracks];
@@ -149,7 +152,7 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
   int vtxIndexTrack[maxTracks];
 
   nTracks = base->nTrack;
-  if(nTracks> maxTracks) return pair<int,float>(0,0); //safety!
+  //if(nTracks> maxTracks) return pair<int,float>(0,0); //safety!
   if(nTracks> maxTracks) nTracks = maxTracks; //safety!
   for(int i=0;i<nTracks;i++){
     pxTrack[i] = base->pxTrack[i]; pyTrack[i] = base->pyTrack[i]; pzTrack[i] = base->pzTrack[i]; 
@@ -190,12 +193,61 @@ pair<int,float> HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2){
   vAna.analyze(vertexInfoAdapter,photonInfo1,photonInfo2);     
   //cout << "Done" << endl;
   /// rank product vertex selection. Including pre-selection based on conversions information.
-  vector<int> rankprod = vAna.rankprod(rankVariables);
+  vector<int> rankprodAll = vAna.rankprod(varNameUsed);
   
   /// MVA vertex selection
+  //old method
   vector<int> vtx_ranked_tmva = vAna.rank(*perVtxReader,perVtxMvaMethod);
 
-  return pair<int,float>(vtx_ranked_tmva[0],vAna.mva(vtx_ranked_tmva[0]));  
+  int iClosestConv=-1;
+  float dminConv=999;
+
+  std::pair<float,float> zConv = getZConv(&photonInfo1,&photonInfo2);
+
+  TVector3 vtx0Pos(PVxPV[0],PVyPV[0],PVzPV[0]);
+
+  TLorentzVector diPhoP4 = (pho1->p4FromVtx(vtx0Pos,pho1->correctedEnergy)+
+			    pho2->p4FromVtx(vtx0Pos,pho2->correctedEnergy));
+
+  int nbest=3;
+  if(diPhoP4.Pt() < 30.) nbest=5;
+
+  for(int iV=0;iV<min(nPV,nbest);iV++){
+    if( fabs( PVzPV[iV] - zConv.first ) < dminConv && fabs(PVzPV[iV]-zConv.first) < zConv.second){
+      iClosestConv=iV; dminConv=fabs( PVzPV[iV] - zConv.first );
+    }
+  }
+
+  vector<int> rankprod;
+  if(iClosestConv != -1) rankprod.push_back(iClosestConv);
+  for(int i=0; i<rankprodAll.size();i++) if(i!=iClosestConv) rankprod.push_back(rankprodAll[i]);
+
+  if(debugVertexing){
+    cout << "Vertex Ranking:" << endl;
+    for(int i=0;i<rankprod.size();i++) cout << rankprod[i] <<":  " << vAna.mva(rankprod[i]) << "  "
+					    << vAna.perEventMva(*perEvtReader,perEvtMvaMethod,rankprod) << endl;
+  }
+  vector<pair<int,float> > output;
+  for(int i=0;i<3;i++){
+    if(i<rankprod.size()) output.push_back(std::pair<int,float>(rankprod[i],vAna.mva(rankprod[i])));
+    else output.push_back(std::pair<int,float>(-1,-99));
+  }
+  for(int i=0;i<3;i++){
+    if(i<rankprod.size()) output.push_back(std::pair<int,float>(vtx_ranked_tmva[i],vAna.mva(vtx_ranked_tmva[i])));
+    else output.push_back(std::pair<int,float>(-1,-99));
+  }
+  return output;
+
 }
 
+std::pair<float,float> HggVertexing::getZConv(PhotonInfo* pho1,PhotonInfo* pho2){
 
+  float z1 = (pho1->isAConversion() ? vConv.vtxZ(*pho1) : 0);
+  float dz1 = (pho1->isAConversion() ? vConv.vtxdZ(*pho1) : 0);
+  float z2 = (pho2->isAConversion() ? vConv.vtxZ(*pho2) : 0);
+  float dz2 = (pho2->isAConversion() ? vConv.vtxdZ(*pho2) : 0);
+
+  float zconv = (z1/dz1/dz1 + z2/dz2/dz2)/(1./dz1/dz1 + 1./dz2/dz2 );
+  float dzconv = sqrt( 1./(1./dz1/dz1 + 1./dz2/dz2)) ;
+  return std::pair<float,float>(zconv,dzconv);
+}

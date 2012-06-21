@@ -23,6 +23,7 @@
 //#include "TMVAGui.C"                         
 //#if not defined(__CINT__) || defined(__MAKECINT__) 
 #include "../h2ginclude/HggVertexAnalyzer.h"
+#include "../h2ginclude/HggVertexFromConversions.h"
 #include "../h2ginclude/PhotonInfo.h"
 #include "../h2ginclude/VertexAlgoParameters.h"
                  
@@ -41,14 +42,15 @@ public:
   virtual ~HggVertexing();     /// Class Destructor
   void setConfigFile(string s){configFilePath = s;}
 
-  pair<int,float> vertex_tmva(VecbosPho*,VecbosPho*);
+  std::vector<pair<int,float> > vertex_tmva(VecbosPho*,VecbosPho*);
   void useConversions(bool b=true){useConversion = b;}
   void init(); // do variable initialization 
   bool getIsInit(){return isInit;}
 private:
   VecbosBase *base;
   bool isInit;
-  
+
+  std::pair<float,float> getZConv(PhotonInfo*,PhotonInfo*);
   TMVA::Reader * perVtxReader; 
   TMVA::Reader * perEvtReader;
   vector<string> rankVariables; 
@@ -67,6 +69,7 @@ private:
 
   VertexAlgoParameters vtxAlgoParams;
   HggVertexAnalyzer vAna;
+  HggVertexFromConversions vConv;
 
   //options
   bool useConversion;

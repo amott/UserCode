@@ -143,7 +143,12 @@ private:
   //the format is std::pair< (iPho1 << 14) + iPho2,iVrt> 
   int nPair_;
   vector<pair<int,int> > ggVerticesPhotonIndices; 
-  vector<pair<int,float> > ggVerticesVertexIndex;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndex01;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndex02;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndex03;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndexOld01;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndexOld02;  // vertex, MVA score
+  vector<pair<int,float> > ggVerticesVertexIndexOld03;  // vertex, MVA score
   //std::vector<int> ggVertices_
 
   //vertex information
