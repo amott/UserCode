@@ -34,12 +34,13 @@ public:
   void setNSigma(int ns){nSigma=ns;}
 
   void suppressElectronVeto(){doElectronVeto=false;}
-
+  void setForceVertexZero(){forceVtxZero=true;}
   void setIsData(bool d){isData_=d;}
   void Loop();
 private:
   bool valid;
   bool doMuMuGamma;
+  bool forceVtxZero;
   TChain* fChain;
   TTree* outTree;
   TTree* outTreeMuMuG;

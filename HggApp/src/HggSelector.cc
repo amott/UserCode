@@ -20,7 +20,8 @@ HggSelector::HggSelector():
   Photons_(0),
   nSigma(3),
   doMuMuGamma(false),
-  isData_(true)
+  isData_(true),
+  forceVtxZero(false)
 {
 }
 
@@ -31,7 +32,8 @@ HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName)
   Photons_(0),
   nSigma(3),
   doMuMuGamma(false),
-  isData_(true)
+  isData_(true),
+  forceVtxZero(false)
 {
   this->loadChain(fNames,treeName);
   outputFile = outFName;
@@ -143,9 +145,14 @@ void HggSelector::Loop(){
     if(!isData_) this->fillGenInfo();
     if(doMuMuGamma) this->fillMuMuGamma();
     
-    if(debugSelector) cout << "requiring triggers ... " << flush;
+    if(debugSelector) cout << "requiring triggers ... " << endl;
     trigger_ = this->requireTrigger();
 
+    // give the photon ID maker the vertex collection for this event
+    if(debugSelector) cout << "Setting Photon ID Vertices " << endl;
+    PhotonID->setVertices(nVtx,vtxX,vtxY,vtxZ);
+
+    if(debugSelector) cout << "Starting Photon Loop:  " << nPho_ << endl;
     for(int iPho=0; iPho<nPho_;iPho++){ //redo the scaling and smearing if needed
       VecbosPho pho = Photons_->at(iPho);
       if(doScale){
@@ -260,7 +267,7 @@ void HggSelector::Loop(){
     if(index1 > -1 && index2 > -1){
       //fill MVA variables
       int selectedVertex = getVertexIndex(index1,index2);
-      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      if(debugSelector) cout << "Final Selection MVA: " << selectedVertex << endl;
       
       TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
       pho1_ = Photons_->at(index1);
@@ -289,11 +296,11 @@ void HggSelector::Loop(){
     if(index1PFCiC > -1 && index2PFCiC > -1){
       //fill PFCiC variables
       int selectedVertex = getVertexIndex(index1PFCiC,index2PFCiC);
-      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      if(debugSelector) cout << "Final Selection PFCiC: " << selectedVertex << endl;
       
       TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
-      pho1_ = Photons_->at(index1);
-      pho2_ = Photons_->at(index2);
+      pho1_ = Photons_->at(index1PFCiC);
+      pho2_ = Photons_->at(index2PFCiC);
       OutPhotonsPFCiC_.push_back(getReducedData(&pho1_,vtxPos,selectedVertex));
       OutPhotonsPFCiC_.push_back(getReducedData(&pho2_,vtxPos,selectedVertex));
 
@@ -316,13 +323,14 @@ void HggSelector::Loop(){
     if(index1CiC > -1 && index2CiC > -1){
       //fill CiC variables
       int selectedVertex = getVertexIndex(index1CiC,index2CiC);
-      if(debugSelector) cout << "Final Selection: " << selectedVertex << endl;
+      if(debugSelector) cout << "Final Selection CiC: " << selectedVertex << endl;
       
       TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
-      pho1_ = Photons_->at(index1);
-      pho2_ = Photons_->at(index2);
+      pho1_ = Photons_->at(index1CiC);
+      pho2_ = Photons_->at(index2CiC);
       OutPhotonsCiC_.push_back(getReducedData(&pho1_,vtxPos,selectedVertex));
       OutPhotonsCiC_.push_back(getReducedData(&pho2_,vtxPos,selectedVertex));
+      if(debugSelector) cout << "Done Getting Photons" << endl;
 
       mPairCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
       mPairNoCorrCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
@@ -408,11 +416,11 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 	int selVtxI = this->getVertexIndex(iPho1,iPho2);
 	bool CiC1,CiC2;
 	if(usePF){
-	  CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
-	  CiC2 = PhotonID->getIdCiCPF(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	  CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,selVtxI);
+	  CiC2 = PhotonID->getIdCiCPF(pho2,nVtx,rho,selVtxI);
 	}else{
-	  CiC1 = PhotonID->getIdCiC(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
-	  CiC2 = PhotonID->getIdCiC(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+	  CiC1 = PhotonID->getIdCiC(pho1,nVtx,rho,selVtxI);
+	  CiC2 = PhotonID->getIdCiC(pho2,nVtx,rho,selVtxI);
 	}
 	if(!CiC1 || !CiC2) continue;
 	float thisPtSum = pho1->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho1->finalEnergy).Pt()
@@ -463,9 +471,9 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
       }
       int selVtxI = this->getVertexIndex(iPho1,iPho2);
       if(debugSelector) cout << "Getting Photon ID:" << endl;
-      float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,selVtxI);
       if(debugSelector) cout << "Getting Photon ID:" << endl;
-      float mva2 = PhotonID->getIdMVA(pho2,nVtx,rho,TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),selVtxI);
+      float mva2 = PhotonID->getIdMVA(pho2,nVtx,rho,selVtxI);
       if(debugSelector) cout << "Getting Double Photon MVA" << endl;
       float diPhoMVA =  getDiPhoMVA(iPho1,iPho2,mva1,mva2,false);
       if(debugSelector) cout << "\t\t" << mva1 << "  " << mva2 << "  " << diPhoMVA << endl;
@@ -558,6 +566,9 @@ void HggSelector::fillGenInfo(){
 }
 
 ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int selVtxI){
+  if(debugSelector) cout << "Filling Reduced Data: " << flush; 
+  if(debugSelector) cout << pho->index << "  " << selVtx.Z() << "  " <<selVtxI <<endl;
+
   ReducedPhotonData data;
   TLorentzVector p4 = pho->p4FromVtx(selVtx,pho->finalEnergy,false);
   TLorentzVector p4NoCorr = pho->p4FromVtx(selVtx,pho->energy,false);
@@ -568,16 +579,16 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
   }
   else{
     p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
-    data.pt_Gen = 0.; data.eta_Gen = 0.; data.phi_Gen = 0.; data.E_Gen = 0.;
-  
+    data.pt_Gen = 0.; data.eta_Gen = 0.; data.phi_Gen = 0.; data.E_Gen = 0.;  
   }
   data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E();
   data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
   data.index = pho->index;
   data.r9 = pho->SC.r9;
-  data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtx,selVtxI); 
+  data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtxI); 
   data.category = (data.r9 < 0.94)+2*(fabs(data.eta) > 1.48); 
-  data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtx,selVtxI);
+  data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtxI);
+  if(debugSelector) cout << "DONE Filling Reduced Data" <<endl;
   return data;
 }
 
@@ -789,7 +800,7 @@ void HggSelector::fillMuMuGamma(){
 	MMG_Pho.push_back(pho);
 	float eT = pho.p4FromVtx(vtx,pho.energy,false).Et();
 	isosumoetPho[nMuMuG] = (pho.dr03EcalRecHitSumEtCone + pho.dr04HcalTowerSumEtCone + pho.dr03TrkSumPtHollowCone + isoSumConst - rho*rhoFac)/eT;
-	mvaPho[nMuMuG] = PhotonID->getIdMVA(&pho,nVtx,rho,TVector3(vtxX[0],vtxY[0],vtxZ[0]),0); 
+	mvaPho[nMuMuG] = PhotonID->getIdMVA(&pho,nVtx,rho,0); 
 	
 	nMuMuG++;
       }
@@ -860,6 +871,7 @@ bool HggSelector::requireTrigger(){
 
 
 int HggSelector::getVertexIndex(int indexPho1,int indexPho2){
+  if(forceVtxZero) return 0;
   //get the vertex selected by the di photon vertex MVA
   int selectedVertex = -1;
   if(indexPho1 > nPho_ || indexPho2 > nPho_) return -1;

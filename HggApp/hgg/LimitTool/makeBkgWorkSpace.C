@@ -93,10 +93,10 @@ std::map<TString,TTreeFormula*> getCategoryCuts(TChain* fChain){
   categories["MVA_R"] = new TTreeFormula("MVA_0","mPair<0 || diPhotonMVA<0.05 || nPhoton==0",fChain); // rejection criterion
   categories["MVA_0"] = new TTreeFormula("MVA_0"," (Mjj >= 500) && (diPhotonMVA>0.05)",fChain);  
   categories["MVA_1"] = new TTreeFormula("MVA_1"," (Mjj < 500) && (Mjj >= 250) && (diPhotonMVA>0.05)",fChain);  
-  categories["MVA_2"] = new TTreeFormula("MVA_2"," (Mjj < 250) && (diPhotonMVA>=0.89)",fChain);  
-  categories["MVA_3"] = new TTreeFormula("MVA_3"," (Mjj < 250) && (diPhotonMVA>=0.72) && (diPhotonMVA<0.89)",fChain);  
-  categories["MVA_4"] = new TTreeFormula("MVA_4"," (Mjj < 250) && (diPhotonMVA>=0.55) && (diPhotonMVA<0.72)",fChain);  
-  categories["MVA_5"] = new TTreeFormula("MVA_5"," (Mjj < 250) && (diPhotonMVA>=0.05) && (diPhotonMVA<0.55)",fChain);  
+  categories["MVA_2"] = new TTreeFormula("MVA_2"," (Mjj < 250) && (diPhotonMVA>=0.88)",fChain);  
+  categories["MVA_3"] = new TTreeFormula("MVA_3"," (Mjj < 250) && (diPhotonMVA>=0.71) && (diPhotonMVA<0.88)",fChain);  
+  categories["MVA_4"] = new TTreeFormula("MVA_4"," (Mjj < 250) && (diPhotonMVA>=0.50) && (diPhotonMVA<0.71)",fChain);  
+  categories["MVA_5"] = new TTreeFormula("MVA_5"," (Mjj < 250) && (diPhotonMVA>=-0.05) && (diPhotonMVA<0.50)",fChain);  
   
   categories["PFCiC_R"] = new TTreeFormula("PFCiC_R","mPairPFCiC==-1 || nPhotonPFCiC==0",fChain); // rejection criterion
   categories["PFCiC_0"] = new TTreeFormula("PFCiC_0","(MjjPFCiC >= 500)",fChain);

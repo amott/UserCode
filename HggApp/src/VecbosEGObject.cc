@@ -178,14 +178,14 @@ void VecbosSC::Init(VecbosBase* o, int i){
   HoverE   = o->hOverESC[i];
   r9       = e3x3/rawE;
   //get the basic clusters
-  
+
+
+  nBCs = o->nBCSC[i];
   std::vector< std::pair<int,float> > indexEnergyMap;
   float maxE=-1;
   int maxI=-1;
-  nBCs++;
   for(int j=0; j<o->nBC; j++){
     if(o->indexSCBC[j] == i){ // the basic cluster points to this SC
-      nBCs++;
       indexEnergyMap.push_back(std::pair<int,float>(j,o->energyBC[j]) );
       if(o->energyBC[j] > maxE){
 	maxE = o->energyBC[j];

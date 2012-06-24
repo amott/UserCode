@@ -184,8 +184,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	if(debugReducer) cout << "Done" << endl;;	
 	pho.dEoE    = dE.first;
 	pho.dEoEErr = 0; 
-	pho.scaledEnergy = pho.correctedEnergy*(1+pho.dEoE);
-	pho.scaledEnergyError = pho.correctedEnergyError*(1+(pho.dEoE+pho.dEoEErr));
+	pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
+	pho.scaledEnergyError = pho.correctedEnergyError*(1-(pho.dEoE+pho.dEoEErr));
       }
 
       if(debugReducer) cout << pho.dEoE <<"   " << pho.scaledEnergy << endl;

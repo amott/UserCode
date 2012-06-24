@@ -50,6 +50,7 @@ int main(int argc, char* argv[]) {
   std::map<std::string,bool> Commands;
   Commands["doMuMuGamma"] = false;
   Commands["suppressElectronVeto"] = false;
+  Commands["forceVtxZero"] = false;
   Commands["--isData"] = false;
 
   for(int arg=3; arg<argc; arg++){
@@ -113,6 +114,7 @@ int main(int argc, char* argv[]) {
     //cout << "Suppressing Electron Veto!" << endl;
   }
   if(Commands["doMuMuGamma"]) sel.setDoMuMuGamma();
+  if(Commands["forceVtxZero"]) sel.setForceVertexZero();
   if(Commands["--isData"]) sel.setIsData(true);
   else sel.setIsData(false);
   //if(Commands["suppressElectronVeto"]) sel.suppressElectronVeto();

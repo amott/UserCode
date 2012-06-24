@@ -48,7 +48,16 @@ void HggPhotonID::Init(){
   this->setupTMVA();
 }
 
-void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+void HggPhotonID::setVertices(int nPV, float* xPV, float *yPV, float *zPV){
+  vertices.clear();
+  for(int i=0;i<nPV;i++){
+    vertices.push_back(TVector3(xPV[i],yPV[i],zPV[i]));
+  }
+}
+
+void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
+  TVector3 selVtxPos = vertices.at(selVtxIndex);
+
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
   if(debugPhotonID) cout << "eT: " << eT << endl;
   hoe = pho->HoverE;
@@ -76,8 +85,15 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
 
   pfChargedIsoGood03 = pho->dr03ChargedHadronPFIso[selVtxIndex];
   float maxIso=0;
-  for(int i=0; i<pho->nPV;i++) if(pho->dr04ChargedHadronPFIso[i] > maxIso) maxIso = pho->dr04ChargedHadronPFIso[i];
+  int worstVtx=0;
+  for(int i=0; i<pho->nPV;i++) 
+    if(pho->dr04ChargedHadronPFIso[i] > maxIso) 
+      { 
+	maxIso = pho->dr04ChargedHadronPFIso[i];
+	worstVtx=i;
+      }
   pfChargedIsoBad04  = maxIso;
+  float eTBad = pho->p4FromVtx(vertices.at(worstVtx),pho->finalEnergy,false).Et();
 
   pfChargedIsoGood03oet = pfChargedIsoGood03*50./eT;
   pfChargedIsoBad04oet  = pfChargedIsoBad04*50./eT;  
@@ -94,7 +110,7 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,TV
   isosumPF = (pfChargedIsoGood03 + pfPhotonIso03 + isoSumConstPF - rho*rhoFac); 
   isosumbadPF = (pfChargedIsoBad04 + pfPhotonIso04 + isoSumConstPF - rho*rhoFacBad); 
   isosumoetPF = isosumPF*50./eT; 
-  isosumoetbadPF = isosumbadPF*50./eT;
+  isosumoetbadPF = isosumbadPF*50./eTBad;
 
   InputDists["pfPhotonIsooet"]->Fill(pfPhotonIso03oet);
   InputDists["pfChargedIsooet"]->Fill(pfChargedIsoGood03oet);
@@ -186,20 +202,29 @@ void HggPhotonID::setupTMVA(){
   
   }
 
-float HggPhotonID::getIdMVA(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+float HggPhotonID::getIdMVA(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){
+  if(selVtxIndex < 0 || selVtxIndex >= vertices.size()){
+    cout << "WARNING: Selected Vertex Index out of range: " << selVtxIndex << "/" << vertices.size() <<endl;
+    return -9999;
+  }
   if(pho->index <0) return -9999;
   if(debugPhotonID) cout << "Filling Variables" << endl;
-  this->fillVariables(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
   
   if(debugPhotonID) cout << "Preselection" << endl;
-  if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex) ) return -9999;
+  if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxIndex) ) return -9999;
 
   if(debugPhotonID) cout << "Version: " << version << endl;
   if(version.compare("May2012")==0) return (pho->isBarrel() ? photonMVA_EB_2012->EvaluateMVA(methodName_Id) : photonMVA_EE_2012->EvaluateMVA(methodName_Id) );    
   else return (pho->isBarrel() ? photonMVA_EB_2011->EvaluateMVA(methodName_Id) : photonMVA_EE_2011->EvaluateMVA(methodName_Id) );    
 }
 
-bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
+  if(selVtxIndex < 0 || selVtxIndex >= vertices.size()){
+    cout << "WARNING: Selected Vertex Index out of range: " << selVtxIndex << "/" << vertices.size() <<endl;
+    return false;
+  }
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
   //2011 CiC Cuts
   const int nCats=4;
   float cut_r9[nCats]         = {0.94,0.36,0.94,0.32};
@@ -221,8 +246,12 @@ bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,TVector
   return true;
 }
 
-bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
-
+bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
+  if(selVtxIndex < 0 || selVtxIndex >= vertices.size()){
+    cout << "WARNING: Selected Vertex Index out of range: " << selVtxIndex << "/" << vertices.size() <<endl;
+    return false;
+  }
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
   //2012 CiC Cuts:
   const int nCats=4;
   float cut_r9[nCats]       = {0.94,0.298,0.94,0.24};
@@ -248,12 +277,13 @@ int HggPhotonID::getCiCCat(VecbosPho* pho){
   return (pho->SC.r9<0.94)+2*(fabs(pho->SC.eta) > 1.48);
 }
 
-bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
-  if(version.compare("May2012")==0) this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
-  else this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxPos,selVtxIndex);
+bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
+  if(version.compare("May2012")==0) this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxIndex);
+  else this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxIndex);
 }
 
-bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){
+  TVector3 selVtxPos = vertices.at(selVtxIndex);
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
 
   if(pho->SC.r9 < 0.9){
@@ -272,7 +302,8 @@ bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoF
   return true;
 }
 
-bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFastJet,TVector3 selVtxPos, int selVtxIndex){
+bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){
+  TVector3 selVtxPos = vertices.at(selVtxIndex);
   float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
 
   if(pho->SC.r9 < 0.9){

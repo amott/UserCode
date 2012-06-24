@@ -23,17 +23,19 @@ public:
   bool isValid(){return valid;}
   void Init();
 
-  bool getPreSelection(VecbosPho*,int,float,TVector3,int);
-  float getIdMVA(VecbosPho*,int,float, TVector3, int);
-  bool getIdCiCPF(VecbosPho*,int,float, TVector3, int);
-  bool getIdCiC(VecbosPho*,int,float, TVector3, int);
+  bool getPreSelection(VecbosPho*,int,float,int);
+  float getIdMVA(VecbosPho*,int,float,  int);
+  bool getIdCiCPF(VecbosPho*,int,float,  int);
+  bool getIdCiC(VecbosPho*,int,float,  int);
   
   int getCiCCat(VecbosPho*);
 
-  bool getPreSelection2011(VecbosPho*,int,float,TVector3,int);
-  bool getPreSelectionMay2012(VecbosPho*,int,float,TVector3,int);
+  bool getPreSelection2011(VecbosPho*,int,float,int);
+  bool getPreSelectionMay2012(VecbosPho*,int,float,int);
 
   std::map<std::string,TH1F*>* getHists(){return &InputDists;}
+
+  void setVertices(int,float*,float*,float*);
 private:
   string configFile;
   bool valid;
@@ -59,7 +61,7 @@ private:
 
   std::map<std::string,TH1F*> InputDists;
 
-  void fillVariables(VecbosPho*,int,float,TVector3,int);
+  void fillVariables(VecbosPho*,int,float,int);
   //photon ID MVA
   float hoe;
   float sigietaieta;
@@ -94,5 +96,7 @@ private:
   float isosumoetbadPF;
   float isosumPF;
   float isosumbadPF;
+
+  std::vector<TVector3> vertices;
   
 };
