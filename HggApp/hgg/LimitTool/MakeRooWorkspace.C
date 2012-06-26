@@ -40,6 +40,7 @@
 #include <TFile.h>
 #include <TGraphAsymmErrors.h>
 #include <TVector3.h>
+#include <TLorentzVector.h>
 #include <TMath.h>
 #include <TH1F.h>
 #include <iostream>
@@ -47,12 +48,14 @@
 #include <TList.h>
 #include <TObjArray.h>
 
+#include "defineCategories.C"
+
 using namespace std;
 using namespace RooFit;               
 
 #define debug 0
 #include "branchingRatio.cc"
-#define nCat_ 4
+#define nCat_ 6
 struct WorkspaceVars{
   RooWorkspace * outputWorkspace;
   std::map<std::string, RooRealVar*>  *m_real_var_;
@@ -67,14 +70,6 @@ void addDataPoint(WorkspaceVars*,string, float, float);
 double getHistVal(TH1D* hist, float x);
 vector<float> getKFac(std::vector<TH1D*>* kFacs,float higgsPt,int shift);
 
-int getCat(float MVA){
-  const float minMVA[nCat_] = {0.89,0.72,0.55,0.05};
-  const float maxMVA[nCat_] = {9999,0.89,0.72,0.55};
-  for(int i=0;i<nCat_;i++){
-    if(minMVA[i] <=MVA && maxMVA[i] > MVA) return i;
-  }
-  return -1;
-}
 int getPhotonCat(float eta,float r9){
   return (r9<0.94)+2*(fabs(eta)>1.48);
 }
@@ -85,11 +80,13 @@ EffMap* loadEffCor(TFile* f);
 vector<float> effCorrMC(float pt, TString type, int cat, EffMap* map,int shift=0);
 
 
-TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isData,float lumi,int massPoint,TString process, TString kFactorFile="",TString pileupReWeightFName="",TString EffCorrectionFName=""){
+TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isData,float lumi,int massPoint,TString process, TString kFactorFile="",TString pileupReWeightFName="",TString EffCorrectionFName="",TString selection="MVA"){
   cout << "Making workspace for mass point: " << massPoint <<  "  Process: " << process << endl;
   if(debug) cout << "MakeRooWorkspace" <<endl;
   TChain *chain = new TChain("HggOutput");
   chain->AddFile(fileName);
+
+
   
   //roohist_sig_ggh_mass_m$MASS_$CHANNEL
   TObjArray *outArray = new TObjArray();
@@ -98,7 +95,7 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
 
   std::map< indexType, int> nameIndexMap;
 
-  const int nSigma=3;
+  const int nSigma=1;
   int ind=0;
 
   std::map<std::string,std::vector<float> > efficiencies; // map between the efficiency name and the vector of efficiencies
@@ -142,14 +139,12 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   float Vx;
   float Vy;
   float Vz;
-  float pxPho1;
-  float pyPho1;
-  float pxPho2;
-  float pyPho2;
-  float etaPho1;
-  float etaPho2;
-  float r9Pho1;
-  float r9Pho2;
+  float ptPho[2];
+  float etaPho[2];
+  float phiPho[2];
+  float energyPho[2];
+  float r9Pho[2];
+  float Mjj;
   vector<float> *mPairScale = 0;
   vector<float> *mPairSmear = 0;
   chain->SetBranchAddress("mPair",&mPair);
@@ -162,17 +157,17 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   chain->SetBranchAddress("diPhotonVtxX",&Vx);
   chain->SetBranchAddress("diPhotonVtxY",&Vy);
   chain->SetBranchAddress("diPhotonVtxZ",&Vz);
-  chain->SetBranchAddress("pxPho1",&pxPho1);
-  chain->SetBranchAddress("pyPho1",&pyPho1);
-  chain->SetBranchAddress("pxPho2",&pxPho2);
-  chain->SetBranchAddress("pyPho2",&pyPho2);
-  chain->SetBranchAddress("etaPho1",&etaPho1);
-  chain->SetBranchAddress("etaPho2",&etaPho2);
-  chain->SetBranchAddress("r9Pho1",&r9Pho1);
-  chain->SetBranchAddress("r9Pho2",&r9Pho2);
+  chain->SetBranchAddress("Photon.pt",ptPho);
+  chain->SetBranchAddress("Photon.eta",etaPho);
+  chain->SetBranchAddress("Photon.phi",phiPho);
+  chain->SetBranchAddress("Photon.E",energyPho);
+  chain->SetBranchAddress("Photon.r9",r9Pho);
+  chain->SetBranchAddress("Mjj",&Mjj);
 
   chain->SetBranchAddress("mPairScale",&mPairScale); //for E_scale systematic
   chain->SetBranchAddress("mPairSmear",&mPairSmear); //for E_res   systematic
+
+  CatMap categories = getCategoryCuts(chain);
 
   
   branchingRatio XSECS;
@@ -181,9 +176,15 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   bool doKFactor = false;
    if(kFactorFile!=""){
     TFile *file = new TFile(kFactorFile);
+    /*
     kFacs.push_back((TH1D*)file->Get(Form("kfact%d_0",int(massPoint)) )); //kFac
     kFacs.push_back((TH1D*)file->Get(Form("kfact%d_1",int(massPoint)))); //UP
     kFacs.push_back((TH1D*)file->Get(Form("kfact%d_6",int(massPoint)))); //DOWN
+    */
+    kFacs.push_back((TH1D*)file->Get(Form("kfact%d_0",120) )); //kFac
+    kFacs.push_back((TH1D*)file->Get(Form("kfact%d_1",120))); //UP
+    kFacs.push_back((TH1D*)file->Get(Form("kfact%d_6",120))); //DOWN
+
     doKFactor = true;
   }
 
@@ -217,16 +218,24 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
   cout << "Getting Entries" << endl;
   long nEntries = chain->GetEntries();
   long entry=-1;
+  Int_t TreeNum = -99;
   cout << "Looping, Entries: "<< nEntries << endl;
   while(chain->GetEntry(++entry)){
     if(entry%500==0) cout << "Processing Entry: " << entry << "\r" << flush;
-    int cat = getCat(MVA);
+    if(chain->GetTreeNumber() != TreeNum){
+      updateFormulas(&categories);
+      TreeNum = chain->GetTreeNumber();
+    }
+    int cat = getCat(&categories,selection,nCat_);
     if(debug) cout << "cat: " << cat << endl;
     if(cat<0) continue;
     if(isData) addDataPoint(&vars,Form("data_mass_cat%d",cat),mPair,1);
     else{ // not data!!
       TVector3 genVtx(genHiggsVx,genHiggsVy,genHiggsVz);
       TVector3 recoVtx(Vx,Vy,Vz);
+      TLorentzVector p1_p4; p1_p4.SetPtEtaPhiM(ptPho[0],etaPho[0],phiPho[0],energyPho[0]);
+      TLorentzVector p2_p4; p2_p4.SetPtEtaPhiM(ptPho[1],etaPho[1],phiPho[1],energyPho[1]);
+      TLorentzVector sys_p4 = p1_p4+p2_p4;
       bool CorrectVtx = (genVtx-recoVtx).Mag() < 1.;
       if(debug) cout << "CorrectVtx: " << CorrectVtx << endl;
       efficiencies["kFactor"] = getKFac(&kFacs,genHiggsPt,nSigma);
@@ -237,10 +246,10 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
       if(debug) cout << "puwt: " << puwt << endl;
 
       float photonEff=1;
-      std::vector<float> tpPho1 = effCorrMC(TMath::Sqrt(pxPho1*pxPho1+pyPho1*pyPho1),"ratioTP",getPhotonCat(etaPho1,r9Pho1),EfficiencyMap,nSigma);
-      std::vector<float> tpPho2 = effCorrMC(TMath::Sqrt(pxPho2*pxPho2+pyPho2*pyPho2),"ratioTP",getPhotonCat(etaPho2,r9Pho2),EfficiencyMap,nSigma);
-      std::vector<float> r9effPho1 = effCorrMC(TMath::Sqrt(pxPho1*pxPho1+pyPho1*pyPho1),"ratioR9",getPhotonCat(etaPho1,r9Pho1),EfficiencyMap,nSigma);
-      std::vector<float> r9effPho2 = effCorrMC(TMath::Sqrt(pxPho2*pxPho2+pyPho2*pyPho2),"ratioR9",getPhotonCat(etaPho2,r9Pho2),EfficiencyMap,nSigma);
+      std::vector<float> tpPho1 = effCorrMC(p1_p4.Pt(),"ratioTP",getPhotonCat(etaPho[0],r9Pho[0]),EfficiencyMap,nSigma);
+      std::vector<float> tpPho2 = effCorrMC(p2_p4.Pt(),"ratioTP",getPhotonCat(etaPho[1],r9Pho[1]),EfficiencyMap,nSigma);
+      std::vector<float> r9effPho1 = effCorrMC(p1_p4.Pt(),"ratioR9",getPhotonCat(etaPho[0],r9Pho[0]),EfficiencyMap,nSigma);
+      std::vector<float> r9effPho2 = effCorrMC(p2_p4.Pt(),"ratioR9",getPhotonCat(etaPho[1],r9Pho[1]),EfficiencyMap,nSigma);
       std::vector<float> idEff, r9Eff;
       for(int i=0;i<tpPho1.size();i++){
 	idEff.push_back(tpPho1.at(i)*tpPho2.at(i));
@@ -249,7 +258,7 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
       efficiencies["idEff"] = idEff;
       efficiencies["r9Eff"] = r9Eff;
 
-      float ptPair = TMath::Sqrt( TMath::Power(pxPho1+pxPho2,2) + TMath::Power(pyPho1+pyPho2,2) );
+      float ptPair = sys_p4.Pt();
       if(debug) cout << "ptPair: " << ptPair << endl;
       float diPhotonEff=1;
       efficiencies["triggerEff"] = effCorrMC(ptPair,"effL1HLT",cat,EfficiencyMap,nSigma);
@@ -365,6 +374,7 @@ vector<float> getKFac(std::vector<TH1D*>* kFacs,float higgsPt,int shiftRange){
 }
 
 double getHistVal(TH1D* hist, float x){ // returns the value corresponding to a given x (returns the top of bottom bin rather than over/underflow
+  if(hist==0) cout << "ERROR: TRYING TO GET VALUE FROM AN INVALID HISTOGRAM" << endl;
   if(x < hist->GetXaxis()->GetXmin()) return hist->GetBinContent(1);
   int nBins = hist->GetNbinsX();
   if(x > hist->GetXaxis()->GetXmax()) return hist->GetBinContent(nBins);
@@ -384,13 +394,13 @@ EffMap* loadEffCor(TFile* f){
     "effL1HLT_cat%d"
   };
  
-  const int nCat = 4;
+  //const int nCat = 4;
   const string catNames[] = {"EBHighR9","EBLowR9","EEHighR9","EELowR9"};
   //std::map<std::string,std::vector<TGraphAsymmErrors*> >
   
   for(int i=0;i<nNames;i++){
     std::vector<TGraphAsymmErrors*> tmp;
-    for(int j=0;j<nCat;j++){
+    for(int j=0;j<nCat_;j++){
       if(i>=2)  tmp.push_back( (TGraphAsymmErrors*)f->Get( Form(names[i],j) ) );
       else     tmp.push_back( (TGraphAsymmErrors*)f->Get( Form(names[i],catNames[j].c_str()) ) );
     }
@@ -442,7 +452,7 @@ vector<float> effCorrMC(float pt, TString type, int cat, EffMap* map,int shiftRa
 
 void MakeAllWorkspaces(string fileList, float lumi,string outputFile,
 		       TString kFactorFileName, TString pileupReWeightDirName, 
-		       TString EfficiencyCorrectionFileName){
+		       TString EfficiencyCorrectionFileName,TString SelectionType){
 
   RooWorkspace *outputWorkspace = new RooWorkspace();
   outputWorkspace->SetName("cms_hgg_workspace");
@@ -468,14 +478,14 @@ void MakeAllWorkspaces(string fileList, float lumi,string outputFile,
     outputName = file.substr(file.find_last_of('/')+1);
     outputName.insert(outputName.find(".root"),"_WorkSpace");
     outputName.insert(0,"workspaces/");
-
+    cout << outputName << endl;
     puName = file.substr(file.find_last_of('/')+1);
     puName.insert(puName.find(".root"),"_puReWeight");
     puName.insert(0,"/");
     puName.insert(0,pileupReWeightDirName.Data());
-
+    cout << puName <<endl;
     //find mass point
-    massString = file.substr(file.find_last_of("_M")+1,3);
+    massString = file.substr(file.find_last_of("M")+2,3);
     cout << file << "  " << outputName << "  " << puName << "  " << massString << endl;
 
     for(int i=0;i<nProc;i++){
@@ -488,9 +498,9 @@ void MakeAllWorkspaces(string fileList, float lumi,string outputFile,
     TObjArray* hists = MakeRooWorkspace(outputWorkspace,TString(file), 0, lumi,atoi(massString.c_str()),
 					TString(process),
 					kFactorFileName, puName,
-					EfficiencyCorrectionFileName);
+					EfficiencyCorrectionFileName,SelectionType);
     f->cd();
-    hists->Write();
+    if(hists) hists->Write();
     //for(int i=0;i<hists->GetEntries();i++) hists->At(i)->Write();
     
   }

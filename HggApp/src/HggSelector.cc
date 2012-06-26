@@ -18,6 +18,9 @@ HggSelector::HggSelector():
   ggVerticesPhotonIndices(0),
   ggVerticesVertexIndex(0),
   Photons_(0),
+  Muons_(0),
+  GenHiggs(0),
+  GenPhotons(0),
   nSigma(3),
   doMuMuGamma(false),
   isData_(true),
@@ -30,6 +33,9 @@ HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName)
   ggVerticesVertexIndex(0),
   doElectronVeto(true),
   Photons_(0),
+  Muons_(0),
+  GenHiggs(0),
+  GenPhotons(0),
   nSigma(3),
   doMuMuGamma(false),
   isData_(true),
@@ -351,6 +357,9 @@ void HggSelector::Loop(){
     nOutPhotons_ = OutPhotons_.size();
     nOutPhotonsPFCiC_ = OutPhotonsPFCiC_.size();
     nOutPhotonsCiC_ = OutPhotonsCiC_.size();
+
+    MET = pfMet;
+    METPhi = pfMetPhi;
     outTree->Fill();
   }//while(fChain...
 
@@ -366,6 +375,15 @@ void HggSelector::Loop(){
   }
 
   f->Close();
+}
+
+bool HggSelected::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2){
+  //apply kinematic photon selection
+  if(fabs(pho1->SC.eta) > 2.5 || fabs(pho2->SC.eta) > 2.5) return false;  //outside of tracker acceptance
+  if(fabs(pho1->SC.eta) > 1.4442 && fabs(pho1->SC.eta) < 1.566) return false;
+  if(fabs(pho2->SC.eta) > 1.4442 && fabs(pho2->SC.eta) < 1.566) return false; // veto gap photons
+
+  
 }
 
 float HggSelector::getMPair(int i1, int i2){
@@ -617,7 +635,7 @@ void HggSelector::setBranchAddresses(){
   fChain->SetBranchAddress("lumiBlock",&lumiBlock);
   fChain->SetBranchAddress("runNumber",&runNumber);
   fChain->SetBranchAddress("evtNumber",&evtNumber);
-  fChain->SetBranchAddress("isRealData",&_isData);
+  //fChain->SetBranchAddress("isRealData",&_isData);
   
 
  ///information for the vertex
@@ -644,8 +662,8 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("ggVerticesPhotonIndices",&ggVerticesPhotonIndices);
  fChain->SetBranchAddress("ggVerticesVertexIndex",&ggVerticesVertexIndex);
 
- //fChain->SetBranchAddress("nMu",&nMu_);
- //fChain->SetBranchAddress("Muons",&Muons_);
+ fChain->SetBranchAddress("nMu",&nMu_);
+ fChain->SetBranchAddress("Muons",&Muons_);
 
  fChain->SetBranchAddress("nGenHiggs",&nGenHiggs);
  fChain->SetBranchAddress("GenHiggs",&GenHiggs);
@@ -660,6 +678,9 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("etaJet",etaJets);
  fChain->SetBranchAddress("phiJet",phiJets);
  fChain->SetBranchAddress("energyJet",energyJets);
+
+ fChain->SetBranchAddress("PFMet",&pfMet);
+ fChain->SetBranchAddress("PFMetPhi",&pfMetPhi);
 
  vector<string>::const_iterator trigIt;
  int i=0;
@@ -715,6 +736,9 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("PhotonPFCiC",&OutPhotonsPFCiC_);
   outTree->Branch("nPhotonCiC",&nOutPhotonsCiC_,"nPhotonCiC/I");
   outTree->Branch("PhotonCiC",&OutPhotonsCiC_);
+
+  outTree->Branch("MET",&MET);
+  outTree->Branch("METPhi",&METPhi);
 
   outTree->Branch("genHiggsPt",&genHiggsPt);
   outTree->Branch("genHiggsVx",&genHiggsVx);

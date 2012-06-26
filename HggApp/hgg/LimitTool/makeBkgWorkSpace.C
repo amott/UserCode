@@ -38,6 +38,8 @@
 #include "TLorentzVector.h"
 #include <fstream>
 
+#include "defineCategories.C"
+
 using namespace RooFit;
 void setTCanvasNicev1(TCanvas *can0){
   
@@ -55,67 +57,6 @@ void setTCanvasNicev1(TCanvas *can0){
   can0->SetFrameBorderMode(0);
   can0->SetFrameFillStyle(0);
   can0->SetFrameBorderMode(0);
-}
-
-int getCatMVA(float mva,float mjj,
-	      const int nCat,
-	      const float* min,const float* max,const float *mjjmin,const float *mjjmax){
-  for(int iCat=0;iCat<nCat;iCat++){
-    if(mva>min[iCat] && mva<=max[iCat]
-       && mjj > mjjmin[iCat] && mjj <=mjjmax[iCat]) return iCat;
-  }
-  return -1;
-}
-
-int getCatPFCiC(std::map<std::string,TTreeFormula*>* cats){
-  int VBF = (*cats)["VBF"]->EvalInstance();
-  if(VBF==2) return 0;
-  if(VBF==1) return 1;
-  int r9 = (*cats)["R9"]->EvalInstance();
-  int eta = (*cats)["eta"]->EvalInstance();
-  return r9+2*eta+2;
-}		
-
-int getCat(std::map<TString,TTreeFormula*>* cats, TString type, const int nCat){
-  if( (*cats)[ Form("%s_R",type.Data()) ]->EvalInstance() ){
-    return -1; // rejections
-  }
-  for(int iCat=0;iCat<nCat;iCat++){
-    if( (*cats)[ Form("%s_%d",type.Data(),iCat) ]->EvalInstance() ) return iCat;
-  }
-  return -1;
-}
-
-std::map<TString,TTreeFormula*> getCategoryCuts(TChain* fChain){
-  std::map<TString,TTreeFormula*> categories;
-
-  //categories["multiplicity"] = new TTreeFormula("Mult","Photon>=2",fChain);
-  categories["MVA_R"] = new TTreeFormula("MVA_0","mPair<0 || diPhotonMVA<0.05 || nPhoton==0",fChain); // rejection criterion
-  categories["MVA_0"] = new TTreeFormula("MVA_0"," (Mjj >= 500) && (diPhotonMVA>0.05)",fChain);  
-  categories["MVA_1"] = new TTreeFormula("MVA_1"," (Mjj < 500) && (Mjj >= 250) && (diPhotonMVA>0.05)",fChain);  
-  categories["MVA_2"] = new TTreeFormula("MVA_2"," (Mjj < 250) && (diPhotonMVA>=0.88)",fChain);  
-  categories["MVA_3"] = new TTreeFormula("MVA_3"," (Mjj < 250) && (diPhotonMVA>=0.71) && (diPhotonMVA<0.88)",fChain);  
-  categories["MVA_4"] = new TTreeFormula("MVA_4"," (Mjj < 250) && (diPhotonMVA>=0.50) && (diPhotonMVA<0.71)",fChain);  
-  categories["MVA_5"] = new TTreeFormula("MVA_5"," (Mjj < 250) && (diPhotonMVA>=-0.05) && (diPhotonMVA<0.50)",fChain);  
-  
-  categories["PFCiC_R"] = new TTreeFormula("PFCiC_R","mPairPFCiC==-1 || nPhotonPFCiC==0",fChain); // rejection criterion
-  categories["PFCiC_0"] = new TTreeFormula("PFCiC_0","(MjjPFCiC >= 500)",fChain);
-  categories["PFCiC_1"] = new TTreeFormula("PFCiC_1","(MjjPFCiC < 500) && (MjjPFCiC >= 250)",fChain);
-  categories["PFCiC_2"] = new TTreeFormula("PFCiC_2","(MjjPFCiC < 250) && (PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && (abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
-  categories["PFCiC_3"] = new TTreeFormula("PFCiC_3","(MjjPFCiC < 250) && !(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && (abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
-  categories["PFCiC_4"] = new TTreeFormula("PFCiC_4","(MjjPFCiC < 250) && (PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
-  categories["PFCiC_5"] = new TTreeFormula("PFCiC_5","(MjjPFCiC < 250) && !(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].eta) < 1.48 && abs(PhotonPFCiC[1].eta) < 1.48)",fChain);
-
-  categories["CiC_R"] = new TTreeFormula("CiC_R","mPairCiC==-1 || nPhotonCiC==0",fChain); // rejection criterion
-  categories["CiC_0"] = new TTreeFormula("CiC_0","(MjjCiC >= 500)",fChain);
-  categories["CiC_1"] = new TTreeFormula("CiC_1","(MjjCiC < 500) && (MjjCiC >= 250)",fChain);
-  categories["CiC_2"] = new TTreeFormula("CiC_2","(MjjCiC < 250) && (PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && (abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
-  categories["CiC_3"] = new TTreeFormula("CiC_3","(MjjCiC < 250) && !(PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && (abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
-  categories["CiC_4"] = new TTreeFormula("CiC_4","(MjjCiC < 250) && (PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && !(abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);
-  categories["CiC_5"] = new TTreeFormula("CiC_5","(MjjCiC < 250) && !(PhotonCiC[0].r9 > 0.94 && PhotonCiC[1].r9 > 0.94) && !(abs(PhotonCiC[0].eta) < 1.48 && abs(PhotonCiC[1].eta) < 1.48)",fChain);  
-
-  cout << "Done" <<endl;
-  return categories;
 }
 
 void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float mMax=180,
@@ -188,8 +129,7 @@ void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float
     //if(nPho<2) continue;
     if(fChain->GetTreeNumber() != TreeNum){
       cout << "Getting New Tree: " << fChain->GetTreeNumber() << endl;
-      std::map<TString,TTreeFormula*>::iterator it;
-      for(it = categories.begin();it != categories.end(); it++) it->second->UpdateFormulaLeaves();
+      updateFormulas(&categories);
       TreeNum = fChain->GetTreeNumber(); 
     }
     if(ientry%1000==0){
@@ -216,6 +156,7 @@ void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float
     mPairOutCiC = mPairCiC;  
     catOutCiC   = categoryCiC;
 
+
     if(category == -1 && categoryPFCiC == -1 && categoryCiC == -1) continue;
     if(mPair < mMin && mPairPFCiC < mMin && mPairCiC < mMin) continue;
     if(mPair > mMax && mPairPFCiC > mMax && mPairCiC > mMax) continue;
@@ -231,8 +172,8 @@ void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float
   f->Close();
 }
 
-void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180,
-		      TString outputFile="interpolated/BkgWorkSpace.root", bool doPFCiC=false,
+void makeBkgWorkSpace(TChain *fChain, float lumi, TString Suffix = "",float mMin=100.,float mMax=180,
+		      TString outputFile="interpolated/BkgWorkSpace.root",
 		      bool applyTrigger=true,bool isMinimal=true){
 
   const int nCat = 6;
@@ -244,11 +185,13 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
   //gStyle->SetOptStat(0);
   std::map<TString,TTreeFormula*> categories =  getCategoryCuts(fChain);
 
+  bool doPFCiC = false;
+  if(Suffix == "PFCiC") doPFCiC = true;
 
   Float_t         mPair;
   Int_t           cat;
-  fChain->SetBranchAddress("mPair", &mPair); 
-  if(isMinimal) fChain->SetBranchAddress("cat",&cat);
+  fChain->SetBranchAddress(Form("mPair%s",Suffix.Data()), &mPair); 
+  if(isMinimal) fChain->SetBranchAddress(Form("cat%s",Suffix.Data()),&cat);
   
   RooRealVar *rv_mass = new RooRealVar("mass","mass",100,mMin,mMax);
   //rv_mass->setRange(100,150);
@@ -273,7 +216,7 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
 
   vector<TString> catnames;
   for(int i=0;i<nCat;i++){
-    catnames.push_back(Form("cat_%d",i));
+    catnames.push_back(Form("cat%d",i));
   }
 
   //loop over events
@@ -291,8 +234,8 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
     }
 
     if(cat==-1) continue; // not a good diPhoton event
-    /// HACK!!!!
-    if(cat==0 && iEvent%2==0) cat =1;
+    //    /// HACK!!!!
+    //if(cat==0 && iEvent%2==0) cat =1;
     /// REMOVE
     nSelected[cat]++;
     if(mPair >=mMin && mPair <= mMax){
@@ -445,11 +388,12 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, float mMin=100.,float mMax=180
   
   
   //float ymax[10] = {600,800,600,800,2000};
-  float ymax[10] = {20,40,40,100,200};
-  
+  float ymax_PFCiC[] = {10,10,200,400,200,400,1200};
+  float ymax_MVA[] = {10,20,30,150,400,800,1400};
+  float *ymax = (doPFCiC ? ymax_PFCiC : ymax_MVA);
   string ptname[2] = {"p^{#gamma#gamma}_{T} > 40 GeV/c","p^{#gamma#gamma}_{T} < 40 GeV/c"};
-  string mvaname[6] = { "M_{jj} > 500 GeV  MVA > 0.05", "500 > M_{jj} > 250 GeV  MVA > 0.05", "MVA > 0.89", 
-			"0.89 > MVA > 0.74" , "0.74 > MVA > 0.55","0.55 > MVA > 0.05" };
+  string mvaname[6] = { "M_{jj} > 500 GeV  MVA > -0.05", "500 > M_{jj} > 250 GeV  MVA > -0.05", "MVA > 0.88", 
+			"0.88 > MVA > 0.72" , "0.72 > MVA > 0.50","0.50 > MVA > -0.05" };
   string cicname[6] = { "M_{jj} > 500 GeV", "500 > M_{jj} > 250 GeV", "Barrel High R9", "Barrel Low R9",
 			"Endcap High R9", "Endcap Low R9"};
 			
@@ -600,6 +544,6 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
     if(file.find("/castor/cern.ch")!=string::npos) file.insert(0,"rfio://");
     fChain->AddFile(file.c_str());
   }
-
-  makeBkgWorkSpace(fChain,lumi,mMin,mMax,outputFile,doPFCiC,applyTrigger);
+  TString tag = (doPFCiC ? "PFCiC" : "" );
+  makeBkgWorkSpace(fChain,lumi,tag,mMin,mMax,outputFile,applyTrigger);
 }

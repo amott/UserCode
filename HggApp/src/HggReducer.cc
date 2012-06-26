@@ -184,8 +184,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	if(debugReducer) cout << "Done" << endl;;	
 	pho.dEoE    = dE.first;
 	pho.dEoEErr = 0; 
-	pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
-	pho.scaledEnergyError = pho.correctedEnergyError*(1-(pho.dEoE+pho.dEoEErr));
+	pho.scaledEnergy = pho.correctedEnergy*(1+pho.dEoE);
+	pho.scaledEnergyError = pho.correctedEnergyError*(1+(pho.dEoE+pho.dEoEErr));
       }
 
       if(debugReducer) cout << pho.dEoE <<"   " << pho.scaledEnergy << endl;
@@ -464,22 +464,29 @@ void HggReducer::fillJets(){
   const float betaStarSlope[nJetCat] = {0.2,0.3,999,999};
   const float rmsCut[nJetCat] = {0.06,0.05,0.05,0.055};
 
+  caloMet =  TMath::Sqrt(TMath::Power(pxMet[0],2)+TMath::Power(pyMet[0],2));
+  caloMetPhi =  phiMet[0];
+  pfMet = TMath::Sqrt(TMath::Power(pxPFMet[0],2)+TMath::Power(pyPFMet[0],2));
+  pfMetPhi = phiPFMet[0];
+  tcMet =  TMath::Sqrt(TMath::Power(pxTCMet[0],2)+TMath::Power(pyTCMet[0],2));
+  tcMetPhi = phiTCMet[0];
+
   nJets=0;
-  for(int iJ=0;iJ<nAK5PFPUcorrJet; iJ++){
+  for(int iJ=0;iJ<nAK5PFNoPUJet; iJ++){
     int jetCat=0;
     for(; jetCat<4; jetCat++){ // get the jet category
-      if(fabs(etaAK5PFPUcorrJet[iJ]) <maxJetEta[jetCat]) break;
+      if(fabs(etaAK5PFNoPUJet[iJ]) <maxJetEta[jetCat]) break;
     }
   if(jetCat>3) continue; //if its >4.7, reject the jet
-  float pT = TMath::Sqrt(TMath::Power(pxAK5PFPUcorrJet[iJ],2)+TMath::Power(pyAK5PFPUcorrJet[iJ],2));
+  float pT = TMath::Sqrt(TMath::Power(pxAK5PFNoPUJet[iJ],2)+TMath::Power(pyAK5PFNoPUJet[iJ],2));
   if(pT < minPt) continue;
-  if(betastarAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
-  if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
+  if(betastarAK5PFNoPUJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
+  if(rmsCandsHandAK5PFNoPUJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
 
   ptJet[nJets] = pT;
-  etaJet[nJets] = etaAK5PFPUcorrJet[iJ];
-  phiJet[nJets] = phiAK5PFPUcorrJet[iJ];
-  energyJet[nJets] = energyAK5PFPUcorrJet[iJ];
+  etaJet[nJets] = etaAK5PFNoPUJet[iJ];
+  phiJet[nJets] = phiAK5PFNoPUJet[iJ];
+  energyJet[nJets] = energyAK5PFNoPUJet[iJ];
   nJets++;
 
   }
@@ -701,6 +708,15 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("etaJet",etaJet,"etaJet[nJets]");
  outTree->Branch("phiJet",phiJet,"phiJet[nJets]");
  outTree->Branch("energyJet",energyJet,"energyJet[nJets]");
+
+ outTree->Branch("CaloMET",&caloMet,"CaloMET");
+ outTree->Branch("CaloMETPhi",&caloMetPhi,"CaloMETPhi");
+
+ outTree->Branch("PFMET",&pfMet,"PFMET");
+ outTree->Branch("PFMETPhi",&pfMetPhi,"PFMETPhi");
+
+ outTree->Branch("TCMET",&tcMet,"TCMET");
+ outTree->Branch("TCMETPhi",&tcMetPhi,"TCMETPhi");
 
  //FOR MONTE CARLO:
   if(!_isData){

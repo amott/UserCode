@@ -40,7 +40,7 @@ ECAL_GEO loadecalGapCoordinates(Bool_t isRealData){
     feg->Add("/home/amott/HggApp/ecalGap.cmssw425.GeometryDB.FT_R_42_V17A.root");///data 
   }else{
     ///feg->Add("/afs/cern.ch/user/y/yangyong/w0/ecalGap.cmssw425.root"); //mc
-    feg->Add("/afs/cern.ch/cms/cit/yongy/ecalGap.cmssw425.GeometryDB.START42_V12_new.root"); //MC
+    feg->Add("/home/amott/HggApp/ecalGap.cmssw425.GeometryDB.START42_V12_new.root"); //MC
   }
   
   ECAL_GEO geometry;

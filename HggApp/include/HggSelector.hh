@@ -52,6 +52,8 @@ private:
   
   bool doElectronVeto;
   bool isData_;
+
+  bool preSelectPhotons(VecbosPho*,VecbosPho*); // kinematic photons selections
   
   string massResConfig;
   HggMassResolution *massRes;
@@ -165,6 +167,9 @@ private:
   Int_t nOutPhotonsCiC_;
   std::vector<ReducedPhotonData> OutPhotonsCiC_;
 
+  float MET;
+  float METPhi;
+
   VecbosPho pho1_;
   VecbosPho pho2_;
 
@@ -268,6 +273,9 @@ private:
   float etaJets[maxJets];
   float phiJets[maxJets];
   float energyJets[maxJets];
+
+  float pfMet;
+  float pfMetPhi;
 
   float inPU;
 };

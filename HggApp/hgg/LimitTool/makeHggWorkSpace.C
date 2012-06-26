@@ -42,8 +42,8 @@ void dofit(TFile* inFile, double fitmass, vector <TString> InterpolationList, TF
   if (floor(fitmass)-fitmass<0.00001 && floor(fitmass)-fitmass>0) fitmass=floor(fitmass);
   if (fitmass-ceil(fitmass)>-0.00001 && fitmass-ceil(fitmass)<0) fitmass=ceil(fitmass);
   
-  double Masses[20] = {110,120,123,125,130,135,145}; ///right now145 are wrong. ggF is 150 actually
-  unsigned int nMassPoint = 7;
+  double Masses[20] = {110,115,120,123,124,125,129,130,135,145,155}; ///right now145 are wrong. ggF is 150 actually
+  unsigned int nMassPoint = 11;
   
   double lowerbound = 0;
   double upperbound = 0;
@@ -82,11 +82,11 @@ void dofit(TFile* inFile, double fitmass, vector <TString> InterpolationList, TF
   for (unsigned int k=0; k < InterpolationList.size(); k++) {
     
     TString LowerHistName = InterpolationList[k];
-    LowerHistName.ReplaceAll("110",LowerBoundString);
+    LowerHistName.ReplaceAll("115",LowerBoundString);
     TString UpperHistName = InterpolationList[k];
-    UpperHistName.ReplaceAll("110",UpperBoundString);
+    UpperHistName.ReplaceAll("115",UpperBoundString);
     TString HistName = InterpolationList[k];
-    HistName.ReplaceAll("110",MassString);
+    HistName.ReplaceAll("115",MassString);
     
     TString HistName0 = HistName; 
     
@@ -98,6 +98,7 @@ void dofit(TFile* inFile, double fitmass, vector <TString> InterpolationList, TF
     TH1F* UpperHist =  ((TH1F*)inFile->Get(UpperHistName));
     if( LowerHist == NULL || UpperHist == NULL){
       cout<<"non histogram? " << LowerHistName<<" "<< UpperHistName <<endl; 
+      return;
       exit(1);
     }
     
@@ -185,7 +186,7 @@ int phtcorr = 96;
   vector<TString> InterpolationList;
   for(Int_t j=0;j<HistList->GetSize();j++){
     TString HistName = HistList->At(j)->GetName();
-    if(HistName.Contains("th1f") && HistName.Contains("110") ){ // just put the histograms for 110, we then change this string to the correct one
+    if(HistName.Contains("th1f") && HistName.Contains("115") ){ // just put the histograms for 110, we then change this string to the correct one
       InterpolationList.push_back(HistName);
     }
   }

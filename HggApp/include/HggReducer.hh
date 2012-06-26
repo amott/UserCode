@@ -196,7 +196,14 @@ private:
   float phiJet[maxJets];
   float energyJet[maxJets];
   
+  float caloMet;
+  float caloMetPhi;
 
+  float pfMet;
+  float pfMetPhi;
+
+  float tcMet;
+  float tcMetPhi;
 };
 #endif
 

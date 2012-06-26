@@ -225,6 +225,7 @@ bool HggPhotonID::getIdCiC(VecbosPho* pho, int nVertex, float rhoFastJet,int sel
     return false;
   }
   this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
+  if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxIndex) ) return false;
   //2011 CiC Cuts
   const int nCats=4;
   float cut_r9[nCats]         = {0.94,0.36,0.94,0.32};
@@ -252,6 +253,7 @@ bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,int s
     return false;
   }
   this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
+  if(! this->getPreSelection(pho,nVertex,rhoFastJet,selVtxIndex) ) return false;
   //2012 CiC Cuts:
   const int nCats=4;
   float cut_r9[nCats]       = {0.94,0.298,0.94,0.24};

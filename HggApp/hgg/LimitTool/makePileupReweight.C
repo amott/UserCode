@@ -8,10 +8,7 @@
 #include <iostream>
 //using namespace std;
 
-void makePileupReweight(TString MCFile, TH1F *dataHist,TString outputName, TString chainName){
-  TChain* chain = new TChain(chainName);
-  chain->AddFile(MCFile);
-  
+void makePileupReweight(TChain *chain, TH1F *dataHist,TString outputName){
   TH1F* mcPU = new TH1F("mcPU","",dataHist->GetNbinsX(),0,dataHist->GetNbinsX());
   chain->Project("mcPU","nPU");
   mcPU->Scale(1./mcPU->Integral());
@@ -40,8 +37,29 @@ void makeAllPU(string mcFileList,TString dataFileName){
     cout << mcFile << " >> " << outputFile << endl;
     outputFile.insert(outputFile.find(".root"),"_puReWeight");
     cout << mcFile << " >> " << outputFile << endl;
-    makePileupReweight(mcFile,dataHist,outputFile,"HggReduce");
+    TChain* chain = new TChain("HggReduce");
+    chain->AddFile(mcFile.c_str());
+    makePileupReweight(chain,dataHist,outputFile);
+    delete chain;
   }
+  dataFile->Close();
+  s->close();
+
+}
+
+void make1PU(string mcFileList,TString dataFileName,TString outputFile){
+  TFile * dataFile = new TFile(dataFileName);
+  TH1F* dataHist = (TH1F*)dataFile->Get("pileup");
+  dataHist->Scale(1./dataHist->Integral());
+
+  string mcFile;
+  ifstream *s = new ifstream(mcFileList.c_str());
+  TChain *chain = new TChain("HggReduce");
+  while(s->good()){
+    getline(*s,mcFile);
+    chain->Add(mcFile.c_str());
+  }
+  makePileupReweight(chain,dataHist,outputFile);
   dataFile->Close();
   s->close();
 
