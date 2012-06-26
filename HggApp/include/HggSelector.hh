@@ -53,7 +53,7 @@ private:
   bool doElectronVeto;
   bool isData_;
 
-  bool preSelectPhotons(VecbosPho*,VecbosPho*); // kinematic photons selections
+  bool preSelectPhotons(VecbosPho*,VecbosPho*,TVector3); // kinematic photons selections
   
   string massResConfig;
   HggMassResolution *massRes;

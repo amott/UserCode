@@ -377,13 +377,16 @@ void HggSelector::Loop(){
   f->Close();
 }
 
-bool HggSelected::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2){
+bool HggSelector::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2,TVector3 vtxPos){
   //apply kinematic photon selection
   if(fabs(pho1->SC.eta) > 2.5 || fabs(pho2->SC.eta) > 2.5) return false;  //outside of tracker acceptance
   if(fabs(pho1->SC.eta) > 1.4442 && fabs(pho1->SC.eta) < 1.566) return false;
   if(fabs(pho2->SC.eta) > 1.4442 && fabs(pho2->SC.eta) < 1.566) return false; // veto gap photons
 
-  
+  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 30 || pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 30 ) return false;
+  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 40 && pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 40 ) return false;
+
+  return true;
 }
 
 float HggSelector::getMPair(int i1, int i2){
@@ -412,6 +415,9 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 	//scale/smear the energy of the photon
 	VecbosPho* pho1 = &(Photons_->at(iPho1));
 	VecbosPho* pho2 = &(Photons_->at(iPho2));
+	int selVtxI = this->getVertexIndex(iPho1,iPho2);
+	TVector3 vtxPos(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]);
+	if(!this->preSelectPhotons(pho1,pho2,vtxPos)) continue;
 	if(!isData_){
 	  
 	  //apply scale shift	  
@@ -431,7 +437,6 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 	  if(rand > 1E3) rand = 1E3;
 	  pho2->finalEnergy = pho2->finalEnergy*(1+rand);
 	}
-	int selVtxI = this->getVertexIndex(iPho1,iPho2);
 	bool CiC1,CiC2;
 	if(usePF){
 	  CiC1 = PhotonID->getIdCiCPF(pho1,nVtx,rho,selVtxI);
@@ -441,8 +446,8 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 	  CiC2 = PhotonID->getIdCiC(pho2,nVtx,rho,selVtxI);
 	}
 	if(!CiC1 || !CiC2) continue;
-	float thisPtSum = pho1->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho1->finalEnergy).Pt()
-	  + pho2->p4FromVtx(TVector3(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]),pho2->finalEnergy).Pt();	
+	float thisPtSum = pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()
+	  + pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt();	
 	if(thisPtSum > highestPtSum){
 	  highestPtSum = thisPtSum;
 	  indices.first = iPho1;
@@ -468,6 +473,9 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
       //scale/smear the energy of the photon
       VecbosPho* pho1 = &(Photons_->at(iPho1));
       VecbosPho* pho2 = &(Photons_->at(iPho2));
+      int selVtxI = this->getVertexIndex(iPho1,iPho2);
+      TVector3 vtxPos(vtxX[selVtxI],vtxY[selVtxI],vtxZ[selVtxI]);
+      if(!this->preSelectPhotons(pho1,pho2,vtxPos)) continue;
       if(!isData_){
 	
 	//apply scale shift	  
@@ -487,7 +495,6 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 	if(rand > 1E3) rand = 1E3;
 	pho2->finalEnergy = pho2->finalEnergy*(1+rand);
       }
-      int selVtxI = this->getVertexIndex(iPho1,iPho2);
       if(debugSelector) cout << "Getting Photon ID:" << endl;
       float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,selVtxI);
       if(debugSelector) cout << "Getting Photon ID:" << endl;

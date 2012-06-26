@@ -83,6 +83,7 @@ private:
   //photon preselection variables
   void setupPreSelection();
   void fillMuons();
+  void fillElectrons();
   void fillJets();
   vector<PreSelCuts> preselections;
   int preSelSet;
@@ -91,6 +92,7 @@ private:
   //energy correction variables
   string correctionType;
   HggEGEnergyCorrector *corrector;
+  HggEGEnergyCorrector *elecorrector;
 
   //energy smearing
   int applyScaleSmear;
@@ -138,6 +140,8 @@ private:
 
   int nMu_;
   MuCollection Muons_;
+  int nEle_;
+  EleCollection Electrons_;
 
   //this is the collection of the TMVA selected vertices for each photon pair
   //the format is std::pair< (iPho1 << 14) + iPho2,iVrt> 

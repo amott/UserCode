@@ -7,20 +7,30 @@
 #define debugEGEnergy 0
 HggEGEnergyCorrector::HggEGEnergyCorrector(VecbosBase *r,string cfgFile,Bool_t realData):
   base(r),
-  version("")
+  version(""),
+  usePhoton(true)
 {
   isRealData = realData;
   configFile = cfgFile;
   this->Init();
 }
 
-std::pair<double,double> HggEGEnergyCorrector::getPhotonEnergyCorrection(int index){
-  VecbosPho pho(base,index); // initialize the photon with index j
-
-  if(version.compare("May2012")==0) return this->photonEnergyCorrector_May2012(pho);
-  if(version.compare("2011")==0) return this->photonEnergyCorrector_CorrectedEnergyWithErrorv2(pho);
+void HggEGEnergyCorrector::getPhotonEnergyCorrection(VecbosPho& pho){
+  std::pair<double,double> corr(pho.energy,0);
+  if(version.compare("May2012")==0) corr= this->photonEnergyCorrector_May2012(pho);
+  if(version.compare("2011")==0) corr= this->photonEnergyCorrector_CorrectedEnergyWithErrorv2(pho);
   
-  return std::pair<double,double>(pho.energy,0);
+  pho.correctedEnergy = corr.first;
+  pho.correctedEnergyError = corr.second;
+}
+void HggEGEnergyCorrector::getElectronEnergyCorrection(VecbosEle& ele){
+  std::pair<double,double> corr(ele.energy,0);
+
+  if(version.compare("May2012")==0) corr = this->electronEnergyCorrector_May2012(ele);
+  if(version.compare("2011")==0) corr = this->electronEnergyCorrector_CorrectedEnergyWithErrorv2(ele);
+  
+  ele.correctedEnergy = corr.first;
+  ele.correctedEnergyError = corr.second;
 }
 
 
@@ -30,7 +40,10 @@ void HggEGEnergyCorrector::Init(){
 
   ReadConfig cfg(configFile);
   version = cfg.getParameter("EnergyCorrectionVersion");
-  std::string regweights = cfg.getParameter("EnergyCorrectionWeights");
+  std::string regweightsPho = cfg.getParameter("EnergyCorrectionWeights");
+  std::string regweightsEle = cfg.getParameter("EleEnergyCorrectionWeights");
+
+  std::string regweights = (usePhoton ? regweightsPho : regweightsEle);
 
   std::cout << "Using Correction Weights: " << regweights << std::endl
 	    << "Using Correction Version: " << version << std::endl;
@@ -114,6 +127,82 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   }
   else {
     den = pho.SC.rawE + pho.SC.esEnergy;
+    greader = fReaderee;
+    greadervar = fReadereevariance;
+  }
+  Double_t ecor = greader->GetResponse(fVals)*den;
+  Double_t ecorerr = greadervar->GetResponse(fVals)*den*varscale;
+  
+  return std::pair<double,double>(ecor,ecorerr);
+}
+
+std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(VecbosEle &ele){
+  int index=0;
+  fVals[0] = ele.SC.rawE;
+  fVals[1] = ele.SC.eta;
+  fVals[2] = ele.SC.phi;
+  fVals[3] = ele.SC.r9;
+  fVals[4] = ele.SC.e5x5/ele.SC.rawE;
+  fVals[5] = ele.SC.etaWidth;
+  fVals[6] = ele.SC.phiWidth;
+  fVals[7] = ele.SC.nBCs;
+  fVals[8] = ele.HoverE; //H/E 
+  fVals[9] = base->rhoFastjet;
+  fVals[10] = base->nPV;
+
+  //seed cluster variables
+  VecbosBC BC = ele.SC.BCSeed;
+  fVals[11] = BC.eta - ele.SC.eta;
+  fVals[12] = DeltaPhi(ele.SC.phi,BC.phi);
+  fVals[13] = BC.energy/ele.SC.rawE;
+  fVals[14] = BC.e3x3/BC.energy;
+  fVals[15] = BC.e5x5/BC.energy;
+
+  fVals[16] = BC.sigmaIEtaIEta;
+  fVals[17] = BC.sigmaIPhiIPhi;
+  fVals[18] = BC.sigmaIEtaIPhi;
+
+  fVals[19] = BC.eMax/BC.energy;
+  fVals[20] = BC.e2nd/BC.energy;
+  fVals[21] = BC.eTop/BC.energy;
+  fVals[22] = BC.eBottom/BC.energy;
+  fVals[23] = BC.eLeft/BC.energy;
+  fVals[24] = BC.eRight/BC.energy;
+
+  fVals[25] = BC.e2x5Max/BC.energy;
+  fVals[26] = BC.e2x5Top/BC.energy;
+  fVals[27] = BC.e2x5Bottom/BC.energy;
+  fVals[28] = BC.e2x5Left/BC.energy;
+  fVals[29] = BC.e2x5Right/BC.energy;
+  
+  if( fabs(ele.SC.eta)<1.48 ){
+    fVals[30] = BC.iEta;
+    fVals[31] = BC.iPhi;
+    fVals[32] = BC.iEta%5;
+    fVals[33] = BC.iPhi%2;
+    if( abs(BC.iEta <= 25) ) fVals[34] = BC.iEta % 25;
+    else fVals[34] = (BC.iEta - 25*abs(BC.iEta)/BC.iEta) % 20;
+    fVals[35] = BC.iPhi%20;
+    fVals[36] = BC.etaCrystal;
+    fVals[37] = BC.phiCrystal;
+  }
+  else{
+    fVals[30] = ele.SC.esEnergy/ele.SC.rawE;
+  }
+  //finished filling array
+
+  const Double_t varscale = 1.;
+  Double_t den;
+  const GBRForest *greader;
+  const GBRForest *greadervar;
+
+  if( fabs(ele.SC.eta)<1.48 ) {
+    den = ele.SC.rawE;
+    greader = fReadereb;
+    greadervar = fReaderebvariance;
+  }
+  else {
+    den = ele.SC.rawE + ele.SC.esEnergy;
     greader = fReaderee;
     greadervar = fReadereevariance;
   }
@@ -251,9 +340,7 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
 }
 
 
-std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_CorrectedEnergyWithErrorv2(int j){
-  VecbosEle ele(base,j);
-
+std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosEle &ele){
   ///no correction for electron of tracker-deriven seed only ( not used in analysis anyway)
   if( !ele.isEcalDriven ){
     return std::pair<double,double>(ele.SC.energy,0);

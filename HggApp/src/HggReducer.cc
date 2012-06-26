@@ -157,6 +157,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     this->fillVertexInfo();
 
     this->fillMuons();
+    this->fillElectrons();
     this->fillJets();
     // setup the photons
     std::vector<VecbosPho> tmpPhotons; //temporarily hold a collection of VecbosPhos
@@ -170,11 +171,9 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       if(debugReducer) cout << "pass" << endl;
 
       //DO ENERGY CORRECTION
-      std::pair<float,float> cor = corrector->getPhotonEnergyCorrection(iPho);
-      pho.correctedEnergy = cor.first;
-      pho.correctedEnergyError = cor.second;
-            if(debugReducer) cout << "Corrected Photon: E=" << pho.energy << "  CorE=" << pho.correctedEnergy << "  eta=" 
-      	   << pho.SC.eta << "  r9=" << pho.SC.r9 << endl;
+      corrector->getPhotonEnergyCorrection(pho);
+      if(debugReducer) cout << "Corrected Photon: E=" << pho.energy << "  CorE=" << pho.correctedEnergy << "  eta=" 
+			    << pho.SC.eta << "  r9=" << pho.SC.r9 << endl;
       
 
 
@@ -361,6 +360,8 @@ void HggReducer::clearAll(){
   
   nMu_=0;
   Muons_.clear();
+  nEle_=0;
+  Electrons_.clear();
   pileupBunchX->clear();
   pileupNInteraction->clear();
   
@@ -428,6 +429,8 @@ void HggReducer::init(string outputFileName){
  vertexer->useConversions();
  vertexer->init();
  corrector = new HggEGEnergyCorrector(this,config,_isData);
+ elecorrector = new HggEGEnergyCorrector(this,config,_isData);
+ elecorrector->useElectronWeights();
  energyScale = new HggEnergyScale(EnergyScaleCFG);
  energySmear = new HggEnergyScale(EnergySmearCFG);
  
@@ -448,12 +451,20 @@ bool HggReducer::passPreselection(VecbosPho *pho){
 }
 
 void HggReducer::fillMuons(){
-  return;
   nMu_=0;
   for(int iMuon = 0; iMuon<nMuon;iMuon++){
     VecbosMu mu(this,iMuon);
     Muons_.push_back(mu);
     nMu_++;
+  }
+}
+void HggReducer::fillElectrons(){
+  nEle_=0;
+  for(int iEle = 0; iEle<nEle;iEle++){
+    VecbosEle ele(this,iEle);
+    elecorrector->getElectronEnergyCorrection(ele);
+    Electrons_.push_back(ele);
+    nEle_++;
   }
 }
 
@@ -631,7 +642,10 @@ void HggReducer::fillGeneratorInfo(){
   MuCollection::iterator muIt;
   for(muIt = Muons_.begin(); muIt !=Muons_.end(); muIt++)
     muIt->doGenMatch(this);
-  
+  EleCollection::iterator eleIt;
+  for(eleIt = Electrons_.begin(); eleIt !=Electrons_.end(); eleIt++)
+    eleIt->doGenMatch(this);
+
 }
 
 void HggReducer::setOutputBranches(){
@@ -702,6 +716,9 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
 
  outTree->Branch("nMu",&nMu_,"nMu/I");
  outTree->Branch("Muons",&Muons_);
+
+ outTree->Branch("nEle",&nEle_,"nEle/I");
+ outTree->Branch("Electrons",&Electrons_);
 
  outTree->Branch("nJets",&nJets,"nJets/I");
  outTree->Branch("ptJet",ptJet,"ptJet[nJets]");

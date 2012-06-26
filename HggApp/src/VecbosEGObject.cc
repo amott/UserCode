@@ -565,16 +565,68 @@ void VecbosEle::Init(VecbosBase* o,int i){
   if(i>o->nEle) return;
   SC.Init(o,o->superClusterIndexPho[i]);
   energy = o->energyEle[i];
+  correctedEnergy = 0;
+
   eta    = o->etaEle[i];
   phi    = o->phiEle[i];
+  pt     = TMath::Sqrt(TMath::Power(o->pxEle[i],2)+TMath::Power(o->pyEle[i],2));
+
   esEnergy = SC.esEnergy;
   HoverE   = o->hOverEPho[i];
+
+  vtxX = o->vertexXEle[i];
+  vtxY = o->vertexYEle[i];
+  vtxZ = o->vertexZEle[i];
+
+  EOverP = o->eSuperClusterOverPEle[i];
+
+  dr03ChargedHadronPFIso = o->pfCandChargedIso03Ele[i];
+  dr03NeutralHadronPFIso = o->pfCandNeutralIso03Ele[i];
+  dr03PhotonPFIso        = o->pfCandPhotonIso03Ele[i];
+
+  dr04ChargedHadronPFIso = o->pfCandChargedIso04Ele[i];
+  dr04NeutralHadronPFIso = o->pfCandNeutralIso04Ele[i];
+  dr04PhotonPFIso        = o->pfCandPhotonIso04Ele[i];
+
+  dr03TkSumPt          = o->dr03TkSumPtEle[i];
+  dr03EcalRecHitSumEt  = o->dr03EcalRecHitSumEtEle[i];
+  dr03HcalTowerSumEt   = o->dr03HcalTowerSumEtEle[i];
+
+  dr04TkSumPt          = o->dr04TkSumPtEle[i];
+  dr04EcalRecHitSumEt  = o->dr04EcalRecHitSumEtEle[i];
+  dr04HcalTowerSumEt   = o->dr04HcalTowerSumEtEle[i];
+
+  dEtaSCTrack = o->deltaEtaEleClusterTrackAtCaloEle[i];
+  dPhiSCTrack = o->deltaPhiEleClusterTrackAtCaloEle[i];
 
   int tmp = o->recoFlagsEle[i];
   //extract the flag information into booleans
   isTrackerDriven = tmp & 1; 
   isEcalDriven    = (tmp >> 1) & 1;
+
+  genMatch.Init(o,-1);
 };
+
+void VecbosEle::doGenMatch(VecbosBase* o){
+  const int eleID = 11;
+  const float maxDR = 0.2;
+  float dEoEBest = 9999;
+  int indexGen = -1;
+  for(int i=0;i<o->nMc;i++){  
+    if(!o->statusMc[i]==1) continue; //require status 1 particles
+    if(!abs(o->idMc[i]) == eleID) continue; //gen photon
+    if(o->energyMc[i] < 1.) continue;
+    if(DeltaR(SC.eta,o->etaMc[i],SC.phi,o->phiMc[i]) > maxDR) continue;
+    float dEoE = fabs(energy-o->energyMc[i])/o->energyMc[i];
+    if(dEoE > 1.) continue;
+    if(dEoE < dEoEBest){
+      dEoEBest = dEoE;
+      indexGen = i;
+    }
+  }
+  genMatch.Init(o,indexGen);
+}
+
 /*
 EleInfo VecbosEle::getStruct(){
   EleInfo out={

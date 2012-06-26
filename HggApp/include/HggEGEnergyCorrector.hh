@@ -15,22 +15,26 @@ using namespace TMVA;
 class HggEGEnergyCorrector{
  public:
   HggEGEnergyCorrector(VecbosBase*,string,Bool_t);
-  std::pair<double,double> getPhotonEnergyCorrection(int);
+  void getPhotonEnergyCorrection(VecbosPho&);
+  void getElectronEnergyCorrection(VecbosEle&);
   //std::pair<double,double> getElectronEnergyCorrection(int);
 
   std::pair<double,double> CorrectedEnergyWithError(int);
   std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithError(int);
-  std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithErrorv2(int);
+  std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosEle&);
   std::pair<double,double> photonEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosPho&);
 
   std::pair<double,double> photonEnergyCorrector_May2012(VecbosPho&);
-  std::pair<double,double> electronEnergyCorrector_May2012(int);
+  std::pair<double,double> electronEnergyCorrector_May2012(VecbosEle&);
+
+  void useElectronWeights(){usePhoton=false;}
  private:
   //private methods
   void Init();
   //vars
   string configFile;
   Bool_t isRealData;
+  Bool_t usePhoton;
   string version;
   ECAL_GEO ecalGeometry;
 

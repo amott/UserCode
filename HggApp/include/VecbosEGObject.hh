@@ -278,18 +278,48 @@ public:
   VecbosEle(VecbosBase*,int);
   void Init(VecbosBase*, int);
   int index;
+  float pt;
   float energy;
   float eta;
   float phi;
+
+  float correctedEnergy;
+  float correctedEnergyError;
 
   VecbosSC SC;
   float esEnergy;
   float HoverE;
   bool isEcalDriven;
   bool isTrackerDriven;
-
-  TVector3 CaloPos;
   
+  float vtxX;
+  float vtxY;
+  float vtxZ;
+
+  float EOverP;
+
+  float dEtaSCTrack;
+  float dPhiSCTrack;
+
+  float dr03ChargedHadronPFIso;
+  float dr03NeutralHadronPFIso;
+  float dr03PhotonPFIso;
+
+  float dr04ChargedHadronPFIso;
+  float dr04NeutralHadronPFIso;
+  float dr04PhotonPFIso;
+
+  float dr03TkSumPt;
+  float dr03EcalRecHitSumEt;
+  float dr03HcalTowerSumEt;
+
+  float dr04TkSumPt;
+  float dr04EcalRecHitSumEt;
+  float dr04HcalTowerSumEt;
+
+  VecbosGen genMatch;
+  void doGenMatch(VecbosBase*);
+
   //EleInfo getStruct();
 };
 
@@ -331,5 +361,6 @@ typedef std::vector<VecbosPFSC> PFSCCollection;
 typedef std::vector<VecbosBC> BCCollection;
 typedef std::vector<VecbosConversion> ConvCollection;
 typedef std::vector<VecbosMu> MuCollection;
+typedef std::vector<VecbosEle> EleCollection;
 typedef std::vector<VecbosGen> GenCollection;
 #endif
