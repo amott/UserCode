@@ -106,6 +106,25 @@ int HggSelector::init(){
   massRes->setConfigFile(MassResConfig);
   massRes->init();
 
+  //get kinematic cuts
+  string leadPhoEtMinS  =    cfg.getParameter("leadPhoEtMin");
+  string subleadPhoEtMinS  = cfg.getParameter("subleadPhoEtMin");
+  doPtOverM = cfg.getParameter("doPtOverM").compare("yes");
+  string PtOverMLeadS =    cfg.getParameter("PtOverMLead");
+  string PtOverMSubLeadS  = cfg.getParameter("PtOverMSubLead");
+
+  leadPhoEtMin = 40.;
+  subleadPhoEtMin = 30.;
+  PtOverMLead = 40./120.;
+  PtOverMSubLead = 30./120.;
+  if(leadPhoEtMinS.compare("") != 0) leadPhoEtMin = atof(leadPhoEtMinS.c_str());
+  if(subleadPhoEtMinS.compare("") != 0) subleadPhoEtMin = atof(subleadPhoEtMinS.c_str());
+  if(PtOverMLeadS.compare("") != 0) PtOverMLead = atof(PtOverMLeadS.c_str());
+  if(PtOverMSubLeadS.compare("") != 0) PtOverMSubLead = atof(PtOverMSubLeadS.c_str());
+
+  cout << "Kinematic Selections: " << endl 
+       << "pt Lead:   " << leadPhoEtMin << "   pt SubLead:   " << subleadPhoEtMin << endl
+       << "pt/m Lead: " << PtOverMLead <<  "   pt/m SubLead: " << PtOverMSubLead << endl;
 
   PhotonID = new HggPhotonID();
   PhotonID->setConfig(configFile);
@@ -126,6 +145,7 @@ int HggSelector::init(){
   MjjDists["BeforeVBF"] = new TH1F("MjjBeforeVBF","",200,0,2000);
   MjjDists["AfterDEta"] = new TH1F("MjjAfterDEta","",200,0,2000);
   MjjDists["AfterZ"] = new TH1F("MjjAfterZ","",200,0,2000);
+  MjjDists["dPhi_jj_gg"] = new TH1F("dPhi_jj_gg","",32,0,3.2);
   MjjDists["Final"] = new TH1F("Final","",200,0,2000);
 
 
@@ -383,8 +403,15 @@ bool HggSelector::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2,TVector3 vtxP
   if(fabs(pho1->SC.eta) > 1.4442 && fabs(pho1->SC.eta) < 1.566) return false;
   if(fabs(pho2->SC.eta) > 1.4442 && fabs(pho2->SC.eta) < 1.566) return false; // veto gap photons
 
-  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 30 || pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 30 ) return false;
-  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 40 && pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < 40 ) return false;
+  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < subleadPhoEtMin || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < subleadPhoEtMin ) return false;
+  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin ) return false;
+
+  if(doPtOverM){
+    double M = (pho1->p4FromVtx(vtxPos,pho2->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
+    if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead ) return false;
+    if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead ) return false;
+    
+  }
 
   return true;
 }
@@ -842,7 +869,7 @@ void HggSelector::fillMuMuGamma(){
   if(doMuMuGamma) outTreeMuMuG->Fill();
 }
 
-#define debugMjj 1
+#define debugMjj 0
 float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,float *jetPts){
   TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
   TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
@@ -881,6 +908,7 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   MjjDists["AfterZ"]->Fill( (j1+j2).M() );
   TLorentzVector jjSystem = j1+j2;
   if(debugMjj) cout << "dPhi jj gg: " << fabs(jjSystem.DeltaPhi(ggSystem)) << endl;
+  MjjDists["dPhi_jj_gg"]->Fill( fabs(jjSystem.DeltaPhi(ggSystem)) );
   if( fabs(jjSystem.DeltaPhi(ggSystem)) < 2.6 ) return 0;
   MjjDists["Final"]->Fill( (j1+j2).M() );
   jetPts[0] = j1.Pt();

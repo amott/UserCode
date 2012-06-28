@@ -240,7 +240,7 @@ TObjArray* MakeRooWorkspace(RooWorkspace *workspace,TString fileName, bool isDat
       if(debug) cout << "CorrectVtx: " << CorrectVtx << endl;
       efficiencies["kFactor"] = getKFac(&kFacs,genHiggsPt,nSigma);
       if(debug) cout << "kFactor: " << efficiencies["kFactor"].at(nSigma+1) << endl;
-      float XSweight = XSECS.BranchingRatios[massPoint]*XSECS.Proc8TeV[massPoint]*lumi*1000./nEntries;
+      float XSweight = XSECS.BranchingRatios[massPoint]*(XSECS.Proc8TeV[process])[massPoint]*lumi*1000./nEntries;
       if(debug) cout << "XSweight: " << XSweight << endl; 
       float puwt=pileupReWeight->GetBinContent( pileupReWeight->FindFixBin(nPU) );
       if(debug) cout << "puwt: " << puwt << endl;
@@ -466,7 +466,7 @@ void MakeAllWorkspaces(string fileList, float lumi,string outputFile,
   string process;
   const int nProc = 4;
   const string processes[nProc] = {"GluGluToH","WH_ZH","ttH","VBF_H"};
-  const string procNames[nProc] = {"ggh","vbf","wzh","tth"};
+  const string procNames[nProc] = {"ggh","wzh","tth","vbf"};
   TFile *f = new TFile(outputFile.c_str(),"RECREATE");
 
   while(fileListStream.good()){

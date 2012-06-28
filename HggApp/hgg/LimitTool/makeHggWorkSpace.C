@@ -33,7 +33,7 @@ string dtoa(double value) {
   return sstr.str();
 }
 
-void dofit(TFile* inFile, double fitmass, vector <TString> InterpolationList, TFile* OutputFile, RooWorkspace* WorkSpace, RooWorkspace* WSoutput,int debug=1) {
+void dofit(TFile* inFile, TString tag,double fitmass, vector <TString> InterpolationList, TFile* OutputFile, RooWorkspace* WorkSpace, RooWorkspace* WSoutput,int debug=1) {
   if (fitmass>150 || fitmass<110) {
     cout << "Warning!!!!!!!!!!! You must have an input mass between 110 and 150 GeV!" << endl << "Exiting Program!!!!" << endl;
     return;
@@ -42,8 +42,20 @@ void dofit(TFile* inFile, double fitmass, vector <TString> InterpolationList, TF
   if (floor(fitmass)-fitmass<0.00001 && floor(fitmass)-fitmass>0) fitmass=floor(fitmass);
   if (fitmass-ceil(fitmass)>-0.00001 && fitmass-ceil(fitmass)<0) fitmass=ceil(fitmass);
   
-  double Masses[20] = {110,115,120,123,124,125,129,130,135,145,155}; ///right now145 are wrong. ggF is 150 actually
-  unsigned int nMassPoint = 11;
+  unsigned int nMassPointGluGlu = 11;
+  double MassesGluGlu[20] = {110,115,120,123,124,125,129,130,135,145,155}; ///right now145 are wrong. ggF is 150 actually
+  unsigned int nMassPointVBF = 6;
+  double MassesVBF[20] = {110,115,123,125,130,135};
+  double *Masses;
+  unsigned int nMassPoint;
+  if(tag == "GluGlu"){
+    Masses = MassesGluGlu;
+    nMassPoint = nMassPointGluGlu;
+  }
+  if(tag == "VBF"){
+    Masses = MassesVBF;
+    nMassPoint = nMassPointVBF;
+  }
   
   double lowerbound = 0;
   double upperbound = 0;
@@ -153,7 +165,7 @@ int phtcorr = 96;
 //int phtcorr = 219;
 
 
- void makeHggWorkSpace(double fitmass,double lum,TString InputFileName, TString OutputFileName) {
+void makeHggWorkSpace(double fitmass,double lum,std::vector<TString> InputFileNames, TString OutputFileName) {
   
   
   double lumOLD =   5000; /// pb used in testSelection.C
@@ -173,43 +185,53 @@ int phtcorr = 96;
     cout << "Warning!!!!!!!!!!! You must have an input mass between 110 and 150 GeV!" << endl << "Exiting Program!!!!" << endl;
     exit(1);
   }
-  
-  TFile* InputFile = new TFile(InputFileName,"read");
-  
-  TList* HistList = InputFile->GetListOfKeys();
-    
-  RooWorkspace * WorkSpace = (RooWorkspace*) InputFile->Get("cms_hgg_workspace");
-  RooWorkspace * WorkSpaceNew = new RooWorkspace("cms_hgg_workspace");
-  
   TFile* OutputFile = new TFile( OutputFileName,"RECREATE");
-  OutputFile->cd();
-  vector<TString> InterpolationList;
-  for(Int_t j=0;j<HistList->GetSize();j++){
-    TString HistName = HistList->At(j)->GetName();
-    if(HistName.Contains("th1f") && HistName.Contains("115") ){ // just put the histograms for 110, we then change this string to the correct one
-      InterpolationList.push_back(HistName);
+  RooWorkspace * WorkSpaceNew = new RooWorkspace("cms_hgg_workspace");
+  for(int i=0;i<InputFileNames.size();i++){
+    TString InputFileName = InputFileNames.at(i);
+    TString tag = "GluGlu";
+    if(InputFileName.Contains("VBF")){
+      tag = "VBF";
     }
+    cout << "READING File: " << InputFileName << "  Tag: " << tag << endl;
+
+    TFile* InputFile = new TFile(InputFileName,"read");
+  
+    TList* HistList = InputFile->GetListOfKeys();
+    
+    RooWorkspace * WorkSpace = (RooWorkspace*) InputFile->Get("cms_hgg_workspace");
+    
+    OutputFile->cd();
+    vector<TString> InterpolationList;
+    for(Int_t j=0;j<HistList->GetSize();j++){
+      TString HistName = HistList->At(j)->GetName();
+      if(HistName.Contains("th1f") && HistName.Contains("115") ){ // just put the histograms for 110, we then change this string to the correct one
+	InterpolationList.push_back(HistName);
+      }
+    }
+  
+    dofit(InputFile,tag,fitmass, InterpolationList, OutputFile, WorkSpace,WorkSpaceNew);
   }
-  
-  dofit(InputFile,fitmass, InterpolationList, OutputFile, WorkSpace,WorkSpaceNew);
+  cout << "Writing" << endl;
   WorkSpaceNew->Write();
-  
+  cout << "Closing" << endl;
   OutputFile->Close();
-  delete WorkSpace;
-  delete InputFile;
-  delete OutputFile;
+  //delete OutputFile;
   cout << "Done!" << endl;
 }
 
 //makeHggWorkSpace(double fitmass,double lum,TString InputFileName, TString OutputFileName)
-void MakeAll(double startMass, double stopMass, double stepSize, double lumi, TString InputFileName, TString OutputFolder){
+void MakeAll(double startMass, double stopMass, double stepSize, double lumi, TString OutputFolder, TString InputFileNameGluGlu,TString InputFileNameVBF=""){
 
   const double minMass = 110;
   const double maxMass = 150;
+  std::vector<TString> inFiles;
+  inFiles.push_back(InputFileNameGluGlu);
+  if(InputFileNameVBF!="") inFiles.push_back(InputFileNameVBF);
 
   for(double mass = startMass; mass < stopMass; mass+=stepSize){
     if(mass < minMass || mass > maxMass) continue;
     TString OutputFileName = Form("%s/CMS-HGG_interpolated_%0.1f_lum%04.0f.root",OutputFolder.Data(),float(mass),lumi*1000);
-    makeHggWorkSpace(mass,lumi,InputFileName, OutputFileName);
+    makeHggWorkSpace(mass,lumi,inFiles,OutputFileName);
   }
 }

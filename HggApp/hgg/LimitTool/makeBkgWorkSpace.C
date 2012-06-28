@@ -547,3 +547,5 @@ void makeBkgWorkSpace(string inputFiles, float lumi, float mMin=100.,float mMax=
   TString tag = (doPFCiC ? "PFCiC" : "" );
   makeBkgWorkSpace(fChain,lumi,tag,mMin,mMax,outputFile,applyTrigger);
 }
+
+//void makeAll();

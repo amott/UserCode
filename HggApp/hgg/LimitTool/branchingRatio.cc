@@ -1,11 +1,14 @@
 #ifndef branchingRatio_cc
 #define branchingRatio_cc
   //copied from the twiki: https://twiki.cern.ch/twiki/bin/view/LHCPhysics/CERNYellowReportPageBR
+#include <TString.h>
 class branchingRatio{
 public:
   branchingRatio();
   std::map<float,float> BranchingRatios;
-  std::map<float,float> Proc8TeV;
+  std::map<TString,std::map<float,float> >Proc8TeV;
+  std::map<float,float> Proc8TeV_GluGlu;
+  std::map<float,float> Proc8TeV_VBF;
 };
 #endif
 branchingRatio::branchingRatio(){
@@ -27,21 +30,37 @@ branchingRatio::branchingRatio(){
   BranchingRatios[150.] = 1.36E-03;
   BranchingRatios[155.] = 0.999E-03;
 
-  Proc8TeV[90.]  = 36.772;
-  Proc8TeV[95.]  = 33.153;
-  Proc8TeV[100.] = 30.089;
-  Proc8TeV[105.] = 27.360;
-  Proc8TeV[110.] = 25.012;
-  Proc8TeV[115.] = 22.937;
-  Proc8TeV[120.] = 21.109;
-  Proc8TeV[123.] = 20.113;
-  Proc8TeV[124.] = 19.796;
-  Proc8TeV[125.] = 19.487;
-  Proc8TeV[129.] = 18.317;
-  Proc8TeV[130.] = 18.040;
-  Proc8TeV[135.] = 16.745;
-  Proc8TeV[140.] = 15.578;
-  Proc8TeV[145.] = 14.525;
-  Proc8TeV[150.] = 13.567;
-  Proc8TeV[155.] = 12.678;
+  Proc8TeV_GluGlu[90.]  = 36.772;
+  Proc8TeV_GluGlu[95.]  = 33.153;
+  Proc8TeV_GluGlu[100.] = 30.089;
+  Proc8TeV_GluGlu[105.] = 27.360;
+  Proc8TeV_GluGlu[110.] = 25.012;
+  Proc8TeV_GluGlu[115.] = 22.937;
+  Proc8TeV_GluGlu[120.] = 21.109;
+  Proc8TeV_GluGlu[123.] = 20.113;
+  Proc8TeV_GluGlu[124.] = 19.796;
+  Proc8TeV_GluGlu[125.] = 19.487;
+  Proc8TeV_GluGlu[129.] = 18.317;
+  Proc8TeV_GluGlu[130.] = 18.040;
+  Proc8TeV_GluGlu[135.] = 16.745;
+  Proc8TeV_GluGlu[140.] = 15.578;
+  Proc8TeV_GluGlu[145.] = 14.525;
+  Proc8TeV_GluGlu[150.] = 13.567;
+  Proc8TeV_GluGlu[155.] = 12.678;
+
+  Proc8TeV_VBF[100] = 1.971;
+  Proc8TeV_VBF[110] = 1.791;
+  Proc8TeV_VBF[115] = 1.709;
+  Proc8TeV_VBF[120] = 1.632;
+  Proc8TeV_VBF[123] = 1.588;
+  Proc8TeV_VBF[125] = 1.559;
+  Proc8TeV_VBF[130] = 1.490;
+  Proc8TeV_VBF[135] = 1.425;
+  Proc8TeV_VBF[140] = 1.365;
+  Proc8TeV_VBF[145] = 1.306;
+  Proc8TeV_VBF[150] = 1.251;
+ 
+  Proc8TeV["ggh"] = Proc8TeV_GluGlu;
+  Proc8TeV["vbf"] = Proc8TeV_VBF;
+
 }

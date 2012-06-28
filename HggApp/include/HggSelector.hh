@@ -69,6 +69,12 @@ private:
   int applyScaleSmear;
   HggEnergyScale* smear;
 
+  //selection
+  float leadPhoEtMin;
+  float subleadPhoEtMin;
+  bool doPtOverM;
+  float PtOverMLead;
+  float PtOverMSubLead;
   const static float rhoFac    = 0.17;
   const static float rhoFacBad = 0.52;
   const static float isoSumConst = 0;//5;
