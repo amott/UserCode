@@ -262,7 +262,7 @@ public:
 };
 
 struct ReducedPhotonData{
-  Float_t pt,eta,phi,E;
+  Float_t pt,eta,phi,E,EError;
   Float_t pt_NoCorr, eta_NoCorr, phi_NoCorr, E_NoCorr;
   Float_t pt_Gen, eta_Gen, phi_Gen, E_Gen;
   int index;

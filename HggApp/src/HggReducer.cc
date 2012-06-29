@@ -483,23 +483,23 @@ void HggReducer::fillJets(){
   tcMetPhi = phiTCMet[0];
 
   nJets=0;
-  for(int iJ=0;iJ<nAK5PFNoPUJet; iJ++){
+  for(int iJ=0;iJ<nAK5PFPUcorrJet; iJ++){
     int jetCat=0;
     for(; jetCat<4; jetCat++){ // get the jet category
-      if(fabs(etaAK5PFNoPUJet[iJ]) <maxJetEta[jetCat]) break;
+      if(fabs(etaAK5PFPUcorrJet[iJ]) <maxJetEta[jetCat]) break;
     }
-  if(jetCat>3) continue; //if its >4.7, reject the jet
-  float pT = TMath::Sqrt(TMath::Power(pxAK5PFNoPUJet[iJ],2)+TMath::Power(pyAK5PFNoPUJet[iJ],2));
-  if(pT < minPt) continue;
-  if(betastarAK5PFNoPUJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
-  if(rmsCandsHandAK5PFNoPUJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
-
-  ptJet[nJets] = pT;
-  etaJet[nJets] = etaAK5PFNoPUJet[iJ];
-  phiJet[nJets] = phiAK5PFNoPUJet[iJ];
-  energyJet[nJets] = energyAK5PFNoPUJet[iJ];
-  nJets++;
-
+    if(jetCat>3) continue; //if its >4.7, reject the jet
+    float pT = TMath::Sqrt(TMath::Power(pxAK5PFPUcorrJet[iJ],2)+TMath::Power(pyAK5PFPUcorrJet[iJ],2));
+    if(pT < minPt) continue;
+    if(betastarAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
+    if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
+    
+    ptJet[nJets] = pT;
+    etaJet[nJets] = etaAK5PFPUcorrJet[iJ];
+    phiJet[nJets] = phiAK5PFPUcorrJet[iJ];
+    energyJet[nJets] = energyAK5PFPUcorrJet[iJ];
+    nJets++;
+    
   }
 }
 void HggReducer::setupPreSelection(){

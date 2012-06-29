@@ -6,6 +6,7 @@
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
 #include "TRandom3.h"
+#include "HggPhysUtils.cc"
 using namespace std;
 using namespace TMVA;
 
@@ -113,8 +114,8 @@ int HggSelector::init(){
   string PtOverMLeadS =    cfg.getParameter("PtOverMLead");
   string PtOverMSubLeadS  = cfg.getParameter("PtOverMSubLead");
 
-  leadPhoEtMin = 40.;
-  subleadPhoEtMin = 30.;
+  leadPhoEtMin = 33.;
+  subleadPhoEtMin = 25.;
   PtOverMLead = 40./120.;
   PtOverMSubLead = 30./120.;
   if(leadPhoEtMinS.compare("") != 0) leadPhoEtMin = atof(leadPhoEtMinS.c_str());
@@ -143,7 +144,9 @@ int HggSelector::init(){
   MVAInputs["p2_idMVA"] = new TH1F("p2_idMVA","",200,-1,1);
 
   MjjDists["BeforeVBF"] = new TH1F("MjjBeforeVBF","",200,0,2000);
+  MjjDists["dEta"] = new TH1F("dEta","",120,0,12);
   MjjDists["AfterDEta"] = new TH1F("MjjAfterDEta","",200,0,2000);
+  MjjDists["Z"] = new TH1F("Z","",200,-20,20);
   MjjDists["AfterZ"] = new TH1F("MjjAfterZ","",200,0,2000);
   MjjDists["dPhi_jj_gg"] = new TH1F("dPhi_jj_gg","",32,0,3.2);
   MjjDists["Final"] = new TH1F("Final","",200,0,2000);
@@ -633,7 +636,7 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
     p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
     data.pt_Gen = 0.; data.eta_Gen = 0.; data.phi_Gen = 0.; data.E_Gen = 0.;  
   }
-  data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E();
+  data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E(); data.EError = pho->finalEnergyError;
   data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
   data.index = pho->index;
   data.r9 = pho->SC.r9;
@@ -883,9 +886,14 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   float maxSumPt=0;
   for(int iJ1=0;iJ1<nJets;iJ1++){
     if(ptJets[iJ1] < 20.) continue;
+    if(DeltaR(etaJets[iJ1],p1.Eta(),phiJets[iJ1],p1.Phi()) < 0.5 ) continue;
+    if(DeltaR(etaJets[iJ1],p2.Eta(),phiJets[iJ1],p2.Phi()) < 0.5 ) continue;
+
     for(int iJ2=iJ1+1;iJ2<nJets;iJ2++){
       if(ptJets[iJ2] < 20.) continue;
-      //if(ptJets[iJ1] < 30. && ptJets[iJ2] < 30.) continue; // require 1 30 GeV jet
+      if(ptJets[iJ1] < 30. && ptJets[iJ2] < 30.) continue; // require 1 30 GeV jet
+      if(DeltaR(etaJets[iJ2],p1.Eta(),phiJets[iJ2],p1.Phi()) < 0.5 ) continue;
+      if(DeltaR(etaJets[iJ2],p2.Eta(),phiJets[iJ2],p2.Phi()) < 0.5 ) continue;
       if(ptJets[iJ1]+ptJets[iJ2] > maxSumPt){
 	maxSumPt = ptJets[iJ1]+ptJets[iJ2];
 	i1=iJ1; i2=iJ2;
@@ -897,13 +905,15 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
   TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
   MjjDists["BeforeVBF"]->Fill((j1+j2).M());
-  float dEtaJ = fabs(etaJets[i1]-etaJets[i2]);
+  float dEtaJ = fabs(j1.Eta()-j2.Eta());
   if(debugMjj) cout << "dEtaJ: " << dEtaJ << endl;
+  MjjDists["dEta"]->Fill(dEtaJ);
   if(dEtaJ < 3.) return 0;
   MjjDists["AfterDEta"]->Fill( (j1+j2).M() );
   TLorentzVector ggSystem = p1+p2;
   float Z = ggSystem.Eta() - (etaJets[i1]+etaJets[i2])/2;
   if(debugMjj) cout << "Z: " << Z << endl;
+  MjjDists["Z"]->Fill(Z);
   if(fabs(Z)>2.5) return 0;
   MjjDists["AfterZ"]->Fill( (j1+j2).M() );
   TLorentzVector jjSystem = j1+j2;

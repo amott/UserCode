@@ -33,7 +33,8 @@ CatMap getCategoryCuts(TChain* fChain){
 
   //categories["multiplicity"] = new TTreeFormula("Mult","Photon>=2",fChain);
   categories["MVA_PreSelEta"] = new TTreeFormula("MVA_PreSelEta","(abs(Photon[0].eta) > 1.4442 && abs(Photon[0].eta) < 1.566) || (abs(Photon[1].eta) > 1.4442 && abs(Photon[1].eta) < 1.566) || abs(Photon[0].eta) > 2.5 || abs(Photon[1].eta) > 2.5",fChain);
-  categories["MVA_PreSelEt"] = new TTreeFormula("MVA_PreSelEt","Photon[0].pt < 25. || Photon[1].pt < 25. || (Photon[0].pt < 33.3 && Photon[1].pt < 33.3) || Photon[0].pt/mPair < 30./120. || Photon[1].pt/mPair < 40./120.",fChain);
+  //categories["MVA_PreSelEt"] = new TTreeFormula("MVA_PreSelEt","Photon[0].pt < 25. || Photon[1].pt < 25. || (Photon[0].pt < 33.3 && Photon[1].pt < 33.3) || Photon[0].pt/mPair < 30./120. || Photon[1].pt/mPair < 40./120.",fChain);
+  categories["MVA_PreSelEt"] = new TTreeFormula("MVA_PreSelEt","(Photon[0].pt/mPair < 30/120) || (Photon[1].pt/mPair < 30/120) || (Photon[0].pt/mPair < 40./120. && Photon[1].pt/mPair < 40./120.)",fChain);
   categories["MVA_R"] = new TTreeFormula("MVA_0","mPair<0 || diPhotonMVA<-0.05 || nPhoton==0",fChain); // rejection criterion
   categories["MVA_0"] = new TTreeFormula("MVA_0"," (Mjj >= 500) && (Photon[0].pt>30. && Photon[1].pt >30.) &&  (diPhotonMVA>=-0.05)",fChain);  
   categories["MVA_1"] = new TTreeFormula("MVA_1"," (Mjj >= 250) && (Photon[0].pt>30. || Photon[1].pt >30.) &&  (diPhotonMVA>=-0.05)",fChain);  
@@ -43,7 +44,8 @@ CatMap getCategoryCuts(TChain* fChain){
   categories["MVA_5"] = new TTreeFormula("MVA_5"," (diPhotonMVA>=-0.05) && (diPhotonMVA<0.50)",fChain);  
   
   categories["PFCiC_PreSelEta"] = new TTreeFormula("PFCiC_PreSelEta","(abs(PhotonPFCiC[0].eta) > 1.4442 && abs(PhotonPFCiC[0].eta) < 1.566) || (abs(PhotonPFCiC[1].eta) > 1.4442 && abs(PhotonPFCiC[1].eta) < 1.566) || abs(PhotonPFCiC[0].eta) > 2.5 || abs(PhotonPFCiC[1].eta) > 2.5",fChain);
-  categories["PFCiC_PreSelEt"] = new TTreeFormula("PFCiC_PreSelEt","PhotonPFCiC[0].pt < 25 || PhotonPFCiC[1].pt < 25 || (PhotonPFCiC[0].pt < 33. && PhotonPFCiC[1].pt < 33.) || PhotonPFCiC[0].pt/mPairPFCiC < 30./120. || PhotonPFCiC[1].pt/mPairPFCiC < 40./120.",fChain);
+  //categories["PFCiC_PreSelEt"] = new TTreeFormula("PFCiC_PreSelEt","PhotonPFCiC[0].pt < 25 || PhotonPFCiC[1].pt < 25 || (PhotonPFCiC[0].pt < 33. && PhotonPFCiC[1].pt < 33.) || PhotonPFCiC[0].pt/mPairPFCiC < 30./120. || PhotonPFCiC[1].pt/mPairPFCiC < 40./120.",fChain);
+  categories["PFCiC_PreSelEt"] = new TTreeFormula("MVA_PreSelEt","(PhotonPFCiC[0].pt/mPairPFCiC < 30/120) || (PhotonPFCiC[1].pt/mPairPFCiC < 30/120) || (PhotonPFCiC[0].pt/mPairPFCiC < 40./120. && PhotonPFCiC[1].pt/mPairPFCiC < 40./120.)",fChain);
   categories["PFCiC_R"] = new TTreeFormula("PFCiC_R","mPairPFCiC==-1 || nPhotonPFCiC==0",fChain); // rejection criterion
   categories["PFCiC_0"] = new TTreeFormula("PFCiC_0","(MjjPFCiC >= 500) && (PhotonPFCiC[0].pt>30. && PhotonPFCiC[1].pt >30.)",fChain);
   categories["PFCiC_1"] = new TTreeFormula("PFCiC_1","(MjjPFCiC >= 250) && (PhotonPFCiC[0].pt>30. || PhotonPFCiC[1].pt >30.)",fChain);
