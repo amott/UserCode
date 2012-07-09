@@ -125,7 +125,7 @@ private:
   const static int maxPho=100;
   int nPho_;
   vector<VecbosPho>  Photons_;
-  int nSC_;
+  //  int nSC_;
   /*
   SCCollection   SuperClusters_; // this contains every SC matched to a photon
   int nPFSC_
@@ -142,6 +142,8 @@ private:
   MuCollection Muons_;
   int nEle_;
   EleCollection Electrons_;
+  int nJet_;
+  JetCollection Jets_;
 
   //this is the collection of the TMVA selected vertices for each photon pair
   //the format is std::pair< (iPho1 << 14) + iPho2,iVrt> 
@@ -193,13 +195,6 @@ private:
   float qScale;
   float nPu;
 
-  const static int maxJets=50;
-  int nJets;
-  float ptJet[maxJets];
-  float etaJet[maxJets];
-  float phiJet[maxJets];
-  float energyJet[maxJets];
-  
   float caloMet;
   float caloMetPhi;
 

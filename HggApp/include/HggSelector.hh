@@ -97,6 +97,7 @@ private:
 
   void fillMuMuGamma();
   float getVBFMjj(VecbosPho*,VecbosPho*,TVector3,float*);
+  bool passJetID(VecbosJet*);
   //TMVA stuff
   string weightFile_diPho;
   string methodName_diPho;
@@ -249,6 +250,8 @@ private:
   int nMu_;
   std::vector<VecbosMu> *Muons_;
 
+  int nJet_;
+  std::vector<VecbosJet> *Jets_;
   
   // for each photon, a vector of floats giving the track iso from each ggVertex
 
@@ -277,13 +280,6 @@ private:
 
   int nGenPho;
   std::vector<VecbosGen> *GenPhotons;
-
-  const static int maxJets=50;
-  int nJets;
-  float ptJets[maxJets];
-  float etaJets[maxJets];
-  float phiJets[maxJets];
-  float energyJets[maxJets];
 
   float pfMet;
   float pfMetPhi;

@@ -20,6 +20,7 @@ HggSelector::HggSelector():
   ggVerticesVertexIndex(0),
   Photons_(0),
   Muons_(0),
+  Jets_(0),
   GenHiggs(0),
   GenPhotons(0),
   nSigma(3),
@@ -35,6 +36,7 @@ HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName)
   doElectronVeto(true),
   Photons_(0),
   Muons_(0),
+  Jets_(0),
   GenHiggs(0),
   GenPhotons(0),
   nSigma(3),
@@ -720,6 +722,9 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("nMu",&nMu_);
  fChain->SetBranchAddress("Muons",&Muons_);
 
+ fChain->SetBranchAddress("nJet",&nJet_);
+ fChain->SetBranchAddress("Jets",&Jets_);
+
  fChain->SetBranchAddress("nGenHiggs",&nGenHiggs);
  fChain->SetBranchAddress("GenHiggs",&GenHiggs);
 
@@ -727,12 +732,6 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("GenPhotons",&GenPhotons);
 
  fChain->SetBranchAddress("nPU",&inPU);
-
- fChain->SetBranchAddress("nJets",&nJets);
- fChain->SetBranchAddress("ptJet",ptJets);
- fChain->SetBranchAddress("etaJet",etaJets);
- fChain->SetBranchAddress("phiJet",phiJets);
- fChain->SetBranchAddress("energyJet",energyJets);
 
  fChain->SetBranchAddress("PFMet",&pfMet);
  fChain->SetBranchAddress("PFMetPhi",&pfMetPhi);
@@ -902,7 +901,7 @@ void HggSelector::fillMuMuGamma(){
   if(doMuMuGamma) outTreeMuMuG->Fill();
 }
 
-#define debugMjj 0
+#define debugMjj 1
 float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,float *jetPts){
   TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
   TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
@@ -910,30 +909,35 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   if( max(p1.Pt(),p2.Pt())/(p1+p2).M() < 60./120. ) return 0;
   if( min(p1.Pt(),p2.Pt()) < 25. ) return 0;
   //if( (p1+p2).M() < 120. ) return 0; 
-  if(nJets<2) return 0;
-  if(debugMjj) cout << "NJets: " << nJets << endl;
+  if(debugMjj) cout << "NJets: " << nJet_ << endl;
+  if(nJet_<2) return 0;
   int i1=-1,i2=-1;
   float maxSumPt=0;
-  for(int iJ1=0;iJ1<nJets;iJ1++){
-    if(ptJets[iJ1] < 20.) continue;
-    if(DeltaR(etaJets[iJ1],p1.Eta(),phiJets[iJ1],p1.Phi()) < 0.5 ) continue;
-    if(DeltaR(etaJets[iJ1],p2.Eta(),phiJets[iJ1],p2.Phi()) < 0.5 ) continue;
+  VecbosJet *jet1=0, *jet2=0;
+  std::vector<VecbosJet>::iterator j1It;
+  std::vector<VecbosJet>::iterator j2It;
+  for(j1It = Jets_->begin(); j1It != Jets_->end(); j1It++){
+    if(j1It->pt < 20.) continue;
+    if(!passJetID(&*j1It)) continue;
+    if(DeltaR(j1It->eta,p1.Eta(),j1It->phi,p1.Phi()) < 0.5 ) continue;
+    if(DeltaR(j1It->eta,p2.Eta(),j1It->phi,p2.Phi()) < 0.5 ) continue;
+    for(j2It = j1It+1; j2It != Jets_->end(); j2It++){
+      if(j2It->pt < 20.) continue;
+      if(!passJetID(&*j2It)) continue;
+      if(DeltaR(j2It->eta,p1.Eta(),j2It->phi,p1.Phi()) < 0.5 ) continue;
+      if(DeltaR(j2It->eta,p2.Eta(),j2It->phi,p2.Phi()) < 0.5 ) continue;
 
-    for(int iJ2=iJ1+1;iJ2<nJets;iJ2++){
-      if(ptJets[iJ2] < 20.) continue;
-      if(ptJets[iJ1] < 30. && ptJets[iJ2] < 30.) continue; // require 1 30 GeV jet
-      if(DeltaR(etaJets[iJ2],p1.Eta(),phiJets[iJ2],p1.Phi()) < 0.5 ) continue;
-      if(DeltaR(etaJets[iJ2],p2.Eta(),phiJets[iJ2],p2.Phi()) < 0.5 ) continue;
-      if(ptJets[iJ1]+ptJets[iJ2] > maxSumPt){
-	maxSumPt = ptJets[iJ1]+ptJets[iJ2];
-	i1=iJ1; i2=iJ2;
+      if(j1It->pt < 30. && j2It->pt < 30.) continue;
+      if(j1It->pt + j2It->pt > maxSumPt){
+	maxSumPt = j1It->pt + j2It->pt;
+	jet1 = &*j1It; jet2 = &*j2It;
       }
     }
   }
-  if(debugMjj) cout << "Selected Jet Indices: " << i1 << " " << i2 << endl;
-  if(i1==-1 || i2==-1) return 0; //didn't find 2 30 GeV Jets
-  TLorentzVector j1; j1.SetPtEtaPhiE(ptJets[i1],etaJets[i1],phiJets[i1],energyJets[i1]);
-  TLorentzVector j2; j2.SetPtEtaPhiE(ptJets[i2],etaJets[i2],phiJets[i2],energyJets[i2]);
+
+  if(jet1==0 || jet2==0) return 0;
+  TLorentzVector j1 = jet1->getP4();
+  TLorentzVector j2 = jet2->getP4();
   MjjDists["BeforeVBF"]->Fill((j1+j2).M());
   float dEtaJ = fabs(j1.Eta()-j2.Eta());
   if(debugMjj) cout << "dEtaJ: " << dEtaJ << endl;
@@ -941,7 +945,7 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   if(dEtaJ < 3.) return 0;
   MjjDists["AfterDEta"]->Fill( (j1+j2).M() );
   TLorentzVector ggSystem = p1+p2;
-  float Z = ggSystem.Eta() - (etaJets[i1]+etaJets[i2])/2;
+  float Z = ggSystem.Eta() - (j1.Eta()+j2.Eta())/2.;
   if(debugMjj) cout << "Z: " << Z << endl;
   MjjDists["Z"]->Fill(Z);
   if(fabs(Z)>2.5) return 0;
@@ -955,6 +959,25 @@ float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,fl
   jetPts[1] = j2.Pt();
   if(debugMjj) cout << "jj Mass: " << jjSystem.M() <<endl;
   return jjSystem.M();
+}
+
+bool HggSelector::passJetID(VecbosJet* jet){
+  const int nJetCat=4;
+  const float maxJetEta[nJetCat] = {2.5,2.75,3,4.7};
+  const float betaStarSlope[nJetCat] = {0.2,0.3,999,999};
+  const float rmsCut[nJetCat] = {0.06,0.05,0.05,0.055};
+
+  int JetCat=-1;
+  for(int i=0;i<nJetCat;i++){
+    if(jet->eta < maxJetEta[i]){
+      JetCat = i; break;
+    }
+  }
+  if(JetCat == -1) return false;
+
+  if(jet->betaStarClassicIdMVA > betaStarSlope[JetCat]*TMath::Log(nVtx)-0.64) return false;
+  if(jet->rmsCandsHand > rmsCut[JetCat]) return false;
+  return true;
 }
 
 bool HggSelector::requireTrigger(){

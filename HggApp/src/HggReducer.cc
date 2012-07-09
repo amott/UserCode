@@ -362,6 +362,8 @@ void HggReducer::clearAll(){
   Muons_.clear();
   nEle_=0;
   Electrons_.clear();
+  nJet_=0;
+  Jets_.clear();
   pileupBunchX->clear();
   pileupNInteraction->clear();
   
@@ -472,12 +474,14 @@ void HggReducer::fillElectrons(){
 }
 
 void HggReducer::fillJets(){
-  const float minPt = 20;
-  const int nJetCat=4;
-  const float maxJetEta[nJetCat] = {2.5,2.75,3,4.7};
-  const float betaStarSlope[nJetCat] = {0.2,0.3,999,999};
-  const float rmsCut[nJetCat] = {0.06,0.05,0.05,0.055};
-
+  const float minPt = 5;
+  nJet_=0;
+  for(int iJet = 0; iJet<nAK5PFPUcorrJet;iJet++){
+    VecbosJet jet(this,iJet,VecbosJet::PFPUcorr);
+    if(jet.pt < minPt) continue;
+    Jets_.push_back(jet);
+    nJet_++;
+  }
   caloMet =  TMath::Sqrt(TMath::Power(pxMet[0],2)+TMath::Power(pyMet[0],2));
   caloMetPhi =  phiMet[0];
   pfMet = TMath::Sqrt(TMath::Power(pxPFMet[0],2)+TMath::Power(pyPFMet[0],2));
@@ -485,7 +489,13 @@ void HggReducer::fillJets(){
   tcMet =  TMath::Sqrt(TMath::Power(pxTCMet[0],2)+TMath::Power(pyTCMet[0],2));
   tcMetPhi = phiTCMet[0];
 
-  nJets=0;
+  return;
+  const int nJetCat=4;
+  const float maxJetEta[nJetCat] = {2.5,2.75,3,4.7};
+  const float betaStarSlope[nJetCat] = {0.2,0.3,999,999};
+  const float rmsCut[nJetCat] = {0.06,0.05,0.05,0.055};
+
+  //nJets=0;
   for(int iJ=0;iJ<nAK5PFPUcorrJet; iJ++){
     int jetCat=0;
     for(; jetCat<4; jetCat++){ // get the jet category
@@ -496,13 +506,14 @@ void HggReducer::fillJets(){
     if(pT < minPt) continue;
     if(betastarIdMvaAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
     if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
-    
+
+    /*    
     ptJet[nJets] = pT;
     etaJet[nJets] = etaAK5PFPUcorrJet[iJ];
     phiJet[nJets] = phiAK5PFPUcorrJet[iJ];
     energyJet[nJets] = energyAK5PFPUcorrJet[iJ];
     nJets++;
-    
+    */
   }
 }
 void HggReducer::setupPreSelection(){
@@ -723,11 +734,8 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("nEle",&nEle_,"nEle/I");
  outTree->Branch("Electrons",&Electrons_);
 
- outTree->Branch("nJets",&nJets,"nJets/I");
- outTree->Branch("ptJet",ptJet,"ptJet[nJets]");
- outTree->Branch("etaJet",etaJet,"etaJet[nJets]");
- outTree->Branch("phiJet",phiJet,"phiJet[nJets]");
- outTree->Branch("energyJet",energyJet,"energyJet[nJets]");
+ outTree->Branch("nJet",&nJet_,"nJet/I");
+ outTree->Branch("Jets",&Jets_);
 
  outTree->Branch("CaloMET",&caloMet,"CaloMET");
  outTree->Branch("CaloMETPhi",&caloMetPhi,"CaloMETPhi");

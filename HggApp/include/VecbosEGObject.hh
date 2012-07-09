@@ -353,7 +353,46 @@ public:
   void doGenMatch(VecbosBase*);
 };
 
+class VecbosJet{
+public:
+  enum JetType{PFPUcorr,PFNoPU};
+  VecbosJet();
+  VecbosJet(VecbosBase*, int,JetType);
+  void Init(VecbosBase*, int,JetType);
+  int index;
+  float energy;
+  float uncorrEnergy;
+  float pt;
+  float eta;
+  float phi;
+  
+  TLorentzVector getP4();
 
+  int charge;
+
+  VecbosJet::JetType type;
+  
+  float vtxX;
+  float vtxY;
+  float vtxZ;
+  TVector3 getVertex(){return TVector3(vtxX,vtxY,vtxZ);}
+
+  float area;
+  float chargedHadronFraction;
+  float neutralHadronFraction;
+
+  float jetIdMva;
+  
+  float betaStar;
+  float betaStarIdMVA;
+  float betaStarClassicIdMVA;
+  float rmsCands;
+  float rmsCandsHand;
+
+  float combinedSecondaryVertex;
+  float simpleSecondaryVertexHighPur;
+  float simpleSecondaryVertexHighEff;
+};
 
 typedef std::vector<VecbosPho> PhoCollection;
 typedef std::vector<VecbosSC> SCCollection;
@@ -363,4 +402,5 @@ typedef std::vector<VecbosConversion> ConvCollection;
 typedef std::vector<VecbosMu> MuCollection;
 typedef std::vector<VecbosEle> EleCollection;
 typedef std::vector<VecbosGen> GenCollection;
+typedef std::vector<VecbosJet> JetCollection;
 #endif
