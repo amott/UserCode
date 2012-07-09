@@ -383,6 +383,10 @@ void HggSelector::Loop(){
 
     MET = pfMet;
     METPhi = pfMetPhi;
+    lumiBlockOut = lumiBlock;
+    runNumberOut = runNumber;
+    evtNumberOut = evtNumber;
+
     outTree->Fill();
   }//while(fChain...
 
@@ -553,11 +557,19 @@ void HggSelector::setDefaults(){
 void HggSelector::clear(){
   mPair_=-1;
   mPairNoCorr_=-1;
+  mPairPFCiC_=-1;
+  mPairNoCorrPFCiC_=-1;
+  mPairCiC_=-1;
+  mPairNoCorrCiC_=-1;
   diPhoMVA_=-999;
   diPhoVtx_= -1;
   diPhoVtxX_=0;
   diPhoVtxY_=0;
   diPhoVtxZ_=0;
+
+  Mjj_ = 0;
+  MjjPFCiC_ = 0;
+  MjjCiC_ = 0;
 
   if(debugSelector) std::cout << "Clearing Scale/Smear variables" << std::endl;
   mPairScale.clear();
@@ -568,6 +580,12 @@ void HggSelector::clear(){
   pho1MVASmear.clear();
   pho2MVASmear.clear();
   diPhoMVASmear.clear();
+
+  mPairScalePFCiC.clear();
+  mPairSmearPFCiC.clear();
+
+  mPairScaleCiC.clear();
+  mPairSmearCiC.clear();
 
   if(debugSelector) std::cout << "Clearing Output Variables" << std::endl;
   OutPhotons_.clear();
@@ -802,7 +820,19 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("pho2MVASmear",&pho2MVASmear);
   outTree->Branch("diPhoMVASmear",&diPhoMVASmear);
 
+  outTree->Branch("mPairScalePFCiC",&mPairScalePFCiC);
+  outTree->Branch("mPairSmearPFCiC",&mPairSmearPFCiC);
+
+  outTree->Branch("mPairScaleCiC",&mPairScaleCiC);
+  outTree->Branch("mPairSmearCiC",&mPairSmearCiC);
+
   outTree->Branch("nPU",&nPU_);
+  
+  outTree->Branch("runNumber",&runNumberOut);
+  outTree->Branch("evtNumber",&evtNumberOut);
+  outTree->Branch("lumiBlock",&lumiBlockOut);
+  
+
   if(doMuMuGamma){
     outTreeMuMuG = new TTree("MuMuGamma","");
     outTreeMuMuG->Branch("nMuMuG",&nMuMuG);

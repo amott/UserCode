@@ -228,6 +228,11 @@ private:
   
   float nPU_;
 
+  int lumiBlockOut;
+  int runNumberOut;
+  int evtNumberOut;
+
+
   //member data
   const static int maxPho = 100;
   int nPho_;

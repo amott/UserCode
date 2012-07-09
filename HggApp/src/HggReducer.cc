@@ -440,12 +440,15 @@ bool HggReducer::passPreselection(VecbosPho *pho){
   if(pho->index == -1 || pho->SC.index == -1) return false;
   PreSelCuts cuts = preselections.at(preSelSet-1);
   if(debugReducer) cout << pho->SC.energy << "  " << pho->SC.eta << "  " << pho->SC.energy/cosh(pho->SC.eta) << endl;
-  if( pho->SC.energy/cosh(pho->SC.eta) < cuts.scet2 || 
-      (cuts.maxeta>0 && pho->SC.eta > cuts.maxeta) ) return false;  //baseline kinematics
-  if(cuts.ecaliso[!pho->isBarrel()]>0 && pho->dr03EcalRecHitSumEtCone >= cuts.ecaliso[!pho->isBarrel()]) return false;
-  if(cuts.hcaliso[!pho->isBarrel()]>0 && pho->dr03HcalTowerSumEtCone >= cuts.hcaliso[!pho->isBarrel()]) return false;
-  if(cuts.sieie[!pho->isBarrel()]>0 && pho->SC.sigmaIEtaIEta >= cuts.sieie[!pho->isBarrel()]) return false;
-  if(cuts.hoe>0 && pho->SC.HoverE >= cuts.hoe) return false;
+  //if( pho->SC.energy/cosh(pho->SC.eta) < cuts.scet2 || 
+  //    (cuts.maxeta>0 && pho->SC.eta > cuts.maxeta) ) return false;  //baseline kinematics
+  //if(cuts.ecaliso[!pho->isBarrel()]>0 && pho->dr03EcalRecHitSumEtCone >= cuts.ecaliso[!pho->isBarrel()]) return false;
+  //if(cuts.hcaliso[!pho->isBarrel()]>0 && pho->dr03HcalTowerSumEtCone >= cuts.hcaliso[!pho->isBarrel()]) return false;
+  //if(cuts.sieie[!pho->isBarrel()]>0 && pho->SC.sigmaIEtaIEta >= cuts.sieie[!pho->isBarrel()]) return false;
+  //if(cuts.hoe>0 && pho->SC.HoverE >= cuts.hoe) return false;
+
+  if(pho->SC.energy/cosh(pho->SC.eta) < 20.) return false;
+
   return true;
 
 }
@@ -491,7 +494,7 @@ void HggReducer::fillJets(){
     if(jetCat>3) continue; //if its >4.7, reject the jet
     float pT = TMath::Sqrt(TMath::Power(pxAK5PFPUcorrJet[iJ],2)+TMath::Power(pyAK5PFPUcorrJet[iJ],2));
     if(pT < minPt) continue;
-    if(betastarAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
+    if(betastarIdMvaAK5PFPUcorrJet[iJ] > betaStarSlope[jetCat]*TMath::Log(nPV)-0.64) continue;
     if(rmsCandsHandAK5PFPUcorrJet[iJ] > rmsCut[jetCat]) continue; //jet ID variables
     
     ptJet[nJets] = pT;
