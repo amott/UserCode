@@ -562,8 +562,15 @@ VecbosEle::VecbosEle(VecbosBase* o,int i){
   this->Init(o,i);
 }
 void VecbosEle::Init(VecbosBase* o,int i){
-  if(i>o->nEle) return;
+  if(i>o->nEle || i < 0){
+    index = -1;
+    return;
+  }
   SC.Init(o,o->superClusterIndexPho[i]);
+  if(SC.index==-1){  // an electron without a supercluster??
+    index = -1; 
+    return;
+  }
   energy = o->energyEle[i];
   correctedEnergy = 0;
 

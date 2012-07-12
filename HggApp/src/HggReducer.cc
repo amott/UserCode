@@ -472,6 +472,7 @@ void HggReducer::fillMuons(){
   nMu_=0;
   for(int iMuon = 0; iMuon<nMuon;iMuon++){
     VecbosMu mu(this,iMuon);
+    if(mu.index==-1) continue;
     Muons_.push_back(mu);
     nMu_++;
   }
@@ -480,6 +481,7 @@ void HggReducer::fillElectrons(){
   nEle_=0;
   for(int iEle = 0; iEle<nEle;iEle++){
     VecbosEle ele(this,iEle);
+    if(ele.index==-1) continue;
     elecorrector->getElectronEnergyCorrection(ele);
     Electrons_.push_back(ele);
     nEle_++;
@@ -491,6 +493,7 @@ void HggReducer::fillJets(){
   nJet_=0;
   for(int iJet = 0; iJet<nAK5PFPUcorrJet;iJet++){
     VecbosJet jet(this,iJet,VecbosJet::PFPUcorr);
+    if(jet.index==-1) continue;
     if(jet.pt < minPt) continue;
     Jets_.push_back(jet);
     nJet_++;

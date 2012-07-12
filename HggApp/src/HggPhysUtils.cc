@@ -33,14 +33,15 @@ int getIndphixyzEBAll(int iphi){
   
 }
 
+#ifndef __pi__ 
+#define __pi__ 3.1415926
+#endif
 double DeltaPhi(double phi1, double phi2){
   
   //double diff = fabs(phi2 - phi1);
-  double diff = phi1 - phi2;
+  double diff = fabs(phi1 - phi2);
   
-  while (diff >acos(-1)) diff -= 2*acos(-1);
-  while (diff <= -acos(-1)) diff += 2*acos(-1);
-  
+  while(diff > __pi__) diff-=__pi__;
   return diff; 
   
 }
@@ -458,8 +459,6 @@ void calcMass3Objects(double pt[3],double eta[3],double phi[3],int pid1,int pid2
 
 double etaTransformation(  float EtaParticle , float Zvertex)  {
   
-  //---Definitions
-  const float pi = 3.1415927;
 
   //---Definitions for ECAL
   const float R_ECAL           = 136.5;
@@ -472,7 +471,7 @@ double etaTransformation(  float EtaParticle , float Zvertex)  {
   float ZEcal = R_ECAL*sinh(EtaParticle)+Zvertex;
 
   if(ZEcal != 0.0) Theta = atan(R_ECAL/ZEcal);
-  if(Theta<0.0) Theta = Theta+pi ;
+  if(Theta<0.0) Theta = Theta+__pi__ ;
   double ETA = - log(tan(0.5*Theta));
          
   if( fabs(ETA) > etaBarrelEndcap )
@@ -482,7 +481,7 @@ double etaTransformation(  float EtaParticle , float Zvertex)  {
       float Zlen = Zend - Zvertex ;
       float RR = Zlen/sinh(EtaParticle); 
       Theta = atan(RR/Zend);
-      if(Theta<0.0) Theta = Theta+pi ;
+      if(Theta<0.0) Theta = Theta+__pi__ ;
       ETA = - log(tan(0.5*Theta));		      
     } 
   //---Return the result
