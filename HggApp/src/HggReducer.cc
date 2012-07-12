@@ -25,6 +25,7 @@ using namespace std;
 #include "VecbosEGObject.hh"
 #include "HggReducer.hh"
 #include "../src/HggPhysUtils.cc"
+#include "assert.h"
 
 #define debugReducer 0
 
@@ -121,7 +122,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     lumiBlockO=lumiBlock;
 
     //filters:
-    if(nTrack > 600 || nPV > 40) {
+    if(nTrack > 1000 || nPV > 80) {
       if(debugReducer) cout << "dropping event: too many tracks/PVs: " << nTrack << "  " << nPV << endl; 
       continue;
     }
@@ -252,14 +253,28 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	if(debugReducer) cout << ">>>>" << endl;
 	//VecbosPho pho2 = *iPho2;
 	if(debugReducer) cout << "Doing Vertexing ... " << endl;
-	vector<pair<int,float> > vtxPair = vertexer->vertex_tmva(&*iPho2,&*iPho2);
+	float perEvt=-1;
+	vector<pair<int,float> > vtxPair = vertexer->vertex_tmva(&*iPho2,&*iPho2,perEvt);
+
+	const int nTop=3;
+	pair<int,float> top[nTop];
+	for(int i=0;i<nTop;i++) top[i] = pair<int,float>(0,-1);
+	vector<pair<int,float> >::const_iterator vtxIt;
+	for(vtxIt = vtxPair.begin(); vtxIt != vtxPair.end(); vtxIt++){
+	  pair<int,float> tmp = *vtxIt;
+	  for(int i=0;i<nTop;i++){
+	    if(tmp.second > top[i].second){
+	      swap(tmp,top[i]);
+	    }
+	  }
+	}
 	ggVerticesPhotonIndices.push_back(pair<int,int>(iPho1->index,iPho2->index) );
-	ggVerticesVertexIndex01.push_back(vtxPair[0]);
-	ggVerticesVertexIndex02.push_back(vtxPair[1]);
-	ggVerticesVertexIndex03.push_back(vtxPair[2]);
-	ggVerticesVertexIndexOld01.push_back(vtxPair[3]);
-	ggVerticesVertexIndexOld02.push_back(vtxPair[4]);
-	ggVerticesVertexIndexOld03.push_back(vtxPair[5]);
+	ggVerticesVertexIndex01.push_back(top[0]);
+	ggVerticesVertexIndex02.push_back(top[1]);
+	ggVerticesVertexIndex03.push_back(top[2]);
+	assert(top[0].second >= top[1].second); //make sure the vertices are in descending order
+
+	ggVerticesPerEvtMVA.push_back(perEvt);
 	nPair_++;
       }
     }
@@ -371,9 +386,7 @@ void HggReducer::clearAll(){
   ggVerticesVertexIndex01.clear();
   ggVerticesVertexIndex02.clear();
   ggVerticesVertexIndex03.clear();
-  ggVerticesVertexIndexOld01.clear();
-  ggVerticesVertexIndexOld02.clear();
-  ggVerticesVertexIndexOld03.clear();
+  ggVerticesPerEvtMVA.clear();
 
   nGenPho=0;
   nGenMu =0;
@@ -721,11 +734,9 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("Photons",&Photons_);
  outTree->Branch("ggVerticesPhotonIndices",&ggVerticesPhotonIndices);
  outTree->Branch("ggVerticesVertexIndex",&ggVerticesVertexIndex01);
- outTree->Branch("ggVerticesVertexIndexOld",&ggVerticesVertexIndexOld01);
  outTree->Branch("ggVerticesVertexIndex2nd",&ggVerticesVertexIndex02);
- outTree->Branch("ggVerticesVertexIndex2ndOld",&ggVerticesVertexIndexOld02);
  outTree->Branch("ggVerticesVertexIndex3rd",&ggVerticesVertexIndex03);
- outTree->Branch("ggVerticesVertexIndex3rdOld",&ggVerticesVertexIndexOld03);
+ outTree->Branch("ggVerticesPerEvtMVA",&ggVerticesPerEvtMVA);
  outTree->Branch("photonMatchedElectron",photonMatchedElectron,"photonMatchedElectron[nPho]/O");
 
  outTree->Branch("nMu",&nMu_,"nMu/I");

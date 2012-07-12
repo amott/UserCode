@@ -85,6 +85,7 @@ private:
   bool requireTrigger();
 
   int getVertexIndex(int,int);
+  float getVertexProb(int,int);
   float getVertexMVA(int,int);
 
   int init();
@@ -166,6 +167,12 @@ private:
   float ptJet1CiC_;
   float ptJet2CiC_;
 
+  float thetaLead;
+  float thetaSubLead;
+  float thetaLeadPFCiC;
+  float thetaSubLeadPFCiC;
+  float thetaLeadCiC;
+  float thetaSubLeadCiC;
   
   Int_t nOutPhotons_;
   std::vector<ReducedPhotonData> OutPhotons_;
@@ -246,6 +253,7 @@ private:
   int nPair_;
   std::vector<std::pair<int,int> > *ggVerticesPhotonIndices;
   std::vector<std::pair<int, float> > *ggVerticesVertexIndex;
+  std::vector<float>                  *ggVerticesPerEvtMVA;
 
   int nMu_;
   std::vector<VecbosMu> *Muons_;

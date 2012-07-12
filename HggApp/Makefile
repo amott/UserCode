@@ -145,7 +145,7 @@ $(OUTLIB)HggEGEnergyCorrector.o: $(SRCDIR)HggEGEnergyCorrector.cc \
 				$(OUTLIB)VecbosEGObject.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggEGEnergyCorrector.o $<
 
-$(OUTLIB)HggVertexing.o: $(SRCDIR)HggVertexing.cc \
+$(OUTLIB)HggVertexing.o: $(SRCDIR)HggVertexingNew.cc \
 			$(OUTLIB)Vecbos.o \
 			$(OUTLIB)VecbosEGObject.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggVertexing.o $<

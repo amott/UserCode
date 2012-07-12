@@ -18,6 +18,7 @@ HggSelector::HggSelector():
   doElectronVeto(true),
   ggVerticesPhotonIndices(0),
   ggVerticesVertexIndex(0),
+  ggVerticesPerEvtMVA(0),
   Photons_(0),
   Muons_(0),
   Jets_(0),
@@ -33,6 +34,7 @@ HggSelector::HggSelector():
 HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName):
   ggVerticesPhotonIndices(0),
   ggVerticesVertexIndex(0),
+  ggVerticesPerEvtMVA(0),
   doElectronVeto(true),
   Photons_(0),
   Muons_(0),
@@ -320,6 +322,17 @@ void HggSelector::Loop(){
       Mjj_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1_ = jpt[0];
       ptJet2_ = jpt[1];
+
+      TLorentzVector p1 = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy);
+      TLorentzVector p2 = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy);
+      if(p1.Pt() < p2.Pt()){
+	TLorentzVector tmp = p1;
+	p1=p2; p2=tmp;
+      }
+      TLorentzVector gg = p1+p2;
+      thetaLead = (p1-gg).Theta();
+      thetaSubLead = (p2-gg).Theta();
+
     }else{
       mPair_=-1;      
     }
@@ -347,6 +360,16 @@ void HggSelector::Loop(){
       MjjPFCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1PFCiC_ = jpt[0];
       ptJet2PFCiC_ = jpt[1];
+
+      TLorentzVector p1 = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy);
+      TLorentzVector p2 = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy);
+      if(p1.Pt() < p2.Pt()){
+	TLorentzVector tmp = p1;
+	p1=p2; p2=tmp;
+      }
+      TLorentzVector gg = p1+p2;
+      thetaLeadPFCiC = (p1-gg).Theta();
+      thetaSubLeadPFCiC = (p2-gg).Theta();
     }else{
       mPairPFCiC_=-1;
     }
@@ -375,6 +398,16 @@ void HggSelector::Loop(){
       MjjCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1CiC_ = jpt[0];
       ptJet2CiC_ = jpt[1];
+
+      TLorentzVector p1 = pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy);
+      TLorentzVector p2 = pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy);
+      if(p1.Pt() < p2.Pt()){
+	TLorentzVector tmp = p1;
+	p1=p2; p2=tmp;
+      }
+      TLorentzVector gg = p1+p2;
+      thetaLeadCiC = (p1-gg).Theta();
+      thetaSubLeadCiC = (p2-gg).Theta();
     }else{
       mPairCiC_=-1;
     }
@@ -718,6 +751,7 @@ void HggSelector::setBranchAddresses(){
  fChain->SetBranchAddress("nPair",&nPair_); 
  fChain->SetBranchAddress("ggVerticesPhotonIndices",&ggVerticesPhotonIndices);
  fChain->SetBranchAddress("ggVerticesVertexIndex",&ggVerticesVertexIndex);
+ fChain->SetBranchAddress("ggVerticesPerEvtMVA",&ggVerticesPerEvtMVA);
 
  fChain->SetBranchAddress("nMu",&nMu_);
  fChain->SetBranchAddress("Muons",&Muons_);
@@ -759,6 +793,9 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("Mjj",&Mjj_,"Mjj");
   outTree->Branch("ptJet1",&ptJet1_,"ptJet1");
   outTree->Branch("ptJet2",&ptJet2_,"ptJet2");
+  outTree->Branch("thetaLead",&thetaLead,"thetaLead/F");
+  outTree->Branch("thetaSubLead",&thetaSubLead,"thetaSubLead/F");
+
 
   outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
   outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
@@ -771,6 +808,8 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("MjjPFCiC",&MjjPFCiC_,"MjjPFCiC");
   outTree->Branch("ptJet1PFCiC",&ptJet1PFCiC_,"ptJet1PFCiC");
   outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
+  outTree->Branch("thetaLeadPFCiC",&thetaLeadPFCiC,"thetaLeadPFCiC/F");
+  outTree->Branch("thetaSubLeadPFCiC",&thetaSubLeadPFCiC,"thetaSubLeadPFCiC/F");
   
   outTree->Branch("mPairCiC",&mPairCiC_,"mPairCiC/F");
   outTree->Branch("mPairNoCorrCiC",&mPairNoCorrCiC_,"mPairNoCorrCiC/F");
@@ -783,7 +822,9 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("MjjCiC",&MjjCiC_,"MjjCiC");
   outTree->Branch("ptJet1CiC",&ptJet1CiC_,"ptJet1CiC");
   outTree->Branch("ptJet2CiC",&ptJet2CiC_,"ptJet2CiC");
-  
+  outTree->Branch("thetaLeadCiC",&thetaLeadCiC,"thetaLeadCiC/F");
+  outTree->Branch("thetaSubLeadCiC",&thetaSubLeadCiC,"thetaSubLeadCiC/F");
+
   outTree->Branch("nPhoton",&nOutPhotons_,"nPhoton/I");
   outTree->Branch("Photon",&OutPhotons_);
   outTree->Branch("nPhotonPFCiC",&nOutPhotonsPFCiC_,"nPhotonPFCiC/I");
@@ -901,7 +942,7 @@ void HggSelector::fillMuMuGamma(){
   if(doMuMuGamma) outTreeMuMuG->Fill();
 }
 
-#define debugMjj 1
+#define debugMjj 0
 float HggSelector::getVBFMjj(VecbosPho* pho1, VecbosPho* pho2,TVector3 SelVtx,float *jetPts){
   TLorentzVector p1 = pho1->p4FromVtx(SelVtx,pho1->finalEnergy);
   TLorentzVector p2 = pho2->p4FromVtx(SelVtx,pho2->finalEnergy);
@@ -975,7 +1016,7 @@ bool HggSelector::passJetID(VecbosJet* jet){
   }
   if(JetCat == -1) return false;
 
-  if(jet->betaStarClassicIdMVA > betaStarSlope[JetCat]*TMath::Log(nVtx)-0.64) return false;
+  if(jet->betaStarClassicIdMVA > betaStarSlope[JetCat]*TMath::Log(nVtx-0.64)) return false; //warning, I think this is WRONG! but its how MIT does it...
   if(jet->rmsCandsHand > rmsCut[JetCat]) return false;
   return true;
 }
@@ -1027,6 +1068,22 @@ float HggSelector::getVertexMVA(int indexPho1,int indexPho2){
   return selectedVertex;
 }
 
+float HggSelector::getVertexProb(int indexPho1,int indexPho2){
+  int origIndex1 = Photons_->at(indexPho1).index;  //index is based on the original photon index
+  int origIndex2 = Photons_->at(indexPho2).index;  
+  float evtmva = -1e6;
+  for(int i=0;i<nPair_;i++){
+    //the first of these should be the correct order, but just in case ....
+    if(ggVerticesPhotonIndices->at(i) == std::pair<int,int>(origIndex1,origIndex2) ||
+       ggVerticesPhotonIndices->at(i) == std::pair<int,int>(origIndex2,origIndex1)){
+      evtmva = ggVerticesPerEvtMVA->at(i);
+      break;
+    }
+  }
+  return vtxprob=1.-0.49*(evtmva+1.0);
+  
+}
+
 float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float mva2, bool usePFSC){
   if(debugSelector) cout << "getDiPhoMVA" <<endl;  
   int selectedVertex = getVertexIndex(indexPho1,indexPho2);
@@ -1068,7 +1125,10 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
   smearedMassErrByMass = massRes->getMassResolutionEonly(&pho1,&pho2,vtxPos)/mPair;
   smearedMassErrByMassWrongVtx = massRes->getMassResolution(&pho1,&pho2,vtxPos,true)/mPair;
   if(debugSelector) cout << "Mass Erro resolved. Selected Vertex: " << selectedVertex << endl;
-  vtxprob=1.-0.49*(getVertexMVA(indexPho1,indexPho2)+1.0);
+
+  vtxprob= getVertexProb(indexPho1,indexPho2);
+
+
   if(debugSelector) cout << "vtx prob: " << vtxprob << endl;
   pho1PtByMass = max(p1.Et(),p2.Et())/mPair;
   pho2PtByMass = min(p1.Et(),p2.Et())/mPair;

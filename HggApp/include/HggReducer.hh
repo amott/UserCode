@@ -18,7 +18,7 @@
 
 
 
-#include "HggVertexing.hh"
+#include "HggVertexingNew.hh"
 #include "HggEGEnergyCorrector.hh"
 #include "HggEnergyScale.hh"
 
@@ -152,9 +152,7 @@ private:
   vector<pair<int,float> > ggVerticesVertexIndex01;  // vertex, MVA score
   vector<pair<int,float> > ggVerticesVertexIndex02;  // vertex, MVA score
   vector<pair<int,float> > ggVerticesVertexIndex03;  // vertex, MVA score
-  vector<pair<int,float> > ggVerticesVertexIndexOld01;  // vertex, MVA score
-  vector<pair<int,float> > ggVerticesVertexIndexOld02;  // vertex, MVA score
-  vector<pair<int,float> > ggVerticesVertexIndexOld03;  // vertex, MVA score
+  vector<float>            ggVerticesPerEvtMVA;
   //std::vector<int> ggVertices_
 
   //vertex information
