@@ -298,6 +298,9 @@ public:
 
   float EOverP;
 
+  float d0Track;
+  float dzTrack;
+
   float dEtaSCTrack;
   float dPhiSCTrack;
 

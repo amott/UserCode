@@ -606,6 +606,15 @@ void VecbosEle::Init(VecbosBase* o,int i){
   dEtaSCTrack = o->deltaEtaEleClusterTrackAtCaloEle[i];
   dPhiSCTrack = o->deltaPhiEleClusterTrackAtCaloEle[i];
 
+  int iGsfTrack = o->gsfTrackIndexEle[i];
+  if(iGsfTrack < 0 || iGsfTrack >= o->nGsfTrack){
+    d0Track= o->d0GsfTrack[iGsfTrack];
+    dzTrack= o->dzGsfTrack[iGsfTrack];
+  }else{
+    d0Track=999;
+    dzTrack=999;
+  }
+
   int tmp = o->recoFlagsEle[i];
   //extract the flag information into booleans
   isTrackerDriven = tmp & 1; 
