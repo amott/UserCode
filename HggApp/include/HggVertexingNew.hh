@@ -55,9 +55,8 @@ private:
   std::pair<float,float> getZConv(VecbosPho*);
   float convCorrectedDz(VecbosConversion*,TVector3);
   float Z0EcalVtxCiC(VecbosConversion*,TVector3,TVector3);
-  int getNConv(VecbosPho* p1, VecbosPho* p2){
-    return (p1->conversion.index!=-1 + p2->conversion.index!=-1);
-  }
+  int getNConv(VecbosPho* p1, VecbosPho* p2);
+
   TMVA::Reader * perVtxReader; 
   TMVA::Reader * perEvtReader;
   float *PerVtxVars;

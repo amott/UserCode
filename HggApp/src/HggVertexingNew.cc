@@ -75,12 +75,17 @@ void HggVertexing::init(){
 }
 
 float HggVertexing::evalPerVtxMVA(float ptbal, float ptasym, float logsumpt2, float limPullToConv, float nConv){
-
+  if(debugVertexing) cout << "evalPerVtxMVA" << endl;
   PerVtxVars[0] = ptbal;
   PerVtxVars[1] = ptasym;
   PerVtxVars[2] = logsumpt2;
   PerVtxVars[3] = limPullToConv;
   PerVtxVars[4] = nConv;
+  if(debugVertexing){
+    cout << "\tInputs:  ";
+    for(int i=0;i<5;i++) cout << PerVtxVars[i] << "  ";
+    cout << endl;
+  }
 
   return perVtxReader->EvaluateMVA(perVtxMvaMethod);
 }
@@ -140,6 +145,7 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
   }//for(int iTrk=0; iTrk<base->nTrack; iTrk++)
 
   std::pair<float,float> convZ = getZConv(pho1,pho2); //z,dz
+  if(debugVertexing) cout << "conv z/dz: " << convZ.first << "  " << convZ.second << endl;
   int maxVertices = ( (pho1_fromVtx[0] + pho2_fromVtx[0]).Pt() > 30 ? 3 : 5);
   double minDz = 999;
 
@@ -194,6 +200,8 @@ float HggVertexing::evalPerEvtMVA(VecbosPho* pho1,VecbosPho* pho2,
   if(perVertexRank->size()==0) return -1e6;
   while(perVertexRank->size()<3) perVertexRank->push_back(std::pair<int,float>(-1,-1e6));
 
+
+      
   PerEvtVars[0] = higgs_p4.Pt();
   PerEvtVars[1] = base->nPV;
   PerEvtVars[2] = perVertexRank->at(0).second;
@@ -203,6 +211,12 @@ float HggVertexing::evalPerEvtMVA(VecbosPho* pho1,VecbosPho* pho2,
   PerEvtVars[6] = (perVertexRank->at(2).first!=-1 ? base->PVzPV[perVertexRank->at(2).first] - bestVtxPos.Z() : 0);
   PerEvtVars[7] = getNConv(pho1,pho2);
 
+
+  if(debugVertexing){
+    cout << "\tInputs:  ";
+    for(int i=0;i<8;i++) cout << PerEvtVars[i] << "  ";
+    cout << endl;
+  }
   if(debugVertexing) cout << "PerEvtMVA --Done" << endl;
   
   return perEvtReader->EvaluateMVA( perEvtMvaMethod );
@@ -211,9 +225,9 @@ float HggVertexing::evalPerEvtMVA(VecbosPho* pho1,VecbosPho* pho2,
 
 
 //method to do the vertexing
-vector<pair<int,float> > HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2,float& evtMVA){
+vector<pair<int,float> > HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2,float& evtMVA){ 
   if(debugVertexing) cout << "vertexTMVA" << endl;
-  
+ 
   //if(base->nPV == 1) return pair<int,float>(0,1); 
   if(base->nPV == 0) return std::vector<pair<int,float> >();
 
@@ -307,11 +321,13 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
 
 }
 
+/*  
+//MIT-like version
  float HggVertexing::convCorrectedDz(VecbosConversion* c,TVector3 basePos){
    TVector3 momPerp(c->pRefittedPair.Px(),c->pRefittedPair.Py(),0);
    TVector3 posPerp(c->CaloPos.X()-basePos.X(),c->CaloPos.Y()-basePos.Y(),0);
 
-   return c->CaloPos.Z() - basePos.Z() - posPerp.Dot(momPerp)/momPerp.Pt() * (c->pRefittedPair.Pt()/momPerp.Pt());
+   return c->CaloPos.Z() - basePos.Z() - posPerp.Dot(momPerp)/momPerp.Pt() * (c->pRefittedPair.Pz()/momPerp.Pt());
  }
 
 float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 caloPos){
@@ -322,3 +338,32 @@ float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 
    return c->CaloPos.Z() - posPerp.Mag() * (dirscvtx.Z()/dirscvtx.Mag());
    
  }
+*/
+
+//Globe-like version
+float HggVertexing::convCorrectedDz(VecbosConversion* c,TVector3 basePos){
+
+  return (c->vtx.Z()-basePos.Z()) - ((c->vtx.X()-basePos.X())*c->pRefittedPair.Px() + (c->vtx.Y()-basePos.Y())*c->pRefittedPair.Py())/c->pRefittedPair.Pt()*c->pRefittedPair.Pz()/c->pRefittedPair.Pt();
+
+}
+
+float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 caloPos){
+  float dx1 = caloPos.X() - c->vtx.X();
+  float dy1 = caloPos.Y() - c->vtx.Y();
+  float dz1 = caloPos.Z() - c->vtx.Z();
+  float r1 = sqrt(dx1*dx1+dy1+dy1);
+  float tantheta = r1/dz1;
+  
+  float dx2 = c->vtx.X()-basePos.X();
+  float dy2 = c->vtx.Y()-basePos.Y();
+  float r2  = sqrt(dx2*dx2+dy2+dy2);
+  float dz2 = r2/tantheta;
+  return caloPos.Z() - dz1 - dz2;
+}
+
+int HggVertexing::getNConv(VecbosPho* p1, VecbosPho* p2){
+  int nconv=0;
+  if(p1->conversion.index != -1) nconv++;
+  if(p2->conversion.index != -1) nconv++;
+  return nconv;
+}
