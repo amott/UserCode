@@ -123,6 +123,8 @@ public :
    Float_t         dr04HcalTowerSumEtFullConeEle[20];   //[nEle]
    Float_t         eleIdLikelihoodEle[20];   //[nEle]
    Float_t         pflowMVAEle[20];   //[nEle]
+   Float_t         mvaidnontrigEle[20];   //[nEle]
+   Float_t         mvaidtrigEle[20];   //[nEle]
    Float_t         pfCombinedIsoEle[20];   //[nEle]
    Float_t         pfCandChargedIso01Ele[20];   //[nEle]
    Float_t         pfCandNeutralIso01Ele[20];   //[nEle]
@@ -1125,6 +1127,8 @@ public :
    TBranch        *b_dr04HcalTowerSumEtFullConeEle;   //!
    TBranch        *b_eleIdLikelihoodEle;   //!
    TBranch        *b_pflowMVAEle;   //!
+   TBranch        *b_mvaidnontrigEle;   //!
+   TBranch        *b_mvaidtrigEle;   //!
    TBranch        *b_pfCombinedIsoEle;   //!
    TBranch        *b_pfCandChargedIso01Ele;   //!
    TBranch        *b_pfCandNeutralIso01Ele;   //!
@@ -2198,6 +2202,8 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("dr04HcalTowerSumEtFullConeEle", dr04HcalTowerSumEtFullConeEle, &b_dr04HcalTowerSumEtFullConeEle);
    fChain->SetBranchAddress("eleIdLikelihoodEle", eleIdLikelihoodEle, &b_eleIdLikelihoodEle);
    fChain->SetBranchAddress("pflowMVAEle", pflowMVAEle, &b_pflowMVAEle);
+   fChain->SetBranchAddress("mvaidnontrigEle", mvaidnontrigEle, &b_mvaidnontrigEle);
+   fChain->SetBranchAddress("mvaidtrigEle", mvaidtrigEle, &b_mvaidtrigEle);
    fChain->SetBranchAddress("pfCombinedIsoEle", pfCombinedIsoEle, &b_pfCombinedIsoEle);
    fChain->SetBranchAddress("pfCandChargedIso01Ele", pfCandChargedIso01Ele, &b_pfCandChargedIso01Ele);
    fChain->SetBranchAddress("pfCandNeutralIso01Ele", pfCandNeutralIso01Ele, &b_pfCandNeutralIso01Ele);

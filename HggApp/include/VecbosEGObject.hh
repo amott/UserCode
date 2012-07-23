@@ -283,6 +283,8 @@ public:
   float eta;
   float phi;
 
+  int charge;
+
   float correctedEnergy;
   float correctedEnergyError;
 
@@ -319,6 +321,8 @@ public:
   float dr04TkSumPt;
   float dr04EcalRecHitSumEt;
   float dr04HcalTowerSumEt;
+
+  float idMVA;
 
   VecbosGen genMatch;
   void doGenMatch(VecbosBase*);

@@ -578,6 +578,8 @@ void VecbosEle::Init(VecbosBase* o,int i){
   phi    = o->phiEle[i];
   pt     = TMath::Sqrt(TMath::Power(o->pxEle[i],2)+TMath::Power(o->pyEle[i],2));
 
+  charge = o->chargeEle[i];
+
   esEnergy = SC.esEnergy;
   HoverE   = o->hOverEPho[i];
 
@@ -605,6 +607,8 @@ void VecbosEle::Init(VecbosBase* o,int i){
 
   dEtaSCTrack = o->deltaEtaEleClusterTrackAtCaloEle[i];
   dPhiSCTrack = o->deltaPhiEleClusterTrackAtCaloEle[i];
+
+  idMVA  = o->mvaidnontrigEle[i];
 
   int iGsfTrack = o->gsfTrackIndexEle[i];
   if(iGsfTrack < 0 || iGsfTrack >= o->nGsfTrack){
