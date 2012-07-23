@@ -254,7 +254,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 	//VecbosPho pho2 = *iPho2;
 	if(debugReducer) cout << "Doing Vertexing ... " << endl;
 	float perEvt=-1;
-	vector<pair<int,float> > vtxPair = vertexer->vertex_tmva(&*iPho2,&*iPho2,perEvt);
+	vector<pair<int,float> > vtxPair = vertexer->vertex_tmva(&*iPho1,&*iPho2,perEvt);
 
 	const int nTop=3;
 	pair<int,float> top[nTop];
