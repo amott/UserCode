@@ -1,0 +1,19 @@
+#!/bin/bash
+echo ""
+echo "This script will modify the CVS sandbox located under:"
+echo "	`pwd`"
+echo "and it will replace pccms173 by lxcms133 in each file called 'Root'"
+echo""
+echo "Type enter to continue or CTRL C to abort:"
+read dummy
+
+
+find . -name Root -print | grep CVS/ | while read file;do
+	is_not_ok="`grep "pccms173" $file`"
+	if [ "$is_not_ok" ];then
+		sed -i -e 's/pccms173/lxcms133/' $file
+		echo "$file corrected"
+	fi
+done
+
+

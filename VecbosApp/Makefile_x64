@@ -1,0 +1,129 @@
+ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
+ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs)
+ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
+
+FASTJETFLAGS = $(shell FASTJET/bin/fastjet-config --cxxflags)
+FASTJETLIBS  = $(shell FASTJET/bin/fastjet-config --libs --plugins)
+
+CXX           = g++ -m64
+CXXFLAGS      = -g -fPIC -Wno-deprecated -O -ansi -D_GNU_SOURCE -g -O2
+LD            = g++ -m64
+LDFLAGS       = -g
+SOFLAGS       = -shared
+
+#PG da qui per macosx
+#PG -----------------
+
+ARCH         := $(shell root-config --arch)
+PLATFORM     := $(shell root-config --platform)
+
+NGLIBS         = $(ROOTGLIBS) 
+NGLIBS        += -lMinuit
+gGLIBS          = $(filter-out -lNew, $(NGLIBS))
+
+CXXFLAGS      += $(ROOTCFLAGS)
+CXXFLAGS      += $(FASTJETFLAGS)
+LIBS           = $(ROOTLIBS) 
+
+NGLIBS         = $(ROOTGLIBS) 
+NGLIBS        += -lMinuit
+NGLIBS        += $(FASTJETLIBS)
+GLIBS          = $(filter-out -lNew, $(NGLIBS))
+
+INCLUDEDIR       = ./include
+INCLUDEDIRCOMMON = ../
+SRCDIR           = ./src/
+CXX	         += -I$(INCLUDEDIR) -I$(INCLUDEDIRCOMMON) -I.
+OUTLIB	         = ./lib/
+OUTLIBCOMMON     = $(INCLUDEDIRCOMMON)/CommonTools/lib/
+
+.SUFFIXES: .cc,.C, .hh
+.PREFIXES: ./lib/
+
+all:  lib VecbosApp
+
+VecbosApp:  $(SRCDIR)VecbosApp.C \
+	$(OUTLIB)VecbosAnalysis.o \
+	$(OUTLIB)SUSYAnalysis.o \
+	$(OUTLIB)RSAnalysis.o \
+#	$(OUTLIB)RSGenAnalysis.o \
+	$(OUTLIB)Vecbos.o \
+#	$(OUTLIB)VtxStudy.o \
+	$(OUTLIB)GenJetAnalysis.o \
+	$(OUTLIB)VecbosEESelection.o \
+	$(OUTLIBCOMMON)Conditions.o \
+	$(OUTLIBCOMMON)Selection.o \
+	$(OUTLIBCOMMON)Counters.o \
+	$(OUTLIBCOMMON)TriggerMask.o \
+	$(OUTLIBCOMMON)Utils.o \
+	$(OUTLIB)RedVecbosWTree.o
+	$(CXX) $(CXXFLAGS) -o VecbosApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(GLIBS) $ $<
+
+VecbosApp.clean:
+	rm -f VecbosApp
+
+lib: $(OUTLIB)VtxStudy.o $(OUTLIB)GenJetAnalysis.o $(OUTLIBCOMMON)Conditions.o $(OUTLIBCOMMON)Selection.o $(OUTLIBCOMMON)Counters.o $(OUTLIBCOMMON)TriggerMask.o $(OUTLIBCOMMON)Utils.o  $(OUTLIB)RSAnalysis.o  \
+#$(OUTLIB)RSGenAnalysis.o 
+	$(OUTLIB)SUSYAnalysis.o $(OUTLIB)VecbosAnalysis.o $(OUTLIB)VecbosEESelection.o 
+# $(OUTLIB)VtxStudy.o 
+
+# analysis functions
+$(OUTLIB)GenJetAnalysis.o: $(SRCDIR)GenJetAnalysis.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)GenJetAnalysis.o $<
+
+$(OUTLIB)VtxStudy.o: $(SRCDIR)VtxStudy.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VtxStudy.o $<
+
+$(OUTLIB)SUSYAnalysis.o: $(SRCDIR)SUSYAnalysis.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)SUSYAnalysis.o $<
+
+$(OUTLIB)RSAnalysis.o: $(SRCDIR)RSAnalysis.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)RSAnalysis.o $<
+
+#$(OUTLIB)RSGenAnalysis.o: $(SRCDIR)RSGenAnalysis.cc $(OUTLIB)Vecbos.o
+#	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)RSGenAnalysis.o $<
+
+$(OUTLIB)VecbosAnalysis.o: $(SRCDIR)VecbosAnalysis.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosAnalysis.o $<
+
+$(OUTLIB)VecbosEESelection.o: $(SRCDIR)VecbosEESelection.cc $(OUTLIB)Vecbos.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosEESelection.o $<
+
+# main VecBos functions
+$(OUTLIB)Vecbos.o: $(SRCDIR)Vecbos.cc $(OUTLIB)VecbosBase.o $(OUTLIB)Jet.o $ \
+	$(OUTLIB)MET.o $(OUTLIB)CaloTower.o	
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)Vecbos.o $<
+
+# base class with ntuple structure
+$(OUTLIB)VecbosBase.o: $(SRCDIR)VecbosBase.cc 
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosBase.o $<
+
+# ausiliary functions (MET, JEt, CaloTower) for offline reclustering
+$(OUTLIB)Jet.o: $(SRCDIR)Jet.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)Jet.o $<
+
+$(OUTLIB)MET.o: $(SRCDIR)MET.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MET.o $<
+
+$(OUTLIB)CaloTower.o: $(SRCDIR)CaloTower.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)CaloTower.o $<
+
+# ausiliary functions to compute selections/efficiencies
+$(OUTLIBCOMMON)Conditions.o: $(INCLUDEDIRCOMMON)/CommonTools/src/Conditions.C
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIBCOMMON)Conditions.o $<
+$(OUTLIBCOMMON)Utils.o: $(INCLUDEDIRCOMMON)/CommonTools/src/Utils.cc
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIBCOMMON)Utils.o $<
+$(OUTLIBCOMMON)Counters.o: $(INCLUDEDIRCOMMON)/CommonTools/src/Counters.cc
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIBCOMMON)Counters.o $<
+$(OUTLIBCOMMON)Selection.o: $(INCLUDEDIRCOMMON)/CommonTools/src/Selection.cc
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIBCOMMON)Selection.o $<
+$(OUTLIBCOMMON)TriggerMask.o: $(INCLUDEDIRCOMMON)/CommonTools/src/TriggerMask.cc
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIBCOMMON)TriggerMask.o $<
+$(OUTLIB)RedVecbosWTree.o: $(SRCDIR)/RedVecbosWTree.cc
+	$(CXX) $(CXXFLAGS) -c -o $(OUTLIB)RedVecbosWTree.o $<
+
+clean:
+	rm -f $(OUTLIB)*.o $(OUTLIBCOMMON)*.o
+	rm -f VecbosApp
+
+

@@ -1,0 +1,26 @@
+#!/bin/bash
+python cmst3_submit.py z0j_0ptz100_dir_0 cmst3_GenVecbos/z0j_0ptz100_0.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_1 cmst3_GenVecbos/z0j_0ptz100_1.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_2 cmst3_GenVecbos/z0j_0ptz100_2.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_3 cmst3_GenVecbos/z0j_0ptz100_3.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_4 cmst3_GenVecbos/z0j_0ptz100_4.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_5 cmst3_GenVecbos/z0j_0ptz100_5.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_6 cmst3_GenVecbos/z0j_0ptz100_6.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_7 cmst3_GenVecbos/z0j_0ptz100_7.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_8 cmst3_GenVecbos/z0j_0ptz100_8.list 2004.55 
+python cmst3_submit.py z0j_0ptz100_dir_9 cmst3_GenVecbos/z0j_0ptz100_9.list 2004.55 
+python cmst3_submit.py z1j_0ptz100_dir cmst3_GenVecbos/z1j_0ptz100.list 388.91
+python cmst3_submit.py z2j_0ptz100_dir cmst3_GenVecbos/z2j_0ptz100.list 97.272
+python cmst3_submit.py z3j_0ptz100_dir cmst3_GenVecbos/z3j_0ptz100.list 21.989
+python cmst3_submit.py z4j_0ptz100_dir cmst3_GenVecbos/z4j_0ptz100.list 4.3315
+python cmst3_submit.py z5j_0ptz100_dir cmst3_GenVecbos/z5j_0ptz100.list 1.0085
+python cmst3_submit.py z1j_100ptz300_dir cmst3_GenVecbos/z1j_100ptz300.list 9.7206
+python cmst3_submit.py z2j_100ptz300_dir cmst3_GenVecbos/z2j_100ptz300.list 8.5156
+python cmst3_submit.py z3j_100ptz300_dir cmst3_GenVecbos/z3j_100ptz300.list 3.8370
+python cmst3_submit.py z4j_100ptz300_dir cmst3_GenVecbos/z4j_100ptz300.list 1.2336
+python cmst3_submit.py z5j_100ptz300_dir cmst3_GenVecbos/z5j_100ptz300.list 0.42213
+python cmst3_submit.py z1j_300ptz800_dir cmst3_GenVecbos/z1j_300ptz800.list 0.079510
+python cmst3_submit.py z2j_300ptz800_dir cmst3_GenVecbos/z2j_300ptz800.list 0.1149
+python cmst3_submit.py z3j_300ptz800_dir cmst3_GenVecbos/z3j_300ptz800.list 0.075362
+python cmst3_submit.py z4j_300ptz800_dir cmst3_GenVecbos/z4j_300ptz800.list 0.03326
+python cmst3_submit.py z5j_300ptz800_dir cmst3_GenVecbos/z5j_300ptz800.list 0.016957

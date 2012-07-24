@@ -1,0 +1,12 @@
+source setup_fastjet_x64.sh
+#source setup_TMVA.sh
+mkdir tmp_setup
+cd tmp_setup
+#project CMSSW
+source /afs/cern.ch/cms/sw/slc4_ia32_gcc345/cms/cms-cvs-utils/1.0-cms/bin/projch.csh CMSSW
+cvs co -d CommonTools UserCode/emanuele/CommonTools
+cvs co -d EgammaAnalysisTools UserCode/emanuele/EgammaAnalysisTools
+mv CommonTools EgammaAnalysisTools ..
+cd ..
+rm -rf tmp_setup 
+make
