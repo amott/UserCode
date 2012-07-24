@@ -1,5 +1,6 @@
 source setup_fastjet_x64.sh
 #source setup_TMVA.sh
+setenv SCRAM_ARCH slc5_amd64_gcc462
 cmsrel CMSSW_5_2_3
 cd CMSSW_5_2_3/src
 eval `scramv1 runtime -csh`
