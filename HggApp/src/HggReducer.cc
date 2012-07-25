@@ -422,16 +422,24 @@ void HggReducer::init(string outputFileName){
    return;
  }
 
- string EnergyScaleCFG = cfg.getParameter("EnergyScaleCFG");
- string EnergySmearCFG = cfg.getParameter("EnergySmearCFG");
+ string EnergyScaleCFG  = cfg.getParameter("EnergyScaleCFG");
+ string EnergySmearCFG  = cfg.getParameter("EnergySmearCFG");
  string sPreselection   = cfg.getParameter("Preselection");
  string sScaleSmear     = cfg.getParameter("ScaleSmear");
  string sMinPhoSel      = cfg.getParameter("MinPreselPhotons");
+ string puWeight        = cfg.getParameter("pileupReweight");
  triggerNames  = cfg.getTokens("Triggers",",");
 
  preSelSet = atoi(sPreselection.c_str());
  applyScaleSmear = atoi(sScaleSmear.c_str());
  if(sMinPhoSel.compare("")!=0) minPhoSel = atoi(sMinPhoSel.c_str());
+
+ pileupWeight=1;
+ if(puWeight.compare("")!=0){
+   cout << "Opening Pileup Weight File: " << puWeight << endl;
+   pileupWeightFile = new TFile(puWeight.c_str());
+   pileupWeightHist = (TH1F*)pileupWeightFile->Get("pileupReWeight");
+ }
 
  cout << "Config Parameters:" << endl
       << "EnergyScale: " << EnergyScaleCFG << endl
@@ -442,6 +450,7 @@ void HggReducer::init(string outputFileName){
  vertexer  = new HggVertexing(this);
  vertexer->setConfigFile(config);
  vertexer->useConversions();
+ vertexer->saveInputs(outTree);
  vertexer->init();
  corrector = new HggEGEnergyCorrector(this,config,_isData);
  elecorrector = new HggEGEnergyCorrector(this,config,_isData);
@@ -663,7 +672,8 @@ void HggReducer::fillGeneratorInfo(){
   procID = 0; //genProcessId;
   qScale;
   nPu = nPU[1];
-  
+  pileupWeight = pileupWeightHist->GetBinContent( pileupWeightHist->FindFixBin(nPu) );
+
   //match the reco objects to gen objects
   
   PhoCollection::iterator phoIt;
@@ -688,7 +698,7 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("orbitNumber",&orbitNumber,"orbitNumber/I");
  outTree->Branch("evtTime",&evtTime,"evtTime/I");
  outTree->Branch("isRealData",&_isData,"isRealData/I");
-  
+
 
  ///information for the vertex
  outTree->Branch("nVtx",&nVtx,"nVtx/I");
@@ -766,6 +776,7 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
     outTree->Branch("procID",&procID,"procID/I");
     outTree->Branch("qScale",&qScale,"qScale/F");
     outTree->Branch("nPU",&nPu,"nPU/F");
+    outTree->Branch("pileupWeight",&pileupWeight,"pileupWeight/F");
 
     ///gen electron, muon,photon
     outTree->Branch("nGenPho",&nGenPho,"nGenPho/I");

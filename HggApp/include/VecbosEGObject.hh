@@ -167,6 +167,7 @@ public:
   float pt;
   float eta;
   float phi;
+  float mass;
   //TLorentzVector getP4();
 
   //TVector3 Vtx;

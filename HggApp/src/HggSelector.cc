@@ -530,6 +530,7 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int scaleShift){
   std::pair<int,int> indices(-1,-1);
   float diPhoMVAMax=-99;
+  float maxSumPt=-1;
   TRandom3 rng(0);
   *mvaOut = -999.;
   for(int iPho1=0; iPho1<nPho_;iPho1++){
@@ -571,7 +572,11 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
       if(debugSelector) cout << "Getting Double Photon MVA" << endl;
       float diPhoMVA =  getDiPhoMVA(iPho1,iPho2,mva1,mva2,false);
       if(debugSelector) cout << "\t\t" << mva1 << "  " << mva2 << "  " << diPhoMVA << endl;
-      if(diPhoMVA > diPhoMVAMax && diPhoMVA>=-1){
+      float thisPtSum = pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()
+	+ pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt();	
+
+      if(diPhoMVA>=-1 &&  thisPtSum > maxSumPt){
+	maxSumPt = thisPtSum;
 	indices.first = iPho1;
 	indices.second = iPho2;
 	diPhoMVAMax = diPhoMVA;
@@ -588,6 +593,7 @@ void HggSelector::setDefaults(){
   mPairNoCorr_=-1;
   genHiggsPt = -1;
   nPU_ = inPU;
+  evtWeight=1;
 }
 void HggSelector::clear(){
   mPair_=-1;
@@ -840,6 +846,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("genHiggsVy",&genHiggsVy);
   outTree->Branch("genHiggsVz",&genHiggsVz);
   
+  outTree->Branch("evtWeight",&evtWeight);
 
   outTree->Branch("ptGenPho1",&ptGenPho1);
   outTree->Branch("etaGenPho1",&etaGenPho1);

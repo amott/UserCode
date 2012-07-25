@@ -16,7 +16,8 @@
 #include "CommonTools/include/LeptonIdBits.h"
 #include "CommonTools/include/TriggerMask.hh"
 
-
+#include "TH1F.h"
+#include "TFile.h"
 
 #include "HggVertexingNew.hh"
 #include "HggEGEnergyCorrector.hh"
@@ -170,8 +171,13 @@ private:
   int vtxIsValid[maxVtx];
 
 
+  //for pileup reweighting
+  TH1F* pileupWeightHist;
+  TFile *pileupWeightFile;
+  float pileupWeight;
+
   //GENERATOR information
-  virtual void fillGeneratorInfo();  // this will be overwritten in the MC class to actually do something
+  virtual void fillGeneratorInfo();  
   static const int MAXGenSaved = 1000;
   //gen-leve phton
   int nGenPho;

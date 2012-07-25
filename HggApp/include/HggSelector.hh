@@ -283,6 +283,8 @@ private:
   long evtNumber;
   bool _isData;
 
+  float evtWeight;
+  
   int nGenHiggs;
   std::vector<VecbosGen> *GenHiggs;
 

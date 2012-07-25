@@ -30,10 +30,17 @@ HggVertexing::HggVertexing(VecbosBase *b):
 {
   useConversion = true;
   isInit=false;
+  doSaveInputs=false;
+  PerVtxVars = new float[5];
+  PerEvtVars = new float[8];
+  rescaleTrkPt = false;
 }
 
  
-HggVertexing::~HggVertexing() {}
+HggVertexing::~HggVertexing() {
+  delete PerVtxVars;
+  delete PerEvtVars;
+}
 
 void HggVertexing::init(){
   //read the config file to setup TMVA
@@ -47,12 +54,10 @@ void HggVertexing::init(){
   perVtxMvaMethod  = cfg.getParameter("perVtxMvaMethod");
   perEvtMvaWeights = cfg.getParameter("perEvtMvaWeights");
   perEvtMvaMethod  = cfg.getParameter("perEvtMvaMethod");
+  rescaleTrkPt   = cfg.getParameter("doRescaleTrkPt").compare("yes")==0;
 
   perVtxReader = new TMVA::Reader( "!Color:!Silent" );
   perEvtReader = new TMVA::Reader( "!Color:!Silent" );
-
-  PerVtxVars = new float[5];
-  PerEvtVars = new float[8];
 
   perVtxReader->AddVariable( "ptbal", &PerVtxVars[0] );
   perVtxReader->AddVariable( "ptasym", &PerVtxVars[1] );
@@ -74,6 +79,17 @@ void HggVertexing::init(){
   isInit=true;
 }
 
+void HggVertexing::saveInputs(TTree* outputTree){
+  doSaveInputs = true;
+
+  outputTree->Branch( "ptbal", &PerVtxVars[0] );
+  outputTree->Branch( "ptasym", &PerVtxVars[1] );
+  outputTree->Branch( "logsumpt2", &PerVtxVars[2] );
+  outputTree->Branch( "limPullToConv", &PerVtxVars[3] );
+  outputTree->Branch( "nConv", &PerVtxVars[4] );
+
+}
+
 float HggVertexing::evalPerVtxMVA(float ptbal, float ptasym, float logsumpt2, float limPullToConv, float nConv){
   if(debugVertexing) cout << "evalPerVtxMVA" << endl;
   PerVtxVars[0] = ptbal;
@@ -89,7 +105,14 @@ float HggVertexing::evalPerVtxMVA(float ptbal, float ptasym, float logsumpt2, fl
 
   return perVtxReader->EvaluateMVA(perVtxMvaMethod);
 }
-
+bool HggVertexing::isGoodVertex(int i){
+  if(i<0 || i >= base->nPV) return false;
+  if(fabs(base->PVzPV[i]) > 24.) return false;
+  if(base->trackSizePV[i] <=0) return false;
+  if(base->ndofPV[i] < 4.0)    return false;
+  if(base->rhoPV[i] > 2.0) return false;
+  return true;
+}
 
 std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, VecbosPho* pho2){
   if(debugVertexing) cout << "evalPerVtxMVA" << endl;
@@ -125,13 +148,38 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
   for(int iTrk=0; iTrk<base->nTrack; iTrk++){
     int iVtx = base->vtxIndexTrack[iTrk];
-    if(iVtx<0 || iVtx >= base->nPV) continue;
+    if(iVtx==-1){ //try to manually match the track
+      float bestDR=1e6;
+      int  bestIndex=-1;
+      TVector3 tkVtxPos(base->trackVxTrack[iTrk], base->trackVyTrack[iTrk], base->trackVzTrack[iTrk]);
+      
+      for(int i=0; i<base->nPV; i++){
+	TVector3 vtxPos(base->PVxPV[i],base->PVyPV[i],base->PVzPV[i]);
+	if(tkVtxPos.DeltaR(vtxPos) < 0.01 && tkVtxPos.DeltaR(vtxPos) < bestDR){
+	//if(fabs(tkVtxPos.Z()-vtxPos.Z()) < 0.001 && fabs(tkVtxPos.Z()-vtxPos.Z()) < bestDR){
+	  bestDR = fabs(tkVtxPos.Z()-vtxPos.Z());
+	  bestIndex = i;
+	}
+      }
+      iVtx = bestIndex;
+    }
+    
+    if(!isGoodVertex(iVtx)) continue;
     TLorentzVector thisMomentum; //use M=0
     thisMomentum.SetPxPyPzE(base->pxTrack[iTrk],base->pyTrack[iTrk],base->pzTrack[iTrk],
 			    TMath::Sqrt(TMath::Power(base->pxTrack[iTrk],2)+
 					TMath::Power(base->pyTrack[iTrk],2)+
 					TMath::Power(base->pzTrack[iTrk],2)));
-    if(thisMomentum.Pt() <0.001) continue;
+    if(thisMomentum.Pt() < 1e-6) continue;
+
+    if(rescaleTrkPt){
+      float modpt = (thisMomentum.Pt() > base->ptErrorTrack[iTrk] ? thisMomentum.Pt() - base->ptErrorTrack[iTrk] : 0. );
+      if(modpt > 0){
+	float corr = modpt/thisMomentum.Pt();
+	thisMomentum*=corr;
+      }
+    }
+
     sumpt2[iVtx]+= thisMomentum.Pt()*thisMomentum.Pt();
 
     //if(debugVertexing) cout << "This Track " << iTrk << "  Pt: " << thisMomentum.Pt() << endl;
@@ -149,12 +197,16 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
   int maxVertices = ( (pho1_fromVtx[0] + pho2_fromVtx[0]).Pt() > 30 ? 3 : 5);
   double minDz = 999;
 
-
+  int maxMVAIndex=-1;
+  float maxMVA=-99;
   std::vector<std::pair<int,float> > vertexMVAs;
   for(int iVtx=0; iVtx<base->nPV; iVtx++){ //loop over the vertices AGAIN to compute
     //this is inelegant, but far quicker, rather than looping over the track collection for
     //every vertex
-
+    if(!isGoodVertex(iVtx)){
+    vertexMVAs.push_back(std::pair<int,float>(iVtx,-2));
+      continue;
+    }
     TLorentzVector thisTrackMom = trackMomentum[iVtx];
     TLorentzVector thisHiggsMom = pho1_fromVtx[iVtx] + pho2_fromVtx[iVtx];
 
@@ -168,13 +220,23 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
       limPullToConv[iVtx] = TMath::Abs(base->PVzPV[iVtx]-convZ.first)/convZ.second;
     }
     
+    if(debugVertexing) cout << "Vtx " << iVtx << ":  " << endl;
     double mva = evalPerVtxMVA(ptbal[iVtx],ptasym[iVtx],log(sumpt2[iVtx]),
 			       limPullToConv[iVtx],getNConv(pho1,pho2));
+    if(debugVertexing) cout << "Output: " << mva << endl;
     vertexMVAs.push_back(std::pair<int,float>(iVtx,mva));
+    if(mva>maxMVA){
+      maxMVA=mva;
+      maxMVAIndex=iVtx;
+    }
   }
 
   //hmmm std::sort doesn't appear to work
   //std::sort(vertexMVAs.begin(),vertexMVAs.end(),sort_pred()); //sort by MVA value
+
+  //leave the PerVtxVariables initialized to the values of the best vertex (for filling)
+  double mva = evalPerVtxMVA(ptbal[maxMVAIndex],ptasym[maxMVAIndex],log(sumpt2[maxMVAIndex]),
+			     limPullToConv[maxMVAIndex],getNConv(pho1,pho2));
 
   delete ptbal;
   delete ptasym;
@@ -226,7 +288,8 @@ float HggVertexing::evalPerEvtMVA(VecbosPho* pho1,VecbosPho* pho2,
 
 //method to do the vertexing
 vector<pair<int,float> > HggVertexing::vertex_tmva(VecbosPho *pho1, VecbosPho *pho2,float& evtMVA){ 
-  if(debugVertexing) cout << "vertexTMVA" << endl;
+  if(debugVertexing) cout << "vertexTMVA  " <<base->runNumber << "  " 
+			  << base->lumiBlock << "  " << base->eventNumber << endl;
  
   //if(base->nPV == 1) return pair<int,float>(0,1); 
   if(base->nPV == 0) return std::vector<pair<int,float> >();
@@ -252,9 +315,11 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
   float dzconv=0;
   if(pho1->conversion.index!=-1){
     zconv = z1; dzconv = dz1;
+    if(debugVertexing) cout << "Photon 1 has conversion   z1: " << z1 << endl;
   }
   if(pho2->conversion.index!=-1){
     zconv = z2; dzconv = dz2;
+    if(debugVertexing) cout << "Photon 2 has conversion   z2: " << z2 << endl;
   }
   if(pho1->conversion.index!=-1 && pho2->conversion.index!=-1){
     float zconv = (z1/dz1/dz1 + z2/dz2/dz2)/(1./dz1/dz1 + 1./dz2/dz2 );
@@ -289,6 +354,9 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
   TVector3 beamSpot(base->beamSpotX,base->beamSpotY,base->beamSpotZ);
   double zconvtrk = convCorrectedDz(&c,beamSpot) + beamSpot.Z();
   double zconvsc  = Z0EcalVtxCiC(&c,beamSpot,pho->SC.CaloPos);
+
+  if(debugVertexing) cout << "zconv SC: " << zconvsc << endl;
+  if(debugVertexing) cout << "zconv TRK: " << zconvtrk << endl;
 
    if( c.vtxNTracks == 2){
      if(pho->SC.CaloPos.Eta() < 1.5){
@@ -351,13 +419,14 @@ float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 
   float dx1 = caloPos.X() - c->vtx.X();
   float dy1 = caloPos.Y() - c->vtx.Y();
   float dz1 = caloPos.Z() - c->vtx.Z();
-  float r1 = sqrt(dx1*dx1+dy1+dy1);
+  float r1 = sqrt(dx1*dx1+dy1*dy1);
   float tantheta = r1/dz1;
-  
+
   float dx2 = c->vtx.X()-basePos.X();
   float dy2 = c->vtx.Y()-basePos.Y();
-  float r2  = sqrt(dx2*dx2+dy2+dy2);
+  float r2  = sqrt(dx2*dx2+dy2*dy2);
   float dz2 = r2/tantheta;
+
   return caloPos.Z() - dz1 - dz2;
 }
 

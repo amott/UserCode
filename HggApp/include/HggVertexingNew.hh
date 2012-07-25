@@ -47,15 +47,21 @@ public:
   void useConversions(bool b=true){useConversion = b;}
   void init(); // do variable initialization 
   bool getIsInit(){return isInit;}
+  void saveInputs(TTree*);
+  void doRescaleTrkPt(bool b){rescaleTrkPt = b;}
+
 private:
   VecbosBase *base;
   bool isInit;
+  bool doSaveInputs;
+  bool rescaleTrkPt;
 
   std::pair<float,float> getZConv(VecbosPho*,VecbosPho*);
   std::pair<float,float> getZConv(VecbosPho*);
   float convCorrectedDz(VecbosConversion*,TVector3);
   float Z0EcalVtxCiC(VecbosConversion*,TVector3,TVector3);
   int getNConv(VecbosPho* p1, VecbosPho* p2);
+  bool isGoodVertex(int);
 
   TMVA::Reader * perVtxReader; 
   TMVA::Reader * perEvtReader;

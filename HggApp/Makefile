@@ -71,6 +71,7 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)HggVertexing.o \
 	$(OUTLIB)HggEGEnergyCorrector.o \
 	$(OUTLIB)VecbosEGObject.o \
+	$(OUTLIB)HggMCWeight.o \
 	$(OUTLIB)HggSelector.o
 
 # analysis functions
@@ -113,6 +114,7 @@ HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 	$(OUTLIBEGAMMA)ElectronLikelihood.o \
 	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
 	$(OUTLIB)VecbosEGObject.o \
+	$(OUTLIB)HggMCWeight.o \
 	$(OUTLIB)HggSelector.o
 	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(H2GLIB)/*.so $(GLIBS) $ $<	
 
@@ -123,6 +125,9 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o \
 			$(OUTLIB)GBRTree.o \
+			$(OUTLIB)HggMCWeight.o \
+			$(OUTLIB)HggPhotonID.o \
+			$(OUTLIB)HggMassResolution.o \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
 
@@ -130,6 +135,9 @@ $(OUTLIB)HggPhotonID.o: $(SRCDIR)HggPhotonID.cc \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggPhotonID.o $<
+
+$(OUTLIB)HggMCWeight.o: $(SRCDIR)HggMCWeight.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggMCWeight.o $<
 
 
 $(OUTLIB)HggMassResolution.o: $(SRCDIR)HggMassResolution.cc \

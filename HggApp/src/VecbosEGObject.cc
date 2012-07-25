@@ -481,9 +481,9 @@ void VecbosPho::matchConversion(VecbosBase *o,bool dR){ //for some reason, the h
     //convert the eta based on the z or the PV
     float convEta = etaTransformation(o->etaRefittedPairConv[i], o->zOfPVFromTracksConv[i] ); 
     if(debugConversionMatch) cout << "eta/phi: " << convEta << " / " << convPhi << endl;
-    float Deta = fabs(convEta - this->eta);
-    float Dphi = DeltaPhi(convPhi,this->phi);
-    float DR   = DeltaR(convEta,this->eta,convPhi,this->phi);
+    float Deta = fabs(convEta - this->SC.eta);
+    float Dphi = DeltaPhi(convPhi,this->SC.phi);
+    float DR   = DeltaR(convEta,this->SC.eta,convPhi,this->SC.phi);
     if(debugConversionMatch) cout << "dEta/dPhi: " << Deta << " / " << Dphi << endl;
     if(DR < minDR){
       minDR = DR;
@@ -753,6 +753,7 @@ void VecbosGen::Init(VecbosBase* o, int i){
   energy = o->energyMc[i];
   eta = o->etaMc[i];
   phi = o->phiMc[i];
+  mass = TMath::Sqrt( TMath::Power(o->energyMc[i],2)-TMath::Power(o->pMc[i],2) );
   
   //Vtx.SetXYZ(o->vxMc[i],o->vyMc[i],o->vzMc[i]);
   Vx = o->vxMc[i];
