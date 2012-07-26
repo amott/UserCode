@@ -131,6 +131,14 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
 
+$(OUTLIB)ZeeSelector.o: $(SRCDIR)ZeeSelector.cc \
+			$(OUTLIB)Vecbos.o \
+			$(OUTLIB)VecbosEGObject.o \
+			$(OUTLIB)HggDict.o \
+			$(OUTLIB)GBRTree.o \
+			$(OUTLIB)MitDict.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)ZeeSelector.o $<
+
 $(OUTLIB)HggPhotonID.o: $(SRCDIR)HggPhotonID.cc \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o
