@@ -71,7 +71,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   fVals[6] = pho.SC.phiWidth;
   fVals[7] = pho.SC.nBCs;
   fVals[8] = pho.HTowOverE; //H/E tower
-  fVals[9] = base->rhoFastjet;
+  fVals[9] = base->rhoJetsFastJet;
   fVals[10] = base->nPV;
 
   //seed cluster variables
@@ -147,7 +147,7 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(V
   fVals[6] = ele.SC.phiWidth;
   fVals[7] = ele.SC.nBCs;
   fVals[8] = ele.HoverE; //H/E 
-  fVals[9] = base->rhoFastjet;
+  fVals[9] = base->rhoJetsFastJet;
   fVals[10] = base->nPV;
 
   //seed cluster variables
