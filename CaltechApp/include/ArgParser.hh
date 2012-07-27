@@ -11,9 +11,11 @@ public:
   void setInputs(int ac, char** av){
     argc = ac; argv=av; 
   }
-  void addLongOption(std::string opt,bool argument);
-  void addShortOption(char opt,bool argument);
-  void addArgument(std::string name,bool required);
+  enum {noArg,reqArg};
+  void addLongOption(std::string opt,bool argument,std::string desc="");
+  void addShortOption(char opt,bool argument,std::string desc="");
+  enum {optional,required};
+  void addArgument(std::string name,bool required,std::string desc="");
   
   int process(std::string& ret);
 
@@ -26,6 +28,8 @@ public:
 
   int getStatus(){return status;}
   void reset();
+
+  void printOptions(std::string);
 private:
   int status;
   int argc;
@@ -49,6 +53,12 @@ private:
   std::vector<std::string> reqArgs;
   std::vector<std::string> optArgs;
   std::vector<std::string> inputArgs;
+
+  //descriptions
+  stringmap longFlagDesc;
+  std::map<char,std::string> shortFlagDesc;
+  stringmap reqArgDesc;
+  stringmap optArgDesc;
 };
 
 #endif

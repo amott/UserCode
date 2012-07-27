@@ -1,26 +1,66 @@
 #include "ArgParser.hh"
 #include <algorithm>
+#include <iostream>
+#include <cstdio>
 
 ArgParser::ArgParser(int ac,char** av){
   status=0;
   this->setInputs(ac,av);
 }
 
-void ArgParser::addLongOption(std::string opt,bool argument){
+void ArgParser::addLongOption(std::string opt,bool argument,std::string desc){
   longFlagMap[opt]="";
   longFlagReqArgMap[opt]=argument;
   longFlagPresMap[opt]=false;
+  longFlagDesc[opt]=desc;
 }
 
-void ArgParser::addShortOption(char opt, bool argument){
+void ArgParser::addShortOption(char opt, bool argument,std::string desc){
   shortFlagMap[opt]="";
   shortFlagReqArgMap[opt]=argument;
   shortFlagPresMap[opt]=false;
+  shortFlagDesc[opt]=desc;
 }
 
-void ArgParser::addArgument(std::string name,bool required){
-  if(required) reqArgs.push_back(name);
-  else optArgs.push_back(name);
+void ArgParser::addArgument(std::string name,bool required, std::string desc){
+  if(required) {
+    reqArgs.push_back(name);
+    reqArgDesc[name]=desc;
+  }
+  else {
+    optArgs.push_back(name);
+    optArgDesc[name]=desc;
+  }
+}
+
+void ArgParser::printOptions(std::string appName){
+  std::cout << "Usage:  " << appName << "  [options] ";
+  std::vector<std::string>::const_iterator argIt;
+  for(argIt = reqArgs.begin(); argIt != reqArgs.end(); argIt++){
+    std::cout << *argIt << " ";
+  }
+  for(argIt = optArgs.begin(); argIt != optArgs.end(); argIt++){
+    std::cout << "[" << *argIt << "] ";
+  }
+  std::cout << std::endl
+	    << "Required Arguments: " <<std::endl;
+  stringmap::const_iterator smapIt;
+  for(smapIt = reqArgDesc.begin(); smapIt !=reqArgDesc.end(); smapIt++){
+    printf("\t%-60s%s\n",smapIt->first.c_str(),smapIt->second.c_str());
+  }
+  std::cout << "Optional Arguments: " << std::endl;
+  for(smapIt = optArgDesc.begin(); smapIt !=optArgDesc.end(); smapIt++){
+    printf("\t%-60s%s\n",smapIt->first.c_str(),smapIt->second.c_str());
+  }
+  std::cout << "Options: " << std::endl;
+  std::map<char,std::string>::const_iterator cmapIt;
+  for(cmapIt = shortFlagDesc.begin(); cmapIt != shortFlagDesc.end(); cmapIt++){
+    printf("\t-%-59c%s\n",cmapIt->first,cmapIt->second.c_str());
+  }
+  for(smapIt = longFlagDesc.begin(); smapIt !=longFlagDesc.end(); smapIt++){
+    printf("\t--%-58s%s\n",smapIt->first.c_str(),smapIt->second.c_str());
+  }
+  
 }
 
 int ArgParser::process(std::string& ret){
@@ -41,7 +81,7 @@ int ArgParser::internalProcess(std::string& ret){
   for(int i=1;i<argc;i++){
     std::string thisString(argv[i]);
     
-    if(!thisString[0]=='-'){ //not an option, push it on the arg list
+    if(thisString[0]!='-'){ //not an option, push it on the arg list
       inputArgs.push_back(thisString);
       continue;
     }
@@ -50,7 +90,7 @@ int ArgParser::internalProcess(std::string& ret){
     if(thisString[1]=='-'){ //check for a -- style argument
       size_t found = thisString.find_first_of('=');
       if(found!=std::string::npos){ // the argument is of the form --arg=val
-	std::string arg = thisString.substr(2,found); //strip the '--'
+	std::string arg = thisString.substr(2,found-2); //strip the '--'
 	std::string val = thisString.substr(found+1,std::string::npos);
 	if(longFlagMap.find(arg) == longFlagMap.end()){
 	  ret =  arg;
@@ -68,7 +108,8 @@ int ArgParser::internalProcess(std::string& ret){
 	longFlagPresMap[arg]=true;
 	continue;
       }else{ // ok, check the next entry in the arg table 
-	std::string arg = thisString;
+	std::string arg = thisString.substr(2,std::string::npos);
+	if(longFlagMap.find(arg) == longFlagMap.end()){ ret = arg; return -2;}
 	longFlagPresMap[arg]=true;
 	if(!longFlagReqArgMap[arg]){ //maybe it doesn't need an argument:
 	  longFlagMap[arg]="";
@@ -80,8 +121,9 @@ int ArgParser::internalProcess(std::string& ret){
 	    return -3;
 	}else{ //there is a next entry!
 	  std::string nextString(argv[i+1]);
+	  //std::cout << "nextString: " << nextString << std::endl;
 	  //make sure it isn't a flag
-	  if(nextString[0]='-'){
+	  if(nextString[0]=='-'){
 	    ret=arg; return -3;
 	  }
 	  //its not a flag!
@@ -93,6 +135,7 @@ int ArgParser::internalProcess(std::string& ret){
     }  //Done with long args!
     else{ //short args.  These can only have the format -fValue or -f Value
       char flag=thisString[1];
+      if(shortFlagMap.find(flag) == shortFlagMap.end()) {ret = std::string(&flag); return -2;}
       shortFlagPresMap[flag]=true;
       if(thisString.length()==2){ //its of the form -f or -f Value
 	if(!shortFlagReqArgMap[flag]) continue; //doesn't need an arg, happy
