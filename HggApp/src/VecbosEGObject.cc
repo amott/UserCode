@@ -605,8 +605,11 @@ void VecbosEle::Init(VecbosBase* o,int i){
   dr04EcalRecHitSumEt  = o->dr04EcalRecHitSumEtEle[i];
   dr04HcalTowerSumEt   = o->dr04HcalTowerSumEtEle[i];
 
-  dEtaSCTrack = o->deltaEtaEleClusterTrackAtCaloEle[i];
-  dPhiSCTrack = o->deltaPhiEleClusterTrackAtCaloEle[i];
+  dEtaSCTrackAtCalo = o->deltaEtaAtCaloEle[i];
+  dPhiSCTrackAtCalo = o->deltaPhiAtCaloEle[i];
+
+  dEtaSCTrackAtVtx = o->deltaEtaAtVtxEle[i];
+  dPhiSCTrackAtVtx = o->deltaPhiAtVtxEle[i];
 
   idMVA  = o->mvaidnontrigEle[i];
 
@@ -614,15 +617,19 @@ void VecbosEle::Init(VecbosBase* o,int i){
   if(iGsfTrack < 0 || iGsfTrack >= o->nGsfTrack){
     d0Track= o->d0GsfTrack[iGsfTrack];
     dzTrack= o->dzGsfTrack[iGsfTrack];
+    expInnerLayersHits = o->expInnerLayersGsfTrack[iGsfTrack];
   }else{
     d0Track=999;
     dzTrack=999;
+    expInnerLayersHits=-999;
   }
 
   int tmp = o->recoFlagsEle[i];
   //extract the flag information into booleans
   isTrackerDriven = tmp & 1; 
   isEcalDriven    = (tmp >> 1) & 1;
+
+  hasMatchedConversion = o->hasMatchedConversionEle[i];
 
   genMatch.Init(o,-1);
 };

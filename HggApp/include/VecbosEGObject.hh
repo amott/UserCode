@@ -304,8 +304,11 @@ public:
   float d0Track;
   float dzTrack;
 
-  float dEtaSCTrack;
-  float dPhiSCTrack;
+  float dEtaSCTrackAtVtx;
+  float dPhiSCTrackAtVtx;
+
+  float dEtaSCTrackAtCalo;
+  float dPhiSCTrackAtCalo;
 
   float dr03ChargedHadronPFIso;
   float dr03NeutralHadronPFIso;
@@ -324,6 +327,9 @@ public:
   float dr04HcalTowerSumEt;
 
   float idMVA;
+
+  bool hasMatchedConversion;
+  int expInnerLayersHits;
 
   VecbosGen genMatch;
   void doGenMatch(VecbosBase*);
