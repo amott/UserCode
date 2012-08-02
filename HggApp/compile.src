@@ -15,6 +15,7 @@ cd CMSSW_5_2_3/src
 cmsenv
 cvs co -d h2gglobe/VertexAnalysis UserCode/HiggsAnalysis/HiggsTo2photons/h2gglobe/VertexAnalysis/
 cvs co CondFormats/EgammaObjects/
+cvs co CondFormats/JetMETObjects
 scramv1 b
 cd ../../
 ln -s CMSSW_5_2_3/src/h2gglobe/VertexAnalysis/interface/ h2ginclude

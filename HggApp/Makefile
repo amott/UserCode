@@ -128,7 +128,8 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMCWeight.o \
 			$(OUTLIB)HggPhotonID.o \
 			$(OUTLIB)HggMassResolution.o \
-			$(OUTLIB)MitDict.o
+			$(OUTLIB)MitDict.o \
+			$(H2GLIB)libCondFormatsJetMETObjects.so
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
 
 $(OUTLIB)ZeeSelector.o: $(SRCDIR)ZeeSelector.cc \
@@ -184,7 +185,8 @@ $(OUTLIB)HggReducer.o: $(SRCDIR)HggReducer.cc \
 		$(OUTLIB)GBRTree.o \
 		$(OUTLIB)GBRForest.o \
 		$(OUTLIB)MitDict.o \
-		$(OUTLIB)VecbosEGObject.o
+		$(OUTLIB)VecbosEGObject.o \
+		$(H2GLIB)libCondFormatsJetMETObjects.so
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggReducer.o $(OUTLIB)HggDict.o $<
 
 $(OUTLIB)VecbosEGObject.o: $(SRCDIR)VecbosEGObject.cc
