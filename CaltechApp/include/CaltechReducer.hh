@@ -142,15 +142,6 @@ private:
   int procID;
   float qScale;
   float nPu;
-
-  float caloMet;
-  float caloMetPhi;
-
-  float pfMet;
-  float pfMetPhi;
-
-  float tcMet;
-  float tcMetPhi;
 };
 #endif
 

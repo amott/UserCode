@@ -24,6 +24,10 @@
 #pragma link C++ class VecbosCaloMET+;
 #pragma link C++ class VecbosTCMET+;
 #pragma link C++ class VecbosGen+;
+#pragma link C++ class VecbosVtx+;
+#pragma link C++ class VecbosTrack+;
+#pragma link C++ class VecbosGsfTrack+;
+#pragma link C++ class VecbosMuonTrack+;
 #pragma link C++ class VecbosBaseObject+;
 #pragma link C++ class VecbosPhysicsObject+;
 
@@ -39,6 +43,10 @@
 #pragma link C++ class std::vector<VecbosPFMET>+;
 #pragma link C++ class std::vector<VecbosTCMET>+;
 #pragma link C++ class std::vector<VecbosGen>+;
+#pragma link C++ class std::vector<VecbosVtx>+;
+#pragma link C++ class std::vector<VecbosTrack>+;
+#pragma link C++ class std::vector<VecbosGsfTrack>+;
+#pragma link C++ class std::vector<VecbosMuonTrack>+;
 #pragma link C++ class std::vector<VecbosBaseObject>+;
 #pragma link C++ class std::vector<VecbosPhysicsObject>+;
 

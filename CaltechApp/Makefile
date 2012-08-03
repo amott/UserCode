@@ -54,6 +54,7 @@ lib: 	$(OUTLIB)CaltechReducer.o \
 	commonlib \
 	egammalib
 
+.PHONE: lib all 
 # analysis functions
 CaltechReducerApp: $(SRCDIR)CaltechReducerApp.C \
 		$(OUTLIB)CaltechReducer.o \
@@ -83,14 +84,7 @@ $(OUTLIB)HggEnergyScale.o: $(SRCDIR)HggEnergyScale.cc \
 $(OUTLIB)CaltechReducer.o: $(SRCDIR)CaltechReducer.cc \
 		$(OUTLIB)HggEGEnergyCorrector.o \
 		$(OUTLIB)HggVertexing.o \
-		$(OUTLIB)VecbosEGObject.o \
-		$(OUTLIB)VecbosMu.o \
-		$(OUTLIB)VecbosMET.o \
-		$(OUTLIB)VecbosJet.o \
-		$(OUTLIB)VecbosVtx.o \
-		$(OUTLIB)VecbosPhysicsObject.o \
-		$(OUTLIB)VecbosGen.o \
-		$(OUTLIB)VecbosBaseObject.o \
+		VecbosObjects \
 		$(OUTLIB)VecbosDict.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)CaltechReducer.o $<
 
@@ -114,6 +108,10 @@ $(OUTLIB)VecbosVtx.o: $(SRCDIR)VecbosVtx.cc \
 		$(OUTLIB)VecbosBaseObject.o
 		$(CXX) $(CXXFLAGS) -c -fPIC -I$(INCLUDEDIR) -o $(OUTLIB)VecbosVtx.o $<
 
+$(OUTLIB)VecbosTrack.o: $(SRCDIR)VecbosTrack.cc \
+		$(OUTLIB)VecbosBaseObject.o
+		$(CXX) $(CXXFLAGS) -c -fPIC -I$(INCLUDEDIR) -o $(OUTLIB)VecbosTrack.o $<
+
 $(OUTLIB)VecbosJet.o: $(SRCDIR)VecbosJet.cc \
 		$(OUTLIB)VecbosPhysicsObject.o
 		$(CXX) $(CXXFLAGS) -c -fPIC -I$(INCLUDEDIR) -o $(OUTLIB)VecbosJet.o $<
@@ -136,20 +134,17 @@ VecbosObjects:  $(OUTLIB)VecbosEGObject.o \
 		$(OUTLIB)VecbosMET.o \
 		$(OUTLIB)VecbosJet.o \
 		$(OUTLIB)VecbosVtx.o \
+		$(OUTLIB)VecbosTrack.o \
 		$(OUTLIB)VecbosPhysicsObject.o \
 		$(OUTLIB)VecbosGen.o \
 		$(OUTLIB)VecbosBaseObject.o
 
+.PHONY: VecbosObjects
+
 VecbosDict.cc: 	$(INCLUDEDIR)/VecbosObjectLinkDef.h \
-		$(OUTLIB)VecbosEGObject.o \
-		$(OUTLIB)VecbosMu.o \
-		$(OUTLIB)VecbosMET.o \
-		$(OUTLIB)VecbosJet.o \
-		$(OUTLIB)VecbosVtx.o \
-		$(OUTLIB)VecbosPhysicsObject.o \
-		$(OUTLIB)VecbosGen.o \
-		$(OUTLIB)VecbosBaseObject.o
-	rootcint -l -f VecbosDict.cc -c -I$(INCLUDEDIR) -p $(INCLUDEDIR)/VecbosEGObject.hh $(INCLUDEDIR)/VecbosGen.hh $(INCLUDEDIR)/VecbosVtx.hh $(INCLUDEDIR)/VecbosJet.hh $(INCLUDEDIR)/VecbosMET.hh $(INCLUDEDIR)/VecbosMu.hh  $<
+		VecbosObjects
+	rootcint -l -f VecbosDict.cc -c -I$(INCLUDEDIR) -p $(INCLUDEDIR)/VecbosEGObject.hh $(INCLUDEDIR)/VecbosGen.hh $(INCLUDEDIR)/VecbosVtx.hh $(INCLUDEDIR)/VecbosJet.hh $(INCLUDEDIR)/VecbosMET.hh $(INCLUDEDIR)/VecbosMu.hh  \
+	$(INCLUDEDIR)/VecbosVtx.hh $(INCLUDEDIR)/VecbosTrack.hh $<
 
 $(OUTLIB)VecbosDict.o: VecbosDict.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosDict.o $<
@@ -242,6 +237,7 @@ egammalib:	$(OUTLIBEGAMMA)ElectronTrackerIsolation.o \
 		$(OUTLIBEGAMMA)LikelihoodPdfProduct.o \
 		$(OUTLIBEGAMMA)ElectronLikelihood.o
 
+.PHONY: egammalib commonlib
 $(OUTLIB)VecbosBase.o: $(SRCDIR)VecbosBase.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosBase.o $<
 

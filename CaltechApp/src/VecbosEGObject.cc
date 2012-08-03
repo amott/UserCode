@@ -1,6 +1,7 @@
 #include <VecbosEGObject.hh>
 #include "CommonTools/include/Utils.hh"
 #include "VecbosVtx.hh"
+#include "VecbosVtx.hh"
 #define debugEGObject 0
 
 VecbosBC::VecbosBC(){

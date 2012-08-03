@@ -453,7 +453,7 @@ void CaltechReducer::setOutputBranches(){
   outTree->Branch("rho", &rho_,"rho/F");
   outTree->Branch("rhoEtaMax44", &rhoEtaMax44_,"rhoEtaMax44/F");
  
-  //trigger -- here we depart a bit from Yong's original code
+  //trigger
   for(int i=0;i<triggerNames.size();i++){
     outTree->Branch(triggerNames.at(i).c_str(), &(triggerBits[i]), Form("%s/I",triggerNames.at(i).c_str()) );  // this will produce 1 int per trigger in the output tree
   }
