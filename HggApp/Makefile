@@ -42,7 +42,6 @@ MITSRC           = ./MitPhysics/Utils/src/
 CXX	         += -I$(INCLUDEDIR) -I$(INCLUDEDIRCOMMON) -I.
 OUTLIB	         = ./lib/
 H2GLIB           = ./h2glib/
-JETLIB           = ./standalone/lib/
 OUTLIBCOMMON     = $(INCLUDEDIRCOMMON)/CommonTools/lib/
 OUTLIBEGAMMA	 = $(INCLUDEDIRCOMMON)/EgammaAnalysisTools/lib/
 
@@ -190,8 +189,7 @@ $(OUTLIB)HggReducer.o: $(SRCDIR)HggReducer.cc \
 		$(OUTLIB)GBRForest.o \
 		$(OUTLIB)MitDict.o \
 		$(OUTLIB)VecbosEGObject.o \
-		$(OUTLIB)HggScaling.o \
-		$(JETLIB)libJetMETObjects.so
+		$(OUTLIB)HggScaling.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggReducer.o $(OUTLIB)HggDict.o $<
 
 $(OUTLIB)VecbosEGObject.o: $(SRCDIR)VecbosEGObject.cc
