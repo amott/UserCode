@@ -23,6 +23,7 @@
 #include "HggEGEnergyCorrector.hh"
 #include "HggEnergyScale.hh"
 #include "HggScaling.hh"
+#include "VecbosJetCorrector.hh"
 
 using namespace std;
 
@@ -96,6 +97,10 @@ private:
   string correctionType;
   HggEGEnergyCorrector *corrector;
   HggEGEnergyCorrector *elecorrector;
+
+  //jet corrector
+  VecbosJetCorrector *jetCorr;
+  bool correctJets;
 
   //energy smearing
   int applyScaleSmear;

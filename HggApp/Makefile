@@ -189,7 +189,8 @@ $(OUTLIB)HggReducer.o: $(SRCDIR)HggReducer.cc \
 		$(OUTLIB)GBRForest.o \
 		$(OUTLIB)MitDict.o \
 		$(OUTLIB)VecbosEGObject.o \
-		$(OUTLIB)HggScaling.o
+		$(OUTLIB)HggScaling.o \
+		$(OUTLIB)VecbosJetCorrector.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggReducer.o $(OUTLIB)HggDict.o $<
 
 $(OUTLIB)VecbosEGObject.o: $(SRCDIR)VecbosEGObject.cc
@@ -224,6 +225,20 @@ $(OUTLIB)SimpleJetCorrectionUncertainty.o: $(SRCDIR)SimpleJetCorrectionUncertain
 $(OUTLIB)JetCorrectionUncertainty.o: $(SRCDIR)JetCorrectionUncertainty.cc \
 	$(OUTLIB)SimpleJetCorrectionUncertainty.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)JetCorrectionUncertainty.o $<
+
+$(OUTLIB)SimpleJetCorrector.o: $(SRCDIR)SimpleJetCorrector.cc \
+	$(OUTLIB)JetCorrectionUncertainty.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)SimpleJetCorrector.o $<
+
+$(OUTLIB)FactorizedJetCorrector.o: $(SRCDIR)FactorizedJetCorrector.cc \
+	$(OUTLIB)JetCorrectionUncertainty.o \
+	$(OUTLIB)SimpleJetCorrector.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)FactorizedJetCorrector.o $<
+
+$(OUTLIB)VecbosJetCorrector.o: $(SRCDIR)VecbosJetCorrector.cc \
+	$(OUTLIB)JetCorrectionUncertainty.o \
+	$(OUTLIB)FactorizedJetCorrector.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosJetCorrector.o $<
 
 $(OUTLIB)Jet.o: $(SRCDIR)Jet.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)Jet.o $<

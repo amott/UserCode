@@ -447,13 +447,16 @@ void HggReducer::init(string outputFileName){
    pileupWeightHist = (TH1F*)pileupWeightFile->Get("pileupReWeight");
  }
 
+ correctJets = cfg.getParameter("doJetCorrection").compare("yes")==0;
+
  cout << "Config Parameters:" << endl
       << "EnergyScale: " << EnergyScaleCFG << endl
       << "EnergySmear: " << EnergySmearCFG << endl
       << "MC Scaling:  " << MCScalingCFG << endl
       << "Preselection Set: " << sPreselection << endl
       << "ApplyScaleSmear: "  << sScaleSmear << endl
-      << "Requiring " << minPhoSel << " Photons" <<endl;
+      << "Requiring " << minPhoSel << " Photons" <<endl
+      << "Doing Jet Corrections: " << correctJets << endl;
 
  vertexer  = new HggVertexing(this);
  vertexer->setConfigFile(config);
@@ -465,6 +468,8 @@ void HggReducer::init(string outputFileName){
  elecorrector->useElectronWeights();
  energyScale = new HggEnergyScale(EnergyScaleCFG);
  energySmear = new HggEnergyScale(EnergySmearCFG);
+
+ if(correctJets) jetCorr = new VecbosJetCorrector(cfg);
  
  scaler = new HggScaling(MCScalingCFG);
 }
@@ -513,6 +518,7 @@ void HggReducer::fillJets(){
     VecbosJet jet(this,iJet,VecbosJet::PFPUcorr);
     if(jet.index==-1) continue;
     if(jet.pt < minPt) continue;
+    if(correctJets) jetCorr->CorrectJet(jet,rhoJetsFastJet);
     Jets_.push_back(jet);
     nJet_++;
   }
