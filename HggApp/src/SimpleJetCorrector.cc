@@ -1,6 +1,6 @@
-#include "CondFormats/JetMETObjects/interface/SimpleJetCorrector.h"
-#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
-#include "CondFormats/JetMETObjects/src/Utilities.cc"
+#include "SimpleJetCorrector.h"
+#include "JetCorrectorParameters.h"
+#include "Utilities.cc"
 #include <iostream>
 #include <sstream>
 #include <cmath>

@@ -1,9 +1,3 @@
-//
-// Original Author:  Fedor Ratnikov Nov 9, 2007
-// $Id: JetCorrectorParameters.cc,v 1.1 2010/12/24 15:19:02 emanuele Exp $
-//
-// Generic parameters for Jet corrections
-//
 #include "JetCorrectorParameters.h"
 #include "Utilities.cc"
 #include <iostream>

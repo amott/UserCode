@@ -377,6 +377,9 @@ public:
   int index;
   float energy;
   float uncorrEnergy;
+  float uncorrpx;
+  float uncorrpy;
+  float uncorrpz;
   float pt;
   float eta;
   float phi;
