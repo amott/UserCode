@@ -177,6 +177,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
   etaWidth = o->etaWidthSC[i];
   HoverE   = o->hOverESC[i];
   r9       = e3x3/rawE;
+  s4ratio  = e2x2/e5x5;
   //get the basic clusters
 
 
@@ -615,13 +616,13 @@ void VecbosEle::Init(VecbosBase* o,int i){
 
   int iGsfTrack = o->gsfTrackIndexEle[i];
   if(iGsfTrack < 0 || iGsfTrack >= o->nGsfTrack){
-    d0Track= o->d0GsfTrack[iGsfTrack];
-    dzTrack= o->dzGsfTrack[iGsfTrack];
-    expInnerLayersHits = o->expInnerLayersGsfTrack[iGsfTrack];
-  }else{
     d0Track=999;
     dzTrack=999;
     expInnerLayersHits=-999;
+  }else{
+    d0Track= o->d0GsfTrack[iGsfTrack];
+    dzTrack= o->dzGsfTrack[iGsfTrack];
+    expInnerLayersHits = o->expInnerLayersGsfTrack[iGsfTrack];
   }
 
   int tmp = o->recoFlagsEle[i];

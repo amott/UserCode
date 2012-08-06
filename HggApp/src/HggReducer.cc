@@ -37,6 +37,7 @@ HggReducer::HggReducer(TTree *tree) : Vecbos(tree) {
   vertexCFG = "";
   energyScaleCFG = "";
   energySmearCFG = "";
+  mcScalingCFG = "";
   minPhoSel = 2;
 }
 
@@ -48,6 +49,7 @@ HggReducer::HggReducer(TTree *tree, string json, bool goodRunLS, bool isData,int
   vertexCFG = "";
   energyScaleCFG = "";
   energySmearCFG = "";
+  mcScalingCFG = "";
   //To read good run list!
   if (goodRunLS && isData) {
     setJsonGoodRunList(json);
@@ -167,6 +169,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 
     for(int iPho=0;iPho<nPho;iPho++){
       VecbosPho pho(this,iPho);
+      if(!_isData) scaler->ScalePhoton(pho);
       if(debugReducer) cout << iPho << ": energy=" <<  pho.energy << "  eta=" << pho.SC.eta << endl;
       if(!this->passPreselection(&pho)) continue;
       if(debugReducer) cout << "pass" << endl;
@@ -234,10 +237,12 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     std::sort(Photons_.begin(),Photons_.end(),less_than_pt_photon());
 
 
+    /*
     if(nSelectedPho<minPhoSel){
       if(debugReducer) cout << "Fewer than " << minPhoSel << " selected photons" << endl;
       continue; // skip the event if there are fewer than 2 photons
     }
+    */
     if(debugReducer) cout << "More than 1 selected photons" << endl;
     //do the vertexing TMVA
     std::vector<VecbosPho>::iterator iPho1;
@@ -424,6 +429,7 @@ void HggReducer::init(string outputFileName){
 
  string EnergyScaleCFG  = cfg.getParameter("EnergyScaleCFG");
  string EnergySmearCFG  = cfg.getParameter("EnergySmearCFG");
+ string MCScalingCFG    = cfg.getParameter("ScalingFile");
  string sPreselection   = cfg.getParameter("Preselection");
  string sScaleSmear     = cfg.getParameter("ScaleSmear");
  string sMinPhoSel      = cfg.getParameter("MinPreselPhotons");
@@ -444,8 +450,10 @@ void HggReducer::init(string outputFileName){
  cout << "Config Parameters:" << endl
       << "EnergyScale: " << EnergyScaleCFG << endl
       << "EnergySmear: " << EnergySmearCFG << endl
+      << "MC Scaling:  " << MCScalingCFG << endl
       << "Preselection Set: " << sPreselection << endl
-      << "ApplyScaleSmear: "  << sScaleSmear << endl;
+      << "ApplyScaleSmear: "  << sScaleSmear << endl
+      << "Requiring " << minPhoSel << " Photons" <<endl;
 
  vertexer  = new HggVertexing(this);
  vertexer->setConfigFile(config);
@@ -458,6 +466,7 @@ void HggReducer::init(string outputFileName){
  energyScale = new HggEnergyScale(EnergyScaleCFG);
  energySmear = new HggEnergyScale(EnergySmearCFG);
  
+ scaler = new HggScaling(MCScalingCFG);
 }
 
 bool HggReducer::passPreselection(VecbosPho *pho){

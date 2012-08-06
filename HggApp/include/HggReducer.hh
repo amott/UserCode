@@ -22,6 +22,7 @@
 #include "HggVertexingNew.hh"
 #include "HggEGEnergyCorrector.hh"
 #include "HggEnergyScale.hh"
+#include "HggScaling.hh"
 
 using namespace std;
 
@@ -66,6 +67,7 @@ private:
   string vertexCFG;
   string energyScaleCFG;
   string energySmearCFG;
+  string mcScalingCFG;
 
   void init(string); // do variable initialization 
   void clearAll();
@@ -100,6 +102,7 @@ private:
   HggEnergyScale *energyScale;
   HggEnergyScale *energySmear;
 
+  HggScaling *scaler;
   TTree * outTree;
   // define variables for the output tree:
   vector<string> triggerNames; // list of all the triggers to consider

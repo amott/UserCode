@@ -421,6 +421,8 @@ void HggSelector::Loop(){
     lumiBlockOut = lumiBlock;
     runNumberOut = runNumber;
     evtNumberOut = evtNumber;
+    evtWeight = pileupWeight;
+
 
     outTree->Fill();
   }//while(fChain...
@@ -748,6 +750,8 @@ void HggSelector::setBranchAddresses(){
   
   fChain->SetBranchAddress("rho", &rho);
   fChain->SetBranchAddress("rhoEtaMax44", &rhoEtaMax44);
+
+  fChain->SetBranchAddress("pileupWeight", &pileupWeight);
  
  //objects
  fChain->SetBranchAddress("nPho",&nPho_);

@@ -284,6 +284,7 @@ private:
   bool _isData;
 
   float evtWeight;
+  float pileupWeight;
   
   int nGenHiggs;
   std::vector<VecbosGen> *GenHiggs;

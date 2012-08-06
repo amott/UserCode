@@ -103,6 +103,7 @@ public:
   //for Hgg corrector
 
   float r9;
+  float s4ratio;
   //  SCInfo getStruct();
 };
 

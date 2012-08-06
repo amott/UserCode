@@ -155,9 +155,9 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
       
       for(int i=0; i<base->nPV; i++){
 	TVector3 vtxPos(base->PVxPV[i],base->PVyPV[i],base->PVzPV[i]);
-	if(tkVtxPos.DeltaR(vtxPos) < 0.01 && tkVtxPos.DeltaR(vtxPos) < bestDR){
+	if(tkVtxPos.DeltaR(vtxPos) < 0.05 && tkVtxPos.DeltaR(vtxPos) < bestDR){
 	//if(fabs(tkVtxPos.Z()-vtxPos.Z()) < 0.001 && fabs(tkVtxPos.Z()-vtxPos.Z()) < bestDR){
-	  bestDR = fabs(tkVtxPos.Z()-vtxPos.Z());
+	  bestDR = tkVtxPos.DeltaR(vtxPos);//fabs(tkVtxPos.Z()-vtxPos.Z());
 	  bestIndex = i;
 	}
       }
@@ -170,7 +170,7 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 			    TMath::Sqrt(TMath::Power(base->pxTrack[iTrk],2)+
 					TMath::Power(base->pyTrack[iTrk],2)+
 					TMath::Power(base->pzTrack[iTrk],2)));
-    if(thisMomentum.Pt() < 1e-6) continue;
+    if(thisMomentum.Pt()==0) continue;
 
     if(rescaleTrkPt){
       float modpt = (thisMomentum.Pt() > base->ptErrorTrack[iTrk] ? thisMomentum.Pt() - base->ptErrorTrack[iTrk] : 0. );
@@ -186,7 +186,7 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
 
     if(thisMomentum.DeltaR(pho1_fromVtx[iVtx]) < 0.05 ||
-       thisMomentum.DeltaR(pho2_fromVtx[iVtx]) < 0.05 ) continue;
+    thisMomentum.DeltaR(pho2_fromVtx[iVtx]) < 0.05 ) continue;
 
     trackMomentum[iVtx] += thisMomentum;
     

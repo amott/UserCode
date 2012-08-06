@@ -42,6 +42,7 @@ MITSRC           = ./MitPhysics/Utils/src/
 CXX	         += -I$(INCLUDEDIR) -I$(INCLUDEDIRCOMMON) -I.
 OUTLIB	         = ./lib/
 H2GLIB           = ./h2glib/
+JETLIB           = ./standalone/lib/
 OUTLIBCOMMON     = $(INCLUDEDIRCOMMON)/CommonTools/lib/
 OUTLIBEGAMMA	 = $(INCLUDEDIRCOMMON)/EgammaAnalysisTools/lib/
 
@@ -72,8 +73,8 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)HggEGEnergyCorrector.o \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)HggMCWeight.o \
-	$(OUTLIB)HggSelector.o
-
+	$(OUTLIB)HggSelector.o \
+	$(OUTLIB)HggScaling.o
 # analysis functions
 HggApp: $(SRCDIR)HggApp.C \
 	$(OUTLIBCOMMON)Conditions.o \
@@ -96,7 +97,7 @@ HggApp: $(SRCDIR)HggApp.C \
 	$(OUTLIB)HggMakePhotonTree.o \
 	$(OUTLIB)GBRTree.o \
 	$(OUTLIB)GBRForest.o
-	$(CXX) $(CXXFLAGS) -o HggApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(H2GLIB)/*.so $(GLIBS) $ $<	
+	$(CXX) $(CXXFLAGS) -o HggApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
 HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 	$(OUTLIBCOMMON)Conditions.o \
@@ -116,7 +117,7 @@ HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)HggMCWeight.o \
 	$(OUTLIB)HggSelector.o
-	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(H2GLIB)/*.so $(GLIBS) $ $<	
+	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
 $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMassResolution.o \
@@ -128,8 +129,7 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMCWeight.o \
 			$(OUTLIB)HggPhotonID.o \
 			$(OUTLIB)HggMassResolution.o \
-			$(OUTLIB)MitDict.o \
-			$(H2GLIB)libCondFormatsJetMETObjects.so
+			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
 
 $(OUTLIB)ZeeSelector.o: $(SRCDIR)ZeeSelector.cc \
@@ -162,6 +162,10 @@ $(OUTLIB)HggEGEnergyCorrector.o: $(SRCDIR)HggEGEnergyCorrector.cc \
 				$(OUTLIB)VecbosEGObject.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggEGEnergyCorrector.o $<
 
+$(OUTLIB)HggScaling.o: $(SRCDIR)HggScaling.cc \
+			$(OUTLIB)VecbosEGObject.o
+		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggScaling.o $<
+
 $(OUTLIB)HggVertexing.o: $(SRCDIR)HggVertexingNew.cc \
 			$(OUTLIB)Vecbos.o \
 			$(OUTLIB)VecbosEGObject.o
@@ -186,7 +190,8 @@ $(OUTLIB)HggReducer.o: $(SRCDIR)HggReducer.cc \
 		$(OUTLIB)GBRForest.o \
 		$(OUTLIB)MitDict.o \
 		$(OUTLIB)VecbosEGObject.o \
-		$(H2GLIB)libCondFormatsJetMETObjects.so
+		$(OUTLIB)HggScaling.o \
+		$(JETLIB)libJetMETObjects.so
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggReducer.o $(OUTLIB)HggDict.o $<
 
 $(OUTLIB)VecbosEGObject.o: $(SRCDIR)VecbosEGObject.cc

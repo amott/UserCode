@@ -132,7 +132,7 @@ void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float
       updateFormulas(&categories);
       TreeNum = fChain->GetTreeNumber(); 
     }
-    if(ientry%1000==0){
+    if(ientry%10000==0){
       cout << "Processing Entry " << ientry << endl;
       cout << "MVA:   ";
       for(int i=0;i<nCat;i++) cout << "\tcat " << i << ": " << nSelected[i];
