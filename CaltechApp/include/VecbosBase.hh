@@ -123,6 +123,8 @@ public :
    Float_t         dr04HcalTowerSumEtFullConeEle[20];   //[nEle]
    Float_t         eleIdLikelihoodEle[20];   //[nEle]
    Float_t         pflowMVAEle[20];   //[nEle]
+   Float_t         mvaidnontrigEle[20];   //[nEle]
+   Float_t         mvaidtrigEle[20];   //[nEle]
    Float_t         pfCombinedIsoEle[20];   //[nEle]
    Float_t         pfCandChargedIso01Ele[20];   //[nEle]
    Float_t         pfCandNeutralIso01Ele[20];   //[nEle]
@@ -875,6 +877,15 @@ public :
    Float_t         trackCountingHighEffBJetTagsAK5Jet[250];   //[nAK5Jet]
    Float_t         trackCountingVeryHighEffBJetTagsAK5Jet[250];   //[nAK5Jet]
    Float_t         uncorrEnergyAK5Jet[250];   //[nAK5Jet]
+
+   Float_t         uncorrpxAK5PFPUcorrJet[250];   //[nAK5Jet]
+   Float_t         uncorrpyAK5PFPUcorrJet[250];   //[nAK5Jet]
+   Float_t         uncorrpzAK5PFPUcorrJet[250];   //[nAK5Jet]
+
+   Float_t         uncorrpxAK5PFNoPUJet[250];   //[nAK5Jet]
+   Float_t         uncorrpyAK5PFNoPUJet[250];   //[nAK5Jet]
+   Float_t         uncorrpzAK5PFNoPUJet[250];   //[nAK5Jet]
+
    Int_t           nAK5PFNoPUJet;
    Int_t           chargeAK5PFNoPUJet[200];   //[nAK5PFNoPUJet]
    Float_t         energyAK5PFNoPUJet[200];   //[nAK5PFNoPUJet]
@@ -1125,6 +1136,8 @@ public :
    TBranch        *b_dr04HcalTowerSumEtFullConeEle;   //!
    TBranch        *b_eleIdLikelihoodEle;   //!
    TBranch        *b_pflowMVAEle;   //!
+   TBranch        *b_mvaidnontrigEle;   //!
+   TBranch        *b_mvaidtrigEle;   //!
    TBranch        *b_pfCombinedIsoEle;   //!
    TBranch        *b_pfCandChargedIso01Ele;   //!
    TBranch        *b_pfCandNeutralIso01Ele;   //!
@@ -1877,6 +1890,15 @@ public :
    TBranch        *b_trackCountingHighEffBJetTagsAK5Jet;   //!
    TBranch        *b_trackCountingVeryHighEffBJetTagsAK5Jet;   //!
    TBranch        *b_uncorrEnergyAK5Jet;   //!
+
+   TBranch        *b_uncorrpxAK5PFPUcorrJet;   //!
+   TBranch        *b_uncorrpyAK5PFPUcorrJet;   //!
+   TBranch        *b_uncorrpzAK5PFPUcorrJet;   //!
+
+   TBranch        *b_uncorrpxAK5PFNoPUJet;   //!
+   TBranch        *b_uncorrpyAK5PFNoPUJet;   //!
+   TBranch        *b_uncorrpzAK5PFNoPUJet;   //!
+
    TBranch        *b_nAK5PFNoPUJet;   //!
    TBranch        *b_chargeAK5PFNoPUJet;   //!
    TBranch        *b_energyAK5PFNoPUJet;   //!
@@ -2198,6 +2220,8 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("dr04HcalTowerSumEtFullConeEle", dr04HcalTowerSumEtFullConeEle, &b_dr04HcalTowerSumEtFullConeEle);
    fChain->SetBranchAddress("eleIdLikelihoodEle", eleIdLikelihoodEle, &b_eleIdLikelihoodEle);
    fChain->SetBranchAddress("pflowMVAEle", pflowMVAEle, &b_pflowMVAEle);
+   fChain->SetBranchAddress("mvaidnontrigEle", mvaidnontrigEle, &b_mvaidnontrigEle);
+   fChain->SetBranchAddress("mvaidtrigEle", mvaidtrigEle, &b_mvaidtrigEle);
    fChain->SetBranchAddress("pfCombinedIsoEle", pfCombinedIsoEle, &b_pfCombinedIsoEle);
    fChain->SetBranchAddress("pfCandChargedIso01Ele", pfCandChargedIso01Ele, &b_pfCandChargedIso01Ele);
    fChain->SetBranchAddress("pfCandNeutralIso01Ele", pfCandNeutralIso01Ele, &b_pfCandNeutralIso01Ele);
@@ -2949,7 +2973,16 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("trackCountingHighPurBJetTagsAK5Jet", trackCountingHighPurBJetTagsAK5Jet, &b_trackCountingHighPurBJetTagsAK5Jet);
    fChain->SetBranchAddress("trackCountingHighEffBJetTagsAK5Jet", trackCountingHighEffBJetTagsAK5Jet, &b_trackCountingHighEffBJetTagsAK5Jet);
    fChain->SetBranchAddress("trackCountingVeryHighEffBJetTagsAK5Jet", trackCountingVeryHighEffBJetTagsAK5Jet, &b_trackCountingVeryHighEffBJetTagsAK5Jet);
-   fChain->SetBranchAddress("uncorrEnergyAK5Jet", uncorrEnergyAK5Jet, &b_uncorrEnergyAK5Jet);
+   fChain->SetBranchAddress("uncorrenergyAK5Jet", uncorrEnergyAK5Jet, &b_uncorrEnergyAK5Jet);
+
+   fChain->SetBranchAddress("uncorrpxAK5PFNoPUJet", uncorrpxAK5PFNoPUJet, &b_uncorrpxAK5PFNoPUJet);
+   fChain->SetBranchAddress("uncorrpyAK5PFNoPUJet", uncorrpyAK5PFNoPUJet, &b_uncorrpyAK5PFNoPUJet);
+   fChain->SetBranchAddress("uncorrpzAK5PFNoPUJet", uncorrpzAK5PFNoPUJet, &b_uncorrpzAK5PFNoPUJet);
+
+   fChain->SetBranchAddress("uncorrpxAK5PFPUcorrJet", uncorrpxAK5PFPUcorrJet, &b_uncorrpxAK5PFPUcorrJet);
+   fChain->SetBranchAddress("uncorrpyAK5PFPUcorrJet", uncorrpyAK5PFPUcorrJet, &b_uncorrpyAK5PFPUcorrJet);
+   fChain->SetBranchAddress("uncorrpzAK5PFPUcorrJet", uncorrpzAK5PFPUcorrJet, &b_uncorrpzAK5PFPUcorrJet);
+
    fChain->SetBranchAddress("nAK5PFNoPUJet", &nAK5PFNoPUJet, &b_nAK5PFNoPUJet);
    fChain->SetBranchAddress("chargeAK5PFNoPUJet", chargeAK5PFNoPUJet, &b_chargeAK5PFNoPUJet);
    fChain->SetBranchAddress("energyAK5PFNoPUJet", energyAK5PFNoPUJet, &b_energyAK5PFNoPUJet);
@@ -3004,7 +3037,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("trackCountingHighPurBJetTagsAK5PFNoPUJet", trackCountingHighPurBJetTagsAK5PFNoPUJet, &b_trackCountingHighPurBJetTagsAK5PFNoPUJet);
    fChain->SetBranchAddress("trackCountingHighEffBJetTagsAK5PFNoPUJet", trackCountingHighEffBJetTagsAK5PFNoPUJet, &b_trackCountingHighEffBJetTagsAK5PFNoPUJet);
    fChain->SetBranchAddress("trackCountingVeryHighEffBJetTagsAK5PFNoPUJet", trackCountingVeryHighEffBJetTagsAK5PFNoPUJet, &b_trackCountingVeryHighEffBJetTagsAK5PFNoPUJet);
-   fChain->SetBranchAddress("uncorrEnergyAK5PFNoPUJet", uncorrEnergyAK5PFNoPUJet, &b_uncorrEnergyAK5PFNoPUJet);
+   fChain->SetBranchAddress("uncorrenergyAK5PFNoPUJet", uncorrEnergyAK5PFNoPUJet, &b_uncorrEnergyAK5PFNoPUJet);
    fChain->SetBranchAddress("rmsCandAK5PFNoPUJet", rmsCandAK5PFNoPUJet, &b_rmsCandAK5PFNoPUJet);
    fChain->SetBranchAddress("ptDAK5PFNoPUJet", ptDAK5PFNoPUJet, &b_ptDAK5PFNoPUJet);
    fChain->SetBranchAddress("nAK5PFPUcorrJet", &nAK5PFPUcorrJet, &b_nAK5PFPUcorrJet);
@@ -3061,7 +3094,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("trackCountingHighPurBJetTagsAK5PFPUcorrJet", trackCountingHighPurBJetTagsAK5PFPUcorrJet, &b_trackCountingHighPurBJetTagsAK5PFPUcorrJet);
    fChain->SetBranchAddress("trackCountingHighEffBJetTagsAK5PFPUcorrJet", trackCountingHighEffBJetTagsAK5PFPUcorrJet, &b_trackCountingHighEffBJetTagsAK5PFPUcorrJet);
    fChain->SetBranchAddress("trackCountingVeryHighEffBJetTagsAK5PFPUcorrJet", trackCountingVeryHighEffBJetTagsAK5PFPUcorrJet, &b_trackCountingVeryHighEffBJetTagsAK5PFPUcorrJet);
-   fChain->SetBranchAddress("uncorrEnergyAK5PFPUcorrJet", uncorrEnergyAK5PFPUcorrJet, &b_uncorrEnergyAK5PFPUcorrJet);
+   fChain->SetBranchAddress("uncorrenergyAK5PFPUcorrJet", uncorrEnergyAK5PFPUcorrJet, &b_uncorrEnergyAK5PFPUcorrJet);
    fChain->SetBranchAddress("rmsCandAK5PFPUcorrJet", rmsCandAK5PFPUcorrJet, &b_rmsCandAK5PFPUcorrJet);
    fChain->SetBranchAddress("ptDAK5PFPUcorrJet", ptDAK5PFPUcorrJet, &b_ptDAK5PFPUcorrJet);
    fChain->SetBranchAddress("nAK5GenJet", &nAK5GenJet, &b_nAK5GenJet);
