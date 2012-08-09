@@ -451,7 +451,7 @@ bool HggSelector::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2,TVector3 vtxP
   if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt() < leadPhoEtMin && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin ) return false;
 
   if(doPtOverM){
-    double M = (pho1->p4FromVtx(vtxPos,pho2->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
+    double M = (pho1->p4FromVtx(vtxPos,pho1->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
     if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMSubLead || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead ) return false;
     if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMLead && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead ) return false;
     
