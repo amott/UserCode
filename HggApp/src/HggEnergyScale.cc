@@ -172,6 +172,8 @@ std::pair<float,float> HggEnergyScale::getDEoE(VecbosPho pho, int run){
 
   string regionName = configNames[selectRegion];
   string regionErrName = regionName;  regionErrName.append("_Err");
+  
+  if(runIndex<0 || runIndex >= energyScales[regionName].size() ) return std::pair<float,float>(1,0);
 
   if(debugEnergyScale) cout << energyScales[regionName].at(runIndex) << endl;
   return std::pair<float,float>(energyScales[regionName].at(runIndex),

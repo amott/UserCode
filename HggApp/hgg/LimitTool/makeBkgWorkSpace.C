@@ -388,8 +388,8 @@ void makeBkgWorkSpace(TChain *fChain, float lumi, TString Suffix = "",float mMin
   
   
   //float ymax[10] = {600,800,600,800,2000};
-  float ymax_PFCiC[] = {10,10,200,400,200,400,1200};
-  float ymax_MVA[] = {10,20,30,150,400,800,1400};
+  float ymax_PFCiC[] = {10,20,300,600,300,600,1800};
+  float ymax_MVA[] = {10,20,40,200,500,1000,2000};
   float *ymax = (doPFCiC ? ymax_PFCiC : ymax_MVA);
   string ptname[2] = {"p^{#gamma#gamma}_{T} > 40 GeV/c","p^{#gamma#gamma}_{T} < 40 GeV/c"};
   string mvaname[6] = { "M_{jj} > 500 GeV  MVA > -0.05", "500 > M_{jj} > 250 GeV  MVA > -0.05", "MVA > 0.88", 

@@ -287,22 +287,15 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     // fill the isolation variables for the photons
     if(debugReducer) cout << "Filling IsoVars" << endl;
     for(int iPho = 0; iPho < nPho_; iPho++){
-      std::vector<float> thisPhoIso;
-      float worstIso03 = 0; int worstIsoIndex03 = -1;
-      float worstIso04 = 0; int worstIsoIndex04 = -1;
+      Photons_.at(iPho).nPV=nVtx;
       for(int i=0;i<nVtx;i++){
+	float thisIsoDR02 = computeTrackIso(iPho,i,0.,0.2,0.2,0.0,1.0,0.1);
 	float thisIsoDR03 = computeTrackIso(iPho,i,0.,0.3,0.2,0.0,1.0,0.1);
 	float thisIsoDR04 = computeTrackIso(iPho,i,0.,0.4,0.2,0.0,1.0,0.1);
-	Photons_.at(iPho).photonTrkIsoFromVtx.push_back(thisIsoDR03);
-	if(thisIsoDR03 > worstIso03){
-	  worstIso03 = thisIsoDR03; worstIsoIndex03 = i;
-	}
-	if(thisIsoDR04 > worstIso04){
-	  worstIso04 = thisIsoDR04; worstIsoIndex04 = i;
-	}
+	Photons_.at(iPho).dr02TrackIso[i]=thisIsoDR02;
+	Photons_.at(iPho).dr03TrackIso[i]=thisIsoDR03;
+	Photons_.at(iPho).dr04TrackIso[i]=thisIsoDR04;
       }
-      Photons_.at(iPho).photonWorstIsoDR03 = std::pair<float,int>(worstIso03,worstIsoIndex03);
-      Photons_.at(iPho).photonWorstIsoDR04 = std::pair<float,int>(worstIso04,worstIsoIndex04);
     } // end of photon isolation loop
 
     //fill remaining collections
