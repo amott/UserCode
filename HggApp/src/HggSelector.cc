@@ -447,13 +447,13 @@ bool HggSelector::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2,TVector3 vtxP
   if(fabs(pho1->SC.eta) > 1.4442 && fabs(pho1->SC.eta) < 1.566) return false;
   if(fabs(pho2->SC.eta) > 1.4442 && fabs(pho2->SC.eta) < 1.566) return false; // veto gap photons
 
-  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < subleadPhoEtMin || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < subleadPhoEtMin ) return false;
-  if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin ) return false;
+  if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt() < subleadPhoEtMin || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < subleadPhoEtMin ) return false;
+  if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt() < leadPhoEtMin && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin ) return false;
 
   if(doPtOverM){
     double M = (pho1->p4FromVtx(vtxPos,pho2->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
-    if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead ) return false;
-    if( pho1->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead ) return false;
+    if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMSubLead || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead ) return false;
+    if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMLead && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead ) return false;
     
   }
 
@@ -700,6 +700,7 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
   data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E(); data.EError = pho->finalEnergyError;
   data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
   data.index = pho->index;
+  data.etaSC = pho->SC.eta;
   data.r9 = pho->SC.r9;
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtxI); 
   data.category = (data.r9 < 0.94)+2*(fabs(data.eta) > 1.48); 
