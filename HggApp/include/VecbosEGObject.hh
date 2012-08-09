@@ -216,11 +216,6 @@ public:
   int hasPixel;
   TVector3 CaloPos;
 
-  std::vector<float> photonTrkIsoFromVtx;
-  pair<float,int> photonWorstIsoDR03;
-  pair<float,int> photonWorstIsoDR04;
-
-
   TLorentzVector p4FromVtx(TVector3 vtx,float E,bool pf=false);
   VecbosConversion conversion;
   //isolation variables
@@ -233,8 +228,13 @@ public:
   float dr04TrkSumPtCone;
   float dr04TrkSumPtHollowCone;
 
-  //pfIsolation
   int           nPV;
+  //tracker isolation
+  float        dr02TrackIso[100];
+  float        dr03TrackIso[100];
+  float        dr04TrackIso[100];
+
+  //pfIsolation
   float         dr01ChargedHadronPFIso[100];
   float         dr02ChargedHadronPFIso[100];
   float         dr03ChargedHadronPFIso[100];
@@ -267,6 +267,7 @@ struct ReducedPhotonData{
   Float_t pt,eta,phi,E,EError;
   Float_t pt_NoCorr, eta_NoCorr, phi_NoCorr, E_NoCorr;
   Float_t pt_Gen, eta_Gen, phi_Gen, E_Gen;
+  Float_t etaSC;
   int index;
   float r9;
   bool passPFCiC;
@@ -285,6 +286,11 @@ public:
   float eta;
   float phi;
 
+  TLorentzVector getP4(float E){
+    TLorentzVector p4;
+    p4.SetPtEtaPhiM(E/cosh(eta),eta,phi,0);
+    return p4;
+  }
   int charge;
 
   float correctedEnergy;
