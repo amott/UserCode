@@ -135,7 +135,7 @@ ZeeSelectorApp: $(SRCDIR)ZeeSelectorApp.C \
 	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)ZeeSelector.o
-	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
+	$(CXX) $(CXXFLAGS) -o ZeeSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
 $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMassResolution.o \
