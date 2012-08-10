@@ -330,8 +330,9 @@ void HggSelector::Loop(){
 	p1=p2; p2=tmp;
       }
       TLorentzVector gg = p1+p2;
-      thetaLead = (p1-gg).Theta();
-      thetaSubLead = (p2-gg).Theta();
+      TVector3 boost = -1*gg.BoostVector();
+      p1.Boost(boost);
+      cosThetaLead = p1.Vect().Dot(gg.Vect())/p1.Vect().Mag()/gg.Vect().Mag();
 
     }else{
       mPair_=-1;      
@@ -368,8 +369,9 @@ void HggSelector::Loop(){
 	p1=p2; p2=tmp;
       }
       TLorentzVector gg = p1+p2;
-      thetaLeadPFCiC = (p1-gg).Theta();
-      thetaSubLeadPFCiC = (p2-gg).Theta();
+      TVector3 boost = -1*gg.BoostVector();
+      p1.Boost(boost);
+      cosThetaLeadPFCiC = p1.Vect().Dot(gg.Vect())/p1.Vect().Mag()/gg.Vect().Mag();
     }else{
       mPairPFCiC_=-1;
     }
@@ -406,8 +408,9 @@ void HggSelector::Loop(){
 	p1=p2; p2=tmp;
       }
       TLorentzVector gg = p1+p2;
-      thetaLeadCiC = (p1-gg).Theta();
-      thetaSubLeadCiC = (p2-gg).Theta();
+      TVector3 boost = -1*gg.BoostVector();
+      p1.Boost(boost);
+      cosThetaLeadCiC = p1.Vect().Dot(gg.Vect())/p1.Vect().Mag()/gg.Vect().Mag();
     }else{
       mPairCiC_=-1;
     }
@@ -478,10 +481,10 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
   TRandom3 rng(0);
 
     for(int iPho1=0; iPho1<nPho_;iPho1++){
-      if(photonMatchedElectron[iPho1] && doElectronVeto) return std::pair<int,int>(-1,-1);
+      if(photonMatchedElectron[iPho1] && doElectronVeto) continue
       for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
 	if(iPho1==iPho2) continue;
-	if(photonMatchedElectron[iPho2] && doElectronVeto) return std::pair<int,int>(-1,-1);
+	if(photonMatchedElectron[iPho2] && doElectronVeto) continue;
 	if(debugSelector) cout << ">> " << iPho1 << "  " << iPho2 << endl;
 	//scale/smear the energy of the photon
 	VecbosPho* pho1 = &(Photons_->at(iPho1));
@@ -703,7 +706,7 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
   data.etaSC = pho->SC.eta;
   data.r9 = pho->SC.r9;
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtxI); 
-  data.category = (data.r9 < 0.94)+2*(fabs(data.eta) > 1.48); 
+  data.category = (data.r9 < 0.94)+2*(fabs(data.etaSC) > 1.48); 
   data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtxI);
   if(debugSelector) cout << "DONE Filling Reduced Data" <<endl;
   return data;
@@ -804,9 +807,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("Mjj",&Mjj_,"Mjj");
   outTree->Branch("ptJet1",&ptJet1_,"ptJet1");
   outTree->Branch("ptJet2",&ptJet2_,"ptJet2");
-  outTree->Branch("thetaLead",&thetaLead,"thetaLead/F");
-  outTree->Branch("thetaSubLead",&thetaSubLead,"thetaSubLead/F");
-
+  outTree->Branch("cosThetaLead",&cosThetaLead,"cosThetaLead/F");
 
   outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
   outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
@@ -819,8 +820,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("MjjPFCiC",&MjjPFCiC_,"MjjPFCiC");
   outTree->Branch("ptJet1PFCiC",&ptJet1PFCiC_,"ptJet1PFCiC");
   outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
-  outTree->Branch("thetaLeadPFCiC",&thetaLeadPFCiC,"thetaLeadPFCiC/F");
-  outTree->Branch("thetaSubLeadPFCiC",&thetaSubLeadPFCiC,"thetaSubLeadPFCiC/F");
+  outTree->Branch("cosThetaLeadPFCiC",&cosThetaLeadPFCiC,"cosThetaLeadPFCiC/F");
   
   outTree->Branch("mPairCiC",&mPairCiC_,"mPairCiC/F");
   outTree->Branch("mPairNoCorrCiC",&mPairNoCorrCiC_,"mPairNoCorrCiC/F");
@@ -833,8 +833,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("MjjCiC",&MjjCiC_,"MjjCiC");
   outTree->Branch("ptJet1CiC",&ptJet1CiC_,"ptJet1CiC");
   outTree->Branch("ptJet2CiC",&ptJet2CiC_,"ptJet2CiC");
-  outTree->Branch("thetaLeadCiC",&thetaLeadCiC,"thetaLeadCiC/F");
-  outTree->Branch("thetaSubLeadCiC",&thetaSubLeadCiC,"thetaSubLeadCiC/F");
+  outTree->Branch("cosThetaLeadCiC",&cosThetaLeadCiC,"cosThetaLeadCiC/F");
 
   outTree->Branch("nPhoton",&nOutPhotons_,"nPhoton/I");
   outTree->Branch("Photon",&OutPhotons_);
