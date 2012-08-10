@@ -16,7 +16,7 @@ int getCat(CatMap* cats, TString type, const int nCat){
   if((*cats).find(Form("%s_PreSelEta",type.Data())) != (*cats).end()) if( (*cats)[ Form("%s_PreSelEta",type.Data()) ]->EvalInstance() ){
     return -1; // rejection photons between EB and EE
   }
-  if((*cats).find(Form("%s_PreSelEta",type.Data())) != (*cats).end()) if( (*cats)[ Form("%s_PreSelEt",type.Data()) ]->EvalInstance() ){
+  if((*cats).find(Form("%s_PreSelEt",type.Data())) != (*cats).end()) if( (*cats)[ Form("%s_PreSelEt",type.Data()) ]->EvalInstance() ){
     return -1; // final pT requirements on the photons
   }
   
@@ -54,8 +54,8 @@ CatMap getCategoryCuts(TChain* fChain){
   categories["PFCiC_4"] = new TTreeFormula("PFCiC_4","(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].etaSC) < 1.48 && abs(PhotonPFCiC[1].etaSC) < 1.48)",fChain);
   categories["PFCiC_5"] = new TTreeFormula("PFCiC_5","!(PhotonPFCiC[0].r9 > 0.94 && PhotonPFCiC[1].r9 > 0.94) && !(abs(PhotonPFCiC[0].etaSC) < 1.48 && abs(PhotonPFCiC[1].etaSC) < 1.48)",fChain);
 
-  categories["CiC_PreSelEta"] = new TTreeFormula("CiC_PreSelEta","(abs(PhotonCiC[0].etaSC) > 1.4442 && abs(PhotonCiC[0].etaSC) < 1.566) || (abs(PhotonCiC[1].etaSC) > 1.4442 && abs(PhotonCiC[1].etaSC) < 1.566) || abs(PhotonCiC[0].etaSC) > 2.5 || abs(PhotonCiC[1].etaSC) > 2.5",fChain);
-  categories["CiC_PreSelEt"] = new TTreeFormula("CiC_PreSelEt","PhotonCiC[0].pt < 25 || PhotonCiC[1].pt < 25 || (PhotonCiC[0].pt < 33 && PhotonCiC[1].pt < 33)",fChain);
+  //categories["CiC_PreSelEta"] = new TTreeFormula("CiC_PreSelEta","(abs(PhotonCiC[0].etaSC) > 1.4442 && abs(PhotonCiC[0].etaSC) < 1.566) || (abs(PhotonCiC[1].etaSC) > 1.4442 && abs(PhotonCiC[1].etaSC) < 1.566) || abs(PhotonCiC[0].etaSC) > 2.5 || abs(PhotonCiC[1].etaSC) > 2.5",fChain);
+  //categories["CiC_PreSelEt"] = new TTreeFormula("CiC_PreSelEt","PhotonCiC[0].pt < 25 || PhotonCiC[1].pt < 25 || (PhotonCiC[0].pt < 33 && PhotonCiC[1].pt < 33)",fChain);
   categories["CiC_R"] = new TTreeFormula("CiC_R","mPairCiC==-1 || nPhotonCiC==0",fChain); // rejection criterion
   categories["CiC_0"] = new TTreeFormula("CiC_0","(MjjCiC >= 500) && (PhotonCiC[0].pt>30. && PhotonCiC[1].pt >30.) && (ptJet1 > 30. && ptJet2 > 30.)",fChain);
   categories["CiC_1"] = new TTreeFormula("CiC_1","(MjjCiC >= 250) && (PhotonCiC[0].pt>30. || PhotonCiC[1].pt >30.)",fChain);

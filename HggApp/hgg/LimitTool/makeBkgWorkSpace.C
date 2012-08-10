@@ -62,12 +62,6 @@ void setTCanvasNicev1(TCanvas *can0){
 void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float mMax=180,
 		      bool applyTrigger=true){
   
-  const int nCat = 6;
-  const float CatMin[nCat] = {0.05,0.05,0.89,0.74,0.55,0.05};
-  const float CatMax[nCat] = {9999,9999,9999,0.89,0.74,0.55}; // predefined cuts for the diPhotonMVA categories
-  const float MjjMin[nCat] = {500.,250.,-999,-999,-999,-999};
-  const float MjjMax[nCat] = {9999,500.,250.,250.,250.,250.};
-  
   TChain *fChain = new TChain("HggOutput");
   
   ifstream st(inputFiles.c_str(),fstream::in);
