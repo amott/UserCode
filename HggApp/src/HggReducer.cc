@@ -124,7 +124,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     lumiBlockO=lumiBlock;
 
     //filters:
-    if(nTrack > 1000 || nPV > 80) {
+    if(nTrack > 5000 || nPV > 160) {
       if(debugReducer) cout << "dropping event: too many tracks/PVs: " << nTrack << "  " << nPV << endl; 
       continue;
     }
@@ -171,7 +171,7 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       VecbosPho pho(this,iPho);
       if(!_isData) scaler->ScalePhoton(pho);
       if(debugReducer) cout << iPho << ": energy=" <<  pho.energy << "  eta=" << pho.SC.eta << endl;
-      if(!this->passPreselection(&pho)) continue;
+      //if(!this->passPreselection(&pho)) continue;
       if(debugReducer) cout << "pass" << endl;
 
       //DO ENERGY CORRECTION
