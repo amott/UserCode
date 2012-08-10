@@ -48,6 +48,10 @@ private:
   int   lpass;
   int   tpass;
   int   mvapass;
+  bool  isZmass;
+  float rho;
+  float PFIsoOverPT1;
+  float PFIsoOverPT2;
 
   // Input variables
   int runNumber;
@@ -55,41 +59,13 @@ private:
   int nVtx;
 
   // Electron Selection
-  static const int MAX = 100;
-  int   charge[MAX];
-  float eta[MAX];
-  float phi[MAX];
-
-  float energySC[MAX];
-  float etaSC[MAX];
-  float phiSC[MAX];
-  float r9[MAX];
-
-  float HoverE[MAX];
-  float dEta[MAX];
-  float dPhi[MAX];
-  float sigmaIEtaIEta[MAX];
-  float PFIsoOverPT1;
-  float PFIsoOverPT2;
-  int   d0[MAX];
-  int   dz[MAX];
-
-  float idMVA[MAX];
-
-  float PT[MAX];
-  float chargedPFiso[MAX];
-  float neutralPFiso[MAX];
-  float photonPFiso[MAX];
-  float rho;
-
-  bool  hasMatchedConversion[MAX];
-  int   expInnerLayersHits[MAX];
+  std::vector<VecbosEle> *Electrons;
 
   // Variables that will be outputted
   float mass;
+  int   nEleOut;
   float Ele1mva;
   float Ele2mva;
-  int   nEleOut;
   float Ele1eta;
   float Ele2eta;
   float Ele1r9;

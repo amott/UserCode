@@ -12,12 +12,14 @@ using namespace std;
 ZeeSelector::ZeeSelector():
   fChain(0),
   valid(false),
-  isData_(true)
+  isData_(true),
+  Electrons(0)
 {
 }
 
 ZeeSelector::ZeeSelector(vector<string> fNames, string treeName,string outFName):
-  isData_(true)
+  isData_(true),
+  Electrons(0)
 {
   this->loadChain(fNames,treeName);
   outputFile = outFName;
@@ -55,11 +57,12 @@ void ZeeSelector::Loop(){
   for (int eventi=0; eventi<nEntries; eventi++) {
     if(eventi%500==0) {
       cout << ">> Processing Entry " << eventi << "/" << nEntries << endl;
-      nbytes += fChain->GetEvent(eventi);
-    }
+    }    
+    nbytes += fChain->GetEvent(eventi);
+
     // Reset mass reference
     DZmassref = 100;
-    
+    isZmass = false;
     // Require the event to have at least two electrons
     if (nEle > 1) {   
 
@@ -68,30 +71,33 @@ void ZeeSelector::Loop(){
 
 	// Choose Second Electron
 	for (int j=k+1; j<nEle;j++) {   
-
+	  lpass   = 0;
+	  tpass   = 0;
+	  mvapass = 0;
+	  Zeemass = 0;
 	  // Verify Opposite Charges
-	  if (charge[k] != charge[j]) {
+	  if (*Electrons[k].charge != *Electrons[j].charge) {
 
 	    // Calculate Invariant Mass for Z Boson from Two Electrons
 	    TLorentzVector Ele1;
-	    Ele1.SetPtEtaPhiM(energySC[k]/cosh(eta[k]),eta[k],phi[k],0);
+	    Ele1.SetPtEtaPhiM(*Electrons[k].correctedEnergy/cosh(*Electrons[k].eta),*Electrons[k].eta,*Electrons[k].phi,0);
 	    TLorentzVector Ele2;
-	    Ele2.SetPtEtaPhiM(energySC[j]/cosh(eta[j]),eta[j],phi[j],0);
+	    Ele2.SetPtEtaPhiM(*Electrons[j].correctedEnergy/cosh(*Electrons[j].eta),*Electrons[j].eta,*Electrons[j].phi,0);
 	    TLorentzVector Zee = Ele1 + Ele2;
 	    Zeemass = Zee.M();
 
-	    PFIsoOverPT1 = (chargedPFiso[k] + max(0.d,(neutralPFiso[k]+photonPFiso[k]) - pow(0.3, 2)*PI*max(0.f,rho)))/(PT[k]);
-	    PFIsoOverPT2 = (chargedPFiso[j] + max(0.d,(neutralPFiso[j]+photonPFiso[j]) - pow(0.3, 2)*PI*max(0.f,rho)))/(PT[j]);
+	    PFIsoOverPT1 = (*Electrons[k].dr03ChargedHadronPFIso + max(0.d,(*Electrons[k].dr03NeutralHadronPFIso+*Electrons[k].dr03PhotonPFIso) - pow(0.3, 2)*PI*max(0.f,rho)))/(*Electrons[k].pt);
+	    PFIsoOverPT2 = (*Electrons[j].dr03ChargedHadronPFIso + max(0.d,(*Electrons[j].dr03NeutralHadronPFIso+*Electrons[j].dr03PhotonPFIso) - pow(0.3, 2)*PI*max(0.f,rho)))/(*Electrons[j].pt);
 	    
 	    // Loose Cuts - WP 90
-	    if (energySC[k]>25 && energySC[j]>25) {
-	      if (((fabs(etaSC[k])<1.44 && fabs(dEta[k])<0.007 && fabs(dPhi[k])<0.15 && sigmaIEtaIEta[k]<0.01 && HoverE[k]<0.12) || (fabs(etaSC[k])>1.52 && fabs(dEta[k])<0.009 && fabs(dPhi[k])<0.1 && sigmaIEtaIEta[k]<0.03 && HoverE[k]<0.10)) && ((fabs(etaSC[j])<1.44 && fabs(dEta[j])<0.007 && fabs(dPhi[j])<0.15 && sigmaIEtaIEta[j]<0.01 && HoverE[j]<0.12) || (fabs(etaSC[j])>1.52 && fabs(dEta[j])<0.009 && fabs(dPhi[j])<0.1 && sigmaIEtaIEta[j]<0.03 && HoverE[j]<0.10))) {
-		if (PFIsoOverPT1<0.15 && PFIsoOverPT2<0.15 && hasMatchedConversion[k] == false && hasMatchedConversion[j] == false && expInnerLayersHits[k]!=-999 && expInnerLayersHits[j]!=-999) {
-		  if (d0[k] != 999 && d0[j] != 999 && dz[k] != 999 && dz[j] != 999) {
+	    if (*Electrons[k].correctedEnergy>25 && *Electrons[j].correctedEnergy>25) {
+	      if (((fabs(*Electrons[k].SC.eta)<1.44 && fabs(*Electrons[k].dEtaSCTrackAtVtx)<0.007 && fabs(*Electrons[k].dPhiSCTrackAtVtx)<0.15 && *Electrons[k].SC.sigmaIEtaIEta<0.01 && *Electrons[k].SC.HoverE<0.12) || (fabs(*Electrons[k].SC.eta)>1.52 && fabs(*Electrons[k].dEtaSCTrackAtVtx)<0.009 && fabs(*Electrons[k].dPhiSCTrackAtVtx)<0.1 && *Electrons[k].SC.sigmaIEtaIEta<0.03 && *Electrons[k].SC.HoverE<0.10)) && ((fabs(*Electrons[j].SC.eta)<1.44 && fabs(*Electrons[j].dEtaSCTrackAtVtx)<0.007 && fabs(*Electrons[j].dPhiSCTrackAtVtx)<0.15 && *Electrons[j].SC.sigmaIEtaIEta<0.01 && *Electrons[j].SC.HoverE<0.12) || (fabs(*Electrons[j].SC.eta)>1.52 && fabs(*Electrons[j].dEtaSCTrackAtVtx)<0.009 && fabs(*Electrons[j].dPhiSCTrackAtVtx)<0.1 && *Electrons[j].SC.sigmaIEtaIEta<0.03 && *Electrons[j].SC.HoverE<0.10))) {
+		if (PFIsoOverPT1<0.15 && PFIsoOverPT2<0.15 && *Electrons[k].hasMatchedConversion == false && *Electrons[j].hasMatchedConversion == false && *Electrons[k].expInnerLayersHits!=-999 && *Electrons[j].expInnerLayersHits!=-999) {
+		  if (*Electrons[k].d0Track != 999 && *Electrons[j].d0Track != 999 && *Electrons[k].dzTrack != 999 && *Electrons[j].dzTrack != 999) {
 		    lpass = 1;
 		    
 		    // Tight Cuts - WP 70
-		    if (((fabs(etaSC[k])<1.44 && fabs(dEta[k])<.004 && fabs(dPhi[k])<0.03) || (fabs(etaSC[k])>1.52 && fabs(dEta[k])<0.005 && fabs(dPhi[k])<0.02)) && ((fabs(etaSC[j])<1.44 && fabs(dEta[k])<0.004 && fabs(dPhi[j])<0.03) || (fabs(etaSC[j])>1.52 && fabs(dEta[j])<0.005 && fabs(dPhi[j])<0.02))) {
+		    if (((fabs(*Electrons[k].SC.eta)<1.44 && fabs(*Electrons[k].dEtaSCTrackAtVtx)<.004 && fabs(*Electrons[k].dPhiSCTrackAtVtx)<0.03) || (fabs(*Electrons[k].SC.eta)>1.52 && fabs(*Electrons[k].dEtaSCTrackAtVtx)<0.005 && fabs(*Electrons[k].dPhiSCTrackAtVtx)<0.02)) && ((fabs(*Electrons[j].SC.eta)<1.44 && fabs(*Electrons[k].dEtaSCTrackAtVtx)<0.004 && fabs(*Electrons[j].dPhiSCTrackAtVtx)<0.03) || (fabs(*Electrons[j].SC.eta)>1.52 && fabs(*Electrons[j].dEtaSCTrackAtVtx)<0.005 && fabs(*Electrons[j].dPhiSCTrackAtVtx)<0.02))) {
 		      if (PFIsoOverPT1<0.10 && PFIsoOverPT2<0.10) {
 			tpass = 1;
 		      };
@@ -102,7 +108,7 @@ void ZeeSelector::Loop(){
 	    
 		    
 	      // MVA ID Cuts
-	      if (((fabs(etaSC[k])<0.8 && idMVA[k]>0.5) || (fabs(etaSC[k])>0.8 && fabs(etaSC[k])<1.479 && idMVA[k]>0.120) || (fabs(etaSC[k])>1.479 && idMVA[k]>0.6)) && ((fabs(etaSC[j])<0.8 && idMVA[j]>0.5) || (fabs(etaSC[j])>0.8 && fabs(etaSC[j])<1.479 && idMVA[j]>0.120) || (fabs(etaSC[j])>1.479 && idMVA[j]>0.6))) {
+	      if (((fabs(*Electrons[k].SC.eta)<0.8 && *Electrons[k].idMVA>0.5) || (fabs(*Electrons[k].SC.eta)>0.8 && fabs(*Electrons[k].SC.eta)<1.479 && *Electrons[k].idMVA>0.120) || (fabs(*Electrons[k].SC.eta)>1.479 && *Electrons[k].idMVA>0.6)) && ((fabs(*Electrons[j].SC.eta)<0.8 && *Electrons[j].idMVA>0.5) || (fabs(*Electrons[j].SC.eta)>0.8 && fabs(*Electrons[j].SC.eta)<1.479 && *Electrons[j].idMVA>0.120) || (fabs(*Electrons[j].SC.eta)>1.479 && *Electrons[j].idMVA>0.6))) {
 		mvapass = 1;
 	      };
 	    };
@@ -110,30 +116,30 @@ void ZeeSelector::Loop(){
 	    // Calculate Difference from True Z Mass 
 	    DZmass = fabs(Zeemass - 91.2);
 	    // Compare the proximity of uncut Z mass to real Z mass with other electron pairs in event
-	    if (DZmass < DZmassref && (mvapass + lpass + tpass > 0)) {
+	    if (DZmass < DZmassref) {
 		// Reset the selected Z mass and reference point to this pair
 		mass = Zeemass;
 		DZmassref = DZmass;          
-		Ele1eta = etaSC[k];
-		Ele2eta = etaSC[j];
-		Ele1r9  = r9[k];
-		Ele2r9  = r9[j];
+		Ele1eta = *Electrons[k].SC.eta;
+		Ele2eta = *Electrons[j].SC.eta;
+		Ele1r9  = *Electrons[k].SC.r9;
+		Ele2r9  = *Electrons[j].SC.r9;
 		passloose = lpass;
 		passtight = tpass;
 		passmva   = mvapass;
-		Ele1mva = idMVA[k];
-		Ele2mva = idMVA[j];
+		Ele1mva = *Electrons[k].idMVA;
+		Ele2mva = *Electrons[j].idMVA;
+		cout << "made it to selection" << *Electrons[k].SC.eta << *Electrons[j].SC.eta <<*Electrons[k].SC.r9 << *Electrons[j].SC.r9 <<endl;
+		isZmass = true;
 	    };
 	  };
-	  lpass   = 0;
-	  tpass   = 0;
-	  mvapass = 0;
-	  Zeemass = 0;
 	};
       };
     };
-    nEleOut = nEle;
-    outTree->Fill();
+    if (isZmass ==  true) {
+      nEleOut = nEle;
+      outTree->Fill();
+    };
   };
 
   TFile *f = new TFile(outputFile.c_str(),"RECREATE");
@@ -153,27 +159,8 @@ void ZeeSelector::setBranchAddresses(){
   
   //information for the Electrons
   fChain->SetBranchAddress("nEle",&nEle);
-  fChain->SetBranchAddress("Electrons.charge",charge);
-  fChain->SetBranchAddress("Electrons.correctEnergy",energySC);
-  fChain->SetBranchAddress("Electrons.SC.eta",etaSC);
-  fChain->SetBranchAddress("Electrons.SC.phi",phiSC);
-  fChain->SetBranchAddress("Electrons.eta",eta);
-  fChain->SetBranchAddress("Electrons.phi",phi);
-  fChain->SetBranchAddress("Electrons.SC.HoverE",HoverE);
-  fChain->SetBranchAddress("Electrons.SC.dEtaSCTrackAtVtx",dEta);
-  fChain->SetBranchAddress("Electrons.dPhiSCTrackAtVtx",dPhi);
-  fChain->SetBranchAddress("Electrons.SC.sigmaIEtaIEta",sigmaIEtaIEta);
-  fChain->SetBranchAddress("Electrons.d0Track",d0);
-  fChain->SetBranchAddress("Electrons.dzTrack", dz);
-  fChain->SetBranchAddress("Electrons.SC.idMVA", idMVA);
-  fChain->SetBranchAddress("Electrons.SC.r9", r9);
-  fChain->SetBranchAddress("Electrons.pt", PT);
-  fChain->SetBranchAddress("Electrons.SC.dr03ChargedHadronPFIso", chargedPFiso);
-  fChain->SetBranchAddress("Electrons.SC.dr03NeutralHadronPFIso", neutralPFiso);
-  fChain->SetBranchAddress("Electrons.SC.dr03PhotonPFIso", photonPFiso);
-  fChain->SetBranchAddress("Electrons.hasMatchedConversion", hasMatchedConversion);
-  fChain->SetBranchAddress("Electrons.expInnerLayersHits", expInnerLayersHits);
-  
+  fChain->SetBranchAddress("Electrons",&Electrons);
+ 
   // information for the vertex
   fChain->SetBranchAddress("nVtx", &nVtx);
   fChain->SetBranchAddress("rho", &rho);
@@ -189,6 +176,7 @@ void ZeeSelector::setupOutputTree(){
   outTree->Branch("Ele2eta",&Ele2eta,"Ele2eta");
   outTree->Branch("Ele2r9",&Ele2r9,"Ele2r9");
   outTree->Branch("Ele2mva",&Ele2mva,"Ele2mva");
+  outTree->Branch("passloose",&passloose,"passloose");  
   outTree->Branch("passtight",&passtight,"passtight");
   outTree->Branch("passmva",&passmva,"passmva");
   outTree->Branch("nEleOut",&nEleOut,"nEleOut");
