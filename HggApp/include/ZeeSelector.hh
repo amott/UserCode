@@ -45,9 +45,9 @@ private:
   float DZmass;
   float Zeemass;
   int   nEle;
-  int   lpass;
-  int   tpass;
-  int   mvapass;
+  float lpass;
+  float tpass;
+  float mvapass;
   bool  isZmass;
   float rho;
   float PFIsoOverPT1;
@@ -70,7 +70,7 @@ private:
   float Ele2eta;
   float Ele1r9;
   float Ele2r9;
-  int   passtight;
-  int   passmva;	
-  int   passloose;
+  float passtight;
+  float passmva;	
+  float passloose;
 };

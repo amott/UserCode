@@ -96,12 +96,12 @@ void ZeeSelector::Loop(){
 	      if (((fabs(ele1.SC.eta)<1.44 && fabs(ele1.dEtaSCTrackAtVtx)<0.007 && fabs(ele1.dPhiSCTrackAtVtx)<0.15 && ele1.SC.sigmaIEtaIEta<0.01 && ele1.SC.HoverE<0.12) || (fabs(ele1.SC.eta)>1.52 && fabs(ele1.dEtaSCTrackAtVtx)<0.009 && fabs(ele1.dPhiSCTrackAtVtx)<0.1 && ele1.SC.sigmaIEtaIEta<0.03 && ele1.SC.HoverE<0.10)) && ((fabs(ele2.SC.eta)<1.44 && fabs(ele2.dEtaSCTrackAtVtx)<0.007 && fabs(ele2.dPhiSCTrackAtVtx)<0.15 && ele2.SC.sigmaIEtaIEta<0.01 && ele2.SC.HoverE<0.12) || (fabs(ele2.SC.eta)>1.52 && fabs(ele2.dEtaSCTrackAtVtx)<0.009 && fabs(ele2.dPhiSCTrackAtVtx)<0.1 && ele2.SC.sigmaIEtaIEta<0.03 && ele2.SC.HoverE<0.10))) {
 		if (PFIsoOverPT1<0.15 && PFIsoOverPT2<0.15 && ele1.hasMatchedConversion == false && ele2.hasMatchedConversion == false && ele1.expInnerLayersHits!=-999 && ele2.expInnerLayersHits!=-999) {
 		  if (ele1.d0Track != 999 && ele2.d0Track != 999 && ele1.dzTrack != 999 && ele2.dzTrack != 999) {
-		    lpass = 1;
+		    lpass = 1.0;
 		    
 		    // Tight Cuts - WP 70
 		    if (((fabs(ele1.SC.eta)<1.44 && fabs(ele1.dEtaSCTrackAtVtx)<.004 && fabs(ele1.dPhiSCTrackAtVtx)<0.03) || (fabs(ele1.SC.eta)>1.52 && fabs(ele1.dEtaSCTrackAtVtx)<0.005 && fabs(ele1.dPhiSCTrackAtVtx)<0.02)) && ((fabs(ele2.SC.eta)<1.44 && fabs(ele1.dEtaSCTrackAtVtx)<0.004 && fabs(ele2.dPhiSCTrackAtVtx)<0.03) || (fabs(ele2.SC.eta)>1.52 && fabs(ele2.dEtaSCTrackAtVtx)<0.005 && fabs(ele2.dPhiSCTrackAtVtx)<0.02))) {
 		      if (PFIsoOverPT1<0.10 && PFIsoOverPT2<0.10) {
-			tpass = 1;
+			tpass = 1.0;
 		      };
 		    };
 		  };
@@ -111,14 +111,14 @@ void ZeeSelector::Loop(){
 		    
 	      // MVA ID Cuts
 	      if (((fabs(ele1.SC.eta)<0.8 && ele1.idMVA>0.5) || (fabs(ele1.SC.eta)>0.8 && fabs(ele1.SC.eta)<1.479 && ele1.idMVA>0.120) || (fabs(ele1.SC.eta)>1.479 && ele1.idMVA>0.6)) && ((fabs(ele2.SC.eta)<0.8 && ele2.idMVA>0.5) || (fabs(ele2.SC.eta)>0.8 && fabs(ele2.SC.eta)<1.479 && ele2.idMVA>0.120) || (fabs(ele2.SC.eta)>1.479 && ele2.idMVA>0.6))) {
-		mvapass = 1;
+		mvapass = 1.0;
 	      };
 	    };
 	  	    
 	    // Calculate Difference from True Z Mass 
 	    DZmass = fabs(Zeemass - 91.2);
 	    // Compare the proximity of uncut Z mass to real Z mass with other electron pairs in event
-	    if (DZmass < DZmassref) {
+	    if (DZmass < DZmassref && (lpass + mvapass + tpass)>0) {
 		// Reset the selected Z mass and reference point to this pair
 		mass = Zeemass;
 		DZmassref = DZmass;          
@@ -131,7 +131,6 @@ void ZeeSelector::Loop(){
 		passmva   = mvapass;
 		Ele1mva = ele1.idMVA;
 		Ele2mva = ele2.idMVA;
-		cout << "made it to selection" << ele1.SC.eta << ele2.SC.eta <<ele1.SC.r9 << ele2.SC.r9 <<endl;
 		isZmass = true;
 	    };
 	  };
@@ -181,7 +180,7 @@ void ZeeSelector::setupOutputTree(){
   outTree->Branch("passloose",&passloose,"passloose");  
   outTree->Branch("passtight",&passtight,"passtight");
   outTree->Branch("passmva",&passmva,"passmva");
-  outTree->Branch("nEleOut",&nEleOut,"nEleOut");
+  outTree->Branch("nEle",&nEleOut,"nEle");
 }
 
 
