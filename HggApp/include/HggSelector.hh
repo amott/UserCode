@@ -167,12 +167,9 @@ private:
   float ptJet1CiC_;
   float ptJet2CiC_;
 
-  float thetaLead;
-  float thetaSubLead;
-  float thetaLeadPFCiC;
-  float thetaSubLeadPFCiC;
-  float thetaLeadCiC;
-  float thetaSubLeadCiC;
+  float cosThetaLead;
+  float cosThetaLeadPFCiC;
+  float cosThetaLeadCiC;
   
   Int_t nOutPhotons_;
   std::vector<ReducedPhotonData> OutPhotons_;
