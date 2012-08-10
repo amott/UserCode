@@ -481,7 +481,7 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
   TRandom3 rng(0);
 
     for(int iPho1=0; iPho1<nPho_;iPho1++){
-      if(photonMatchedElectron[iPho1] && doElectronVeto) continue
+      if(photonMatchedElectron[iPho1] && doElectronVeto) continue;
       for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
 	if(iPho1==iPho2) continue;
 	if(photonMatchedElectron[iPho2] && doElectronVeto) continue;
