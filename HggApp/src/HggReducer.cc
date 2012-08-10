@@ -171,6 +171,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       VecbosPho pho(this,iPho);
       if(!_isData) scaler->ScalePhoton(pho);
       if(debugReducer) cout << iPho << ": energy=" <<  pho.energy << "  eta=" << pho.SC.eta << endl;
+      if(pho.energy/cosh(pho.eta) < 5) continue;
+      if(fabs(pho.SC.eta) > 3.) continue;
       //if(!this->passPreselection(&pho)) continue;
       if(debugReducer) cout << "pass" << endl;
 
@@ -289,9 +291,9 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     for(int iPho = 0; iPho < nPho_; iPho++){
       Photons_.at(iPho).nPV=nVtx;
       for(int i=0;i<nVtx;i++){
-	float thisIsoDR02 = computeTrackIso(iPho,i,0.,0.2,0.2,0.0,1.0,0.1);
-	float thisIsoDR03 = computeTrackIso(iPho,i,0.,0.3,0.2,0.0,1.0,0.1);
-	float thisIsoDR04 = computeTrackIso(iPho,i,0.,0.4,0.2,0.0,1.0,0.1);
+	float thisIsoDR02 = computeTrackIso(iPho,i,1e-5,0.2,0.02,0.0,1.0,0.1);
+	float thisIsoDR03 = computeTrackIso(iPho,i,1e-5,0.3,0.2,0.0,1.0,0.1);
+	float thisIsoDR04 = computeTrackIso(iPho,i,1e-5,0.4,0.2,0.0,1.0,0.1);
 	Photons_.at(iPho).dr02TrackIso[i]=thisIsoDR02;
 	Photons_.at(iPho).dr03TrackIso[i]=thisIsoDR03;
 	Photons_.at(iPho).dr04TrackIso[i]=thisIsoDR04;
@@ -324,7 +326,7 @@ float HggReducer::computeTrackIso(int iPho, int iVtx,
 				  float dxyMax){
 
   float vX=0,vY=0,vZ=0;
-  if(iVtx >= -0 && iVtx < nPV){
+  if(iVtx >= 0 && iVtx < nPV){
     vX = vtxX[iVtx];
     vY = vtxY[iVtx];
     vZ = vtxZ[iVtx];
@@ -341,6 +343,10 @@ float HggReducer::computeTrackIso(int iPho, int iVtx,
     double dXY = ( (trackVyTrack[iTrack] - vY)*pyTrack[iTrack] - (trackVxTrack[iTrack] - vX)*pxTrack[iTrack] )/ptTrack;
     if( fabs(dXY) > dxyMax ) continue;
     TVector3 trackP(pxTrack[iTrack],pyTrack[iTrack],pzTrack[iTrack]);
+    if(trackP.Pt()<1e-4) continue;
+    assert(trackP.Pt()>0);
+    assert(trackP.Phi() > -4 && trackP.Phi()<4);
+    assert(phiPho[iPho] > -4 && phiPho[iPho]<4);
     double dEta = fabs(etaPho[iPho] - trackP.Eta());
     double dR   = DeltaR<float>(etaPho[iPho],trackP.Eta(),phiPho[iPho],trackP.Phi());
     if( dR < outerCone && dR >= innerCone && dEta >= etaStripHalfWidth) SumTrackPt+=ptTrack;

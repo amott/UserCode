@@ -131,6 +131,9 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
     TLorentzVector pho1_p4 = pho1->p4FromVtx(thisVtxPos,pho1->finalEnergy);
     TLorentzVector pho2_p4 = pho2->p4FromVtx(thisVtxPos,pho2->finalEnergy);
 
+    assert(pho1_p4.Pt() > 3);
+    assert(pho2_p4.Pt() > 3);
+
     pho1_fromVtx.push_back(pho1_p4);
     pho2_fromVtx.push_back(pho2_p4);
     
@@ -142,13 +145,16 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
   }//for(int iVtx=0; iVtx<base->nPV; iVtx++)
 
+  if(debugVertexing) std::cout << "initial loop over vertices done" << std::endl;
 
   std::vector<TLorentzVector> trackMomentum;
   for(int iVtx=0; iVtx<base->nPV; iVtx++) trackMomentum.push_back(TLorentzVector(0.,0.,0.,0.));
+  if(debugVertexing) std::cout << "initial loop over vertices done" << std::endl;
 
   for(int iTrk=0; iTrk<base->nTrack; iTrk++){
     int iVtx = base->vtxIndexTrack[iTrk];
-    if(iVtx==-1){ //try to manually match the track
+    /*
+    if(iVtx==-1 && false){ //try to manually match the track
       float bestDR=1e6;
       int  bestIndex=-1;
       TVector3 tkVtxPos(base->trackVxTrack[iTrk], base->trackVyTrack[iTrk], base->trackVzTrack[iTrk]);
@@ -163,14 +169,17 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
       }
       iVtx = bestIndex;
     }
-    
+    */
+    if(iVtx==-1) continue;
     if(!isGoodVertex(iVtx)) continue;
     TLorentzVector thisMomentum; //use M=0
     thisMomentum.SetPxPyPzE(base->pxTrack[iTrk],base->pyTrack[iTrk],base->pzTrack[iTrk],
 			    TMath::Sqrt(TMath::Power(base->pxTrack[iTrk],2)+
 					TMath::Power(base->pyTrack[iTrk],2)+
 					TMath::Power(base->pzTrack[iTrk],2)));
-    if(thisMomentum.Pt()==0) continue;
+    if(thisMomentum.Pt()<1e-6) continue;
+
+    if(thisMomentum.Pt()==0) std::cout << "WARNING: INVALID PT in HggVertexingNew" <<std::endl;
 
     if(rescaleTrkPt){
       float modpt = (thisMomentum.Pt() > base->ptErrorTrack[iTrk] ? thisMomentum.Pt() - base->ptErrorTrack[iTrk] : 0. );
@@ -184,10 +193,17 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
     //if(debugVertexing) cout << "This Track " << iTrk << "  Pt: " << thisMomentum.Pt() << endl;
 
-
+    assert(pho1_fromVtx[iVtx].Pt()>0);
+    assert(pho2_fromVtx[iVtx].Pt()>0);
+    assert(thisMomentum.Pt()>0);
+    
+    if(fabs(pho1_fromVtx[iVtx].Eta()) > 10) std::cout << "ERROR IN VERTEXING: Photon 1" <<std::endl;
+    if(fabs(pho2_fromVtx[iVtx].Eta()) > 10) std::cout << "ERROR IN VERTEXING: Photon 2" <<std::endl;
+    if(fabs(thisMomentum.Eta()) > 10) std::cout << "ERROR IN VERTEXING: Track" <<std::endl;
+    
     if(thisMomentum.DeltaR(pho1_fromVtx[iVtx]) < 0.05 ||
     thisMomentum.DeltaR(pho2_fromVtx[iVtx]) < 0.05 ) continue;
-
+    
     trackMomentum[iVtx] += thisMomentum;
     
   }//for(int iTrk=0; iTrk<base->nTrack; iTrk++)
@@ -330,6 +346,7 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
 
 //copied from MIT framework
  std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho){
+  if(debugVertexing) std::cout << "getZConv" << std::endl;
    const double dzpxb = 0.016;
    const double dztib = 0.331;
    const double dztob = 1.564;
@@ -410,12 +427,13 @@ float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 
 
 //Globe-like version
 float HggVertexing::convCorrectedDz(VecbosConversion* c,TVector3 basePos){
-
+  if(debugVertexing) std::cout << "convCorrectedDz" << std::endl;
   return (c->vtx.Z()-basePos.Z()) - ((c->vtx.X()-basePos.X())*c->pRefittedPair.Px() + (c->vtx.Y()-basePos.Y())*c->pRefittedPair.Py())/c->pRefittedPair.Pt()*c->pRefittedPair.Pz()/c->pRefittedPair.Pt();
 
 }
 
 float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 caloPos){
+  if(debugVertexing) std::cout << "Z0EcalVtxCiC" << std::endl;
   float dx1 = caloPos.X() - c->vtx.X();
   float dy1 = caloPos.Y() - c->vtx.Y();
   float dz1 = caloPos.Z() - c->vtx.Z();
