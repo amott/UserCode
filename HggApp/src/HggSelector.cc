@@ -114,7 +114,7 @@ int HggSelector::init(){
   //get kinematic cuts
   string leadPhoEtMinS  =    cfg.getParameter("leadPhoEtMin");
   string subleadPhoEtMinS  = cfg.getParameter("subleadPhoEtMin");
-  doPtOverM = cfg.getParameter("doPtOverM").compare("yes");
+  doPtOverM = cfg.getParameter("doPtOverM").compare("yes")==0;
   string PtOverMLeadS =    cfg.getParameter("PtOverMLead");
   string PtOverMSubLeadS  = cfg.getParameter("PtOverMSubLead");
 
@@ -129,6 +129,7 @@ int HggSelector::init(){
 
   cout << "Kinematic Selections: " << endl 
        << "pt Lead:   " << leadPhoEtMin << "   pt SubLead:   " << subleadPhoEtMin << endl
+       << "Do Pt Over M: " << doPtOverM << endl
        << "pt/m Lead: " << PtOverMLead <<  "   pt/m SubLead: " << PtOverMSubLead << endl;
 
   PhotonID = new HggPhotonID();
