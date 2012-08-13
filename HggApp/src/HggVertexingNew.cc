@@ -131,9 +131,6 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
     TLorentzVector pho1_p4 = pho1->p4FromVtx(thisVtxPos,pho1->finalEnergy);
     TLorentzVector pho2_p4 = pho2->p4FromVtx(thisVtxPos,pho2->finalEnergy);
 
-    assert(pho1_p4.Pt() > 3);
-    assert(pho2_p4.Pt() > 3);
-
     pho1_fromVtx.push_back(pho1_p4);
     pho2_fromVtx.push_back(pho2_p4);
     
@@ -153,15 +150,16 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
   for(int iTrk=0; iTrk<base->nTrack; iTrk++){
     int iVtx = base->vtxIndexTrack[iTrk];
-    /*
-    if(iVtx==-1 && false){ //try to manually match the track
+
+    /*    
+    if(iVtx==-1){ //try to manually match the track
       float bestDR=1e6;
       int  bestIndex=-1;
       TVector3 tkVtxPos(base->trackVxTrack[iTrk], base->trackVyTrack[iTrk], base->trackVzTrack[iTrk]);
       
       for(int i=0; i<base->nPV; i++){
 	TVector3 vtxPos(base->PVxPV[i],base->PVyPV[i],base->PVzPV[i]);
-	if(tkVtxPos.DeltaR(vtxPos) < 0.05 && tkVtxPos.DeltaR(vtxPos) < bestDR){
+	if(tkVtxPos.DeltaR(vtxPos) < 0.03 && tkVtxPos.DeltaR(vtxPos) < bestDR){
 	//if(fabs(tkVtxPos.Z()-vtxPos.Z()) < 0.001 && fabs(tkVtxPos.Z()-vtxPos.Z()) < bestDR){
 	  bestDR = tkVtxPos.DeltaR(vtxPos);//fabs(tkVtxPos.Z()-vtxPos.Z());
 	  bestIndex = i;
@@ -193,10 +191,6 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
     //if(debugVertexing) cout << "This Track " << iTrk << "  Pt: " << thisMomentum.Pt() << endl;
 
-    assert(pho1_fromVtx[iVtx].Pt()>0);
-    assert(pho2_fromVtx[iVtx].Pt()>0);
-    assert(thisMomentum.Pt()>0);
-    
     if(fabs(pho1_fromVtx[iVtx].Eta()) > 10) std::cout << "ERROR IN VERTEXING: Photon 1" <<std::endl;
     if(fabs(pho2_fromVtx[iVtx].Eta()) > 10) std::cout << "ERROR IN VERTEXING: Photon 2" <<std::endl;
     if(fabs(thisMomentum.Eta()) > 10) std::cout << "ERROR IN VERTEXING: Track" <<std::endl;
@@ -233,6 +227,8 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
 
     //if there is a conversion, compute the pull
     if(pho1->conversion.index != -1 || pho2->conversion.index != -1){
+      if(debugVertexing) cout << "Vtx " << iVtx << " Z: " << base->PVzPV[iVtx] << "\t conv Z:"
+			      << convZ.first << " +- " << convZ.second << endl;
       limPullToConv[iVtx] = TMath::Abs(base->PVzPV[iVtx]-convZ.first)/convZ.second;
     }
     
@@ -324,7 +320,7 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
 
   float z1 = pho1_z.first;
   float dz1 = pho1_z.second;
-  float z2 = pho2_z.second;
+  float z2 = pho2_z.first;
   float dz2 = pho2_z.second;
 
   float zconv=0;
@@ -347,42 +343,42 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
 //copied from MIT framework
  std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho){
   if(debugVertexing) std::cout << "getZConv" << std::endl;
-   const double dzpxb = 0.016;
-   const double dztib = 0.331;
-   const double dztob = 1.564;
-   const double dzpxf = 0.082;
-   const double dztid = 0.321;
-   const double dztec = 0.815;
+   const float dzpxb = 0.016;
+   const float dztib = 0.331;
+   const float dztob = 1.564;
+   const float dzpxf = 0.082;
+   const float dztid = 0.321;
+   const float dztec = 0.815;
 
-   const double dzpxbsingle = 0.036;
-   const double dztibsingle = 0.456;
-   const double dztobsingle = 0.362;
-   const double dzpxfsingle = 0.130;
-   const double dztidsingle = 0.465;
-   const double dztecsingle = 1.018;
+   const float dzpxbsingle = 0.036;
+   const float dztibsingle = 0.456;
+   const float dztobsingle = 0.362;
+   const float dzpxfsingle = 0.130;
+   const float dztidsingle = 0.465;
+   const float dztecsingle = 1.018;
 
-   double zconv  = -99;
-   double dzconv = -99;
+   float zconv  = -99;
+   float dzconv = -99;
 
    VecbosConversion c = pho->conversion;
    if(c.index == -1) return std::pair<float,float>(0.,0.);
 
 
   TVector3 beamSpot(base->beamSpotX,base->beamSpotY,base->beamSpotZ);
-  double zconvtrk = convCorrectedDz(&c,beamSpot) + beamSpot.Z();
-  double zconvsc  = Z0EcalVtxCiC(&c,beamSpot,pho->SC.CaloPos);
+  float zconvtrk = convCorrectedDz(&c,beamSpot) + beamSpot.Z();
+  float zconvsc  = Z0EcalVtxCiC(&c,beamSpot,pho->SC.CaloPos);
 
   if(debugVertexing) cout << "zconv SC: " << zconvsc << endl;
   if(debugVertexing) cout << "zconv TRK: " << zconvtrk << endl;
 
    if( c.vtxNTracks == 2){
      if(pho->SC.CaloPos.Eta() < 1.5){
-       double rho = c.CaloPos.Mag();
+       float rho = c.CaloPos.Mag();
        if(rho<15)           { dzconv = dzpxb; zconv = zconvtrk; }
        else if( rho < 60. ) { dzconv = dztib; zconv = zconvsc; }
        else                 { dzconv = dztob; zconv = zconvsc; }
      }else{ 
-       double z = c.CaloPos.Z();
+       float z = c.CaloPos.Z();
        if     ( TMath::Abs(z) < 50. ) { dzconv = dzpxf; zconv = zconvtrk; }
        else if( TMath::Abs(z) < 100.) { dzconv = dztid; zconv = zconvtrk; }
        else                           { dzconv = dztec; zconv = zconvsc; }
@@ -390,12 +386,12 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
    }//if( c.vtxNTrack == 2)
    else if( c.vtxNTracks == 1){
      if(pho->SC.CaloPos.Eta() < 1.5){
-       double rho = c.CaloPos.Mag();
+       float rho = c.CaloPos.Mag();
        if(rho<15)           { dzconv = dzpxbsingle; zconv = zconvsc; }
        else if( rho < 60. ) { dzconv = dztibsingle; zconv = zconvsc; }
        else                 { dzconv = dztobsingle; zconv = zconvsc; }
      }else{
-       double z = c.CaloPos.Z();
+       float z = c.CaloPos.Z();
        if     ( TMath::Abs(z) < 50. ) { dzconv = dzpxfsingle; zconv = zconvsc; }
        else if( TMath::Abs(z) < 100.) { dzconv = dztidsingle; zconv = zconvsc; }
        else                           { dzconv = dztecsingle; zconv = zconvsc; }
@@ -413,7 +409,7 @@ std::pair<float,float> HggVertexing::getZConv(VecbosPho* pho1,VecbosPho* pho2){
    TVector3 posPerp(c->CaloPos.X()-basePos.X(),c->CaloPos.Y()-basePos.Y(),0);
 
    return c->CaloPos.Z() - basePos.Z() - posPerp.Dot(momPerp)/momPerp.Pt() * (c->pRefittedPair.Pz()/momPerp.Pt());
- }
+0 }
 
 float HggVertexing::Z0EcalVtxCiC(VecbosConversion* c, TVector3 basePos,TVector3 caloPos){
    TVector3 dirscvtx = caloPos - c->CaloPos;
