@@ -752,7 +752,7 @@ VecbosGen::VecbosGen(VecbosBase* o, int i){
 }
 
 void VecbosGen::Init(VecbosBase* o, int i){
-  if(i < 0 || i > o->nMc){
+  if(i < 0 || i >= o->nMc){
     index = -1;
     return;
   }
@@ -772,7 +772,7 @@ void VecbosGen::Init(VecbosBase* o, int i){
   status = o->statusMc[i];
   id     = o->idMc[i];
   indexMother = o->mothMc[i];
-  if(indexMother >=0){
+  if(indexMother >=0 && indexMother < o->nMc){
     statusMother = o->statusMc[indexMother];
     idMother     = o->idMc[indexMother];
   }else{
