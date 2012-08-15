@@ -280,8 +280,8 @@ int HggPhotonID::getCiCCat(VecbosPho* pho){
 }
 
 bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
-  if(version.compare("May2012")==0) this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxIndex);
-  else this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxIndex);
+  if(version.compare("May2012")==0) return this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxIndex);
+  else return this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxIndex);
 }
 
 bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){

@@ -39,7 +39,7 @@ void HggMassResolution::clear(){
 
 double HggMassResolution::getMassResolution(VecbosPho *leadPho,VecbosPho *subleadPho, TVector3 vtx,bool isWrongVtx){
   TLorentzVector p4Pho1 = leadPho->p4FromVtx(vtx,leadPho->finalEnergy);
-  TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,leadPho->finalEnergy);
+  TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,subleadPho->finalEnergy);
   double angle   = p4Pho1.Angle(p4Pho2.Vect());
   if(debugMassRes) cout << ">> >> doing getResolution" << endl;
   double resPho1 = this->getResolution(leadPho);
@@ -60,7 +60,7 @@ double HggMassResolution::getMassResolution(VecbosPho *leadPho,VecbosPho *sublea
 
 double HggMassResolution::getMassResolutionEonly(VecbosPho *leadPho,VecbosPho *subleadPho,TVector3 vtx){
   TLorentzVector p4Pho1 = leadPho->p4FromVtx(vtx,leadPho->finalEnergy);
-  TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,leadPho->finalEnergy);
+  TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,subleadPho->finalEnergy);
   double resPho1 = this->getResolution(leadPho);
   double resPho2 = this->getResolution(subleadPho);
   double higgsMass = (p4Pho1+p4Pho2).M();
@@ -105,9 +105,11 @@ double HggMassResolution::getAngleResolution(VecbosPho* pho1,VecbosPho* pho2, TV
 }
 
 float HggMassResolution::getResolution(VecbosPho* pho){
+  int cat = this->getCategory(pho);
+  if(debugMassRes) cout << "category: " << cat << endl;
   pair<float,float> catRes = smear[this->getCategory(pho)];
-  if(debugMassRes) cout << "got Res" << endl;
-  return TMath::Sqrt(pho->correctedEnergyError*pho->correctedEnergyError+catRes.second*catRes.second);
+  if(debugMassRes) cout << "category Res: " << catRes.first << endl;
+  return TMath::Sqrt(pho->correctedEnergyError*pho->correctedEnergyError+catRes.first*catRes.first);
 }
 
 int HggMassResolution::getCategory(VecbosPho* pho){

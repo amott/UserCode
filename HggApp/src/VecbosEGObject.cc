@@ -400,7 +400,7 @@ VecbosPho::VecbosPho(VecbosBase* o, int i):
 }
 
 void VecbosPho::Init(VecbosBase* o, int i){
-  if(i>o->nPho || i<0){
+  if(i>=o->nPho || i<0){
     index  = -1;
     return;
   }
@@ -451,8 +451,8 @@ void VecbosPho::Init(VecbosBase* o, int i){
   dr05PhotonPFIso  = o->dr05PhotonPFIsoPho[i];
   dr06PhotonPFIso  = o->dr06PhotonPFIsoPho[i];
 
-  int SCI = o->superClusterIndexPho[i];
-  CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
+  int SCI = SC.index;
+  if(SCI!=-1) CaloPos.SetXYZ(o->xPosSC[SCI],o->yPosSC[SCI],o->zPosSC[SCI]);
 
   this->matchConversion(o,true);
   genMatch.Init(o,-1);
@@ -463,7 +463,8 @@ TLorentzVector VecbosPho::p4FromVtx(TVector3 vtx,float E,bool pf){
   if(pf) dir = PFSC.CaloPos-vtx;
   else   dir = SC.CaloPos-vtx;
   TVector3 p   = dir.Unit()*E;
-  TLorentzVector p4(p.x(),p.y(),p.z(),E);
+  TLorentzVector p4;
+  p4.SetVectM(p,0);
   return p4;
 }
 #define debugConversionMatch 0

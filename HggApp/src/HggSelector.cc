@@ -313,12 +313,14 @@ void HggSelector::Loop(){
 
       mPair_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
       mPairNoCorr_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
-      mPairRes_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,false);
+      mPairRes_ = massRes->getMassResolutionEonly(&pho1_,&pho2_,vtxPos);
       mPairResWrongVtx_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,true);
       diPhoVtx_ = selectedVertex;
       diPhoVtxX_ = vtxX[selectedVertex];
       diPhoVtxY_ = vtxY[selectedVertex];
       diPhoVtxZ_ = vtxZ[selectedVertex];
+      vtxProb_ = this->getVertexProb(index1,index2);
+
       float jpt[2];
       Mjj_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1_ = jpt[0];
@@ -335,8 +337,11 @@ void HggSelector::Loop(){
       p1.Boost(boost);
       cosThetaLead = p1.Vect().Dot(gg.Vect())/p1.Vect().Mag()/gg.Vect().Mag();
 
+      cat_ = getCategory();
+
     }else{
       mPair_=-1;      
+      cat_=-1;
     }
 
     if(index1PFCiC > -1 && index2PFCiC > -1){
@@ -352,12 +357,14 @@ void HggSelector::Loop(){
 
       mPairPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
       mPairNoCorrPFCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
-      mPairResPFCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,false);
+      mPairResPFCiC_ = massRes->getMassResolutionEonly(&pho1_,&pho2_,vtxPos);
       mPairResWrongVtxPFCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,true);
       diPhoVtxPFCiC_ = selectedVertex;
       diPhoVtxXPFCiC_ = vtxX[selectedVertex];
       diPhoVtxYPFCiC_ = vtxY[selectedVertex];
       diPhoVtxZPFCiC_ = vtxZ[selectedVertex];
+      vtxProbPFCiC_ = this->getVertexProb(index1PFCiC,index2PFCiC);
+
       float jpt[2];
       MjjPFCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1PFCiC_ = jpt[0];
@@ -373,8 +380,11 @@ void HggSelector::Loop(){
       TVector3 boost = -1*gg.BoostVector();
       p1.Boost(boost);
       cosThetaLeadPFCiC = p1.Vect().Dot(gg.Vect())/p1.Vect().Mag()/gg.Vect().Mag();
+
+      catPFCiC_ = getCategoryPFCiC();
     }else{
       mPairPFCiC_=-1;
+      catPFCiC_ = -1;
     }
 
     if(index1CiC > -1 && index2CiC > -1){
@@ -391,12 +401,14 @@ void HggSelector::Loop(){
 
       mPairCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.finalEnergy) + pho2_.p4FromVtx(vtxPos,pho2_.finalEnergy)).M();
       mPairNoCorrCiC_ = (pho1_.p4FromVtx(vtxPos,pho1_.energy) + pho2_.p4FromVtx(vtxPos,pho2_.energy)).M();
-      mPairResCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,false);
+      mPairResCiC_ = massRes->getMassResolutionEonly(&pho1_,&pho2_,vtxPos);
       mPairResWrongVtxCiC_ = massRes->getMassResolution(&pho1_,&pho2_,vtxPos,true);
       diPhoVtxCiC_ = selectedVertex;
       diPhoVtxXCiC_ = vtxX[selectedVertex];
       diPhoVtxYCiC_ = vtxY[selectedVertex];
       diPhoVtxZCiC_ = vtxZ[selectedVertex];
+      vtxProbCiC_ = this->getVertexProb(index1CiC,index2CiC);
+
       float jpt[2];
       MjjCiC_  = this->getVBFMjj(&pho1_,&pho2_,vtxPos,jpt);
       ptJet1CiC_ = jpt[0];
@@ -805,10 +817,12 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxX",&diPhoVtxX_,"diPhotonVtxX/F");
   outTree->Branch("diPhotonVtxY",&diPhoVtxY_,"diPhotonVtxY/F");
   outTree->Branch("diPhotonVtxZ",&diPhoVtxZ_,"diPhotonVtxZ/F");
+  outTree->Branch("vtxProb",&vtxProb_,"vtxProb/F");
   outTree->Branch("Mjj",&Mjj_,"Mjj");
   outTree->Branch("ptJet1",&ptJet1_,"ptJet1");
   outTree->Branch("ptJet2",&ptJet2_,"ptJet2");
   outTree->Branch("cosThetaLead",&cosThetaLead,"cosThetaLead/F");
+  outTree->Branch("cat",&cat_,"cat/I");
 
   outTree->Branch("mPairPFCiC",&mPairPFCiC_,"mPairPFCiC/F");
   outTree->Branch("mPairNoCorrPFCiC",&mPairNoCorrPFCiC_,"mPairNoCorrPFCiC/F");
@@ -818,11 +832,13 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxXPFCiC",&diPhoVtxXPFCiC_,"diPhotonVtxXPFCiC/F");
   outTree->Branch("diPhotonVtxYPFCiC",&diPhoVtxYPFCiC_,"diPhotonVtxYPFCiC/F");
   outTree->Branch("diPhotonVtxZPFCiC",&diPhoVtxZPFCiC_,"diPhotonVtxZPFCiC/F");
+  outTree->Branch("vtxProbPFCiC",&vtxProbPFCiC_,"vtxProbPFCiC/F");
   outTree->Branch("MjjPFCiC",&MjjPFCiC_,"MjjPFCiC");
   outTree->Branch("ptJet1PFCiC",&ptJet1PFCiC_,"ptJet1PFCiC");
   outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
   outTree->Branch("cosThetaLeadPFCiC",&cosThetaLeadPFCiC,"cosThetaLeadPFCiC/F");
-  
+  outTree->Branch("catPFCiC",&catPFCiC_,"catPFCiC/I");
+
   outTree->Branch("mPairCiC",&mPairCiC_,"mPairCiC/F");
   outTree->Branch("mPairNoCorrCiC",&mPairNoCorrCiC_,"mPairNoCorrCiC/F");
   outTree->Branch("mPairResCiC",&mPairResCiC_,"mPairResCiC/F");
@@ -831,6 +847,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("diPhotonVtxXCiC",&diPhoVtxXCiC_,"diPhotonVtxXCiC/F");
   outTree->Branch("diPhotonVtxYCiC",&diPhoVtxYCiC_,"diPhotonVtxYCiC/F");
   outTree->Branch("diPhotonVtxZCiC",&diPhoVtxZCiC_,"diPhotonVtxZCiC/F");
+  outTree->Branch("vtxProbCiC",&vtxProbCiC_,"vtxProbCiC/F");
   outTree->Branch("MjjCiC",&MjjCiC_,"MjjCiC");
   outTree->Branch("ptJet1CiC",&ptJet1CiC_,"ptJet1CiC");
   outTree->Branch("ptJet2CiC",&ptJet2CiC_,"ptJet2CiC");
@@ -1031,6 +1048,31 @@ bool HggSelector::passJetID(VecbosJet* jet){
   if(jet->betaStarClassicIdMVA > betaStarSlope[JetCat]*TMath::Log(nVtx-0.64)) return false; //warning, I think this is WRONG! but its how MIT does it...
   if(jet->rmsCandsHand > rmsCut[JetCat]) return false;
   return true;
+}
+
+int HggSelector::getCategory(){
+  if(diPhoMVA_ < -0.05) return -1;
+  if(Mjj_ >=500 && ptJet1_ >= 30. && ptJet2_ >= 30.) return 4;
+  if(Mjj_ >=250 && (ptJet1_ >= 30. || ptJet2_ >= 30.)) return 5;
+  
+  if(diPhoMVA_ > 0.88) return 0;
+  if(diPhoMVA_ > 0.71) return 1;
+  if(diPhoMVA_ > 0.50) return 2;
+  return 3;
+}
+
+int HggSelector::getCategoryPFCiC(){
+  if(Mjj_ >=500 && ptJet1_ >= 30. && ptJet2_ >= 30.) return 4;
+  if(Mjj_ >=250 && (ptJet1_ >= 30. || ptJet2_ >= 30.)) return 5;
+
+  bool EBEB = (fabs(pho1_.SC.eta) < 1.48) && (fabs(pho2_.SC.eta) < 1.48);
+  bool R9R9 = (pho1_.SC.r9 > 0.94) && (pho2_.SC.r9 > 0.94);
+  
+  if(R9R9 && EBEB) return 0;
+  if(!R9R9 && EBEB) return 1;
+  if(R9R9 && !EBEB) return 2;
+  if(!R9R9 && !EBEB) return 3;
+  return -1;
 }
 
 bool HggSelector::requireTrigger(){

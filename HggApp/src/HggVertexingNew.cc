@@ -170,11 +170,15 @@ std::vector<std::pair<int,float> > HggVertexing::evalPerVtxMVA(VecbosPho* pho1, 
     */
     if(iVtx==-1) continue;
     if(!isGoodVertex(iVtx)) continue;
+    TVector3 trackP(base->pxTrack[iTrk],base->pyTrack[iTrk],base->pzTrack[iTrk]);
     TLorentzVector thisMomentum; //use M=0
+    thisMomentum.SetVectM(trackP,0);
+    /*
     thisMomentum.SetPxPyPzE(base->pxTrack[iTrk],base->pyTrack[iTrk],base->pzTrack[iTrk],
 			    TMath::Sqrt(TMath::Power(base->pxTrack[iTrk],2)+
 					TMath::Power(base->pyTrack[iTrk],2)+
 					TMath::Power(base->pzTrack[iTrk],2)));
+    */
     if(thisMomentum.Pt()<1e-6) continue;
 
     if(thisMomentum.Pt()==0) std::cout << "WARNING: INVALID PT in HggVertexingNew" <<std::endl;

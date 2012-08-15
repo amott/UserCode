@@ -62,6 +62,7 @@ void setTCanvasNicev1(TCanvas *can0){
 void makeMinimalTrees(string inputFiles,TString outputFile,float mMin=100.,float mMax=180,
 		      bool applyTrigger=true){
   
+  const int nCat=6;
   TChain *fChain = new TChain("HggOutput");
   
   ifstream st(inputFiles.c_str(),fstream::in);

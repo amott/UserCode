@@ -128,6 +128,9 @@ private:
   float pho2IdMVA;
   //-------------
 
+  int getCategory();
+  int getCategoryPFCiC();
+
   //Output Variables:
   int trigger_;
   float mPair_;
@@ -136,30 +139,35 @@ private:
   float mPairResWrongVtx_;
   float diPhoMVA_;
   int diPhoVtx_;
+  float vtxProb_;
   float diPhoVtxX_;
   float diPhoVtxY_;
   float diPhoVtxZ_;
   float Mjj_;
   float ptJet1_;
   float ptJet2_;
+  int cat_;
 
   float mPairPFCiC_;
   float mPairNoCorrPFCiC_;
   float mPairResPFCiC_;
   float mPairResWrongVtxPFCiC_;
   int diPhoVtxPFCiC_;
+  float vtxProbPFCiC_;
   float diPhoVtxXPFCiC_;
   float diPhoVtxYPFCiC_;
   float diPhoVtxZPFCiC_;
   float MjjPFCiC_;
   float ptJet1PFCiC_;
   float ptJet2PFCiC_;
+  int catPFCiC_;
 
   float mPairCiC_;
   float mPairNoCorrCiC_;
   float mPairResCiC_;
   float mPairResWrongVtxCiC_;
   int diPhoVtxCiC_;
+  float vtxProbCiC_;
   float diPhoVtxXCiC_;
   float diPhoVtxYCiC_;
   float diPhoVtxZCiC_;
