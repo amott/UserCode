@@ -103,7 +103,7 @@ bool Vecbos::isGoodRunLS()
   for (LSSegments::const_iterator iSeg=goodRunLS[runNumber].begin();iSeg!=goodRunLS[runNumber].end();++iSeg)
     {
       //std::cout << "Range is [" << (*iSeg).first << "," << (*iSeg).second << "]" << std::endl;
-      if ( lumiBlock >= (*iSeg).first && lumiBlock <= (*iSeg).second)
+      if ( static_cast<unsigned int>(lumiBlock) >= (*iSeg).first && static_cast<unsigned int>(lumiBlock) <= (*iSeg).second)
 	return true;
     }
   return false;
@@ -193,10 +193,11 @@ bool Vecbos::reloadTriggerMask(bool newVersion)
               }
           }
         m_requiredTriggers = triggerMask;
-        for (int i=0;i<m_requiredTriggers.size();++i)
+        for (unsigned int i=0;i<m_requiredTriggers.size();++i)
           std::cout << "[ReloadTriggerMask]::Requiring bit " << m_requiredTriggers[i] << " " << requiredTriggers[i] << std::endl;
       }
   }
+  return true;
 }
 
 bool Vecbos::reloadTriggerMask(int runN)
@@ -217,6 +218,7 @@ bool Vecbos::reloadTriggerMask(int runN)
         }
     }
   m_requiredTriggers = triggerMask;
+  return true;
 }
 
 void Vecbos::WriteHistos(vector<TH1D*> histos, TFile* file, string dirname){
@@ -328,7 +330,7 @@ vector<Jet> Vecbos::SortJet(vector<Jet> v){
   std::sort(pT.begin(), pT.end());
   std::reverse(pT.begin(), pT.end());
    
-  for(int i=0; i<pT.size(); i++) 
+  for(unsigned int i=0; i<pT.size(); i++) 
     sorted.push_back(v[pT.at(i).second]);
   
   return sorted;
@@ -348,7 +350,7 @@ vector<Jet> Vecbos::SortJetByEt(vector<Jet> v){
   std::sort(pT.begin(), pT.end());
   std::reverse(pT.begin(), pT.end());
    
-  for(int i=0; i<pT.size(); i++) 
+  for(unsigned int i=0; i<pT.size(); i++) 
     sorted.push_back(v[pT.at(i).second]);
   
   return sorted;
@@ -1168,6 +1170,7 @@ vector<Jet> Vecbos::FastJetAlgorithm(vector<TLorentzVector> InputCollection, dou
 
   fastjet::Strategy strategy = fastjet::Best;
 
+  /*
   int theMode = 0;
   
   if((theNjets!=-1)&&(theDcut==-1)){
@@ -1179,12 +1182,12 @@ vector<Jet> Vecbos::FastJetAlgorithm(vector<TLorentzVector> InputCollection, dou
   } else {
     theMode = 0;
   }
-
+  */
   theJetConfig->theJetDef = fastjet::JetDefinition(jet_finder, Rparam, strategy);
 
   std::vector<fastjet::PseudoJet> input_vectors;
   int index_ = 0;
-  for(int i = 0; i < InputCollection.size(); i++){
+  for(unsigned int i = 0; i < InputCollection.size(); i++){
     double px = InputCollection[i].Px();
     double py = InputCollection[i].Py();
     double pz = InputCollection[i].Pz();
@@ -1250,7 +1253,7 @@ vector<Jet> Vecbos::FastJetAlgorithm(vector<CaloTower> InputCollection, double R
   fastjet::JetFinder jet_finder = fastjet::kt_algorithm;
 
   fastjet::Strategy strategy = fastjet::Best;
-
+  /*
   int theMode = 0;
   
   if((theNjets!=-1)&&(theDcut==-1)){
@@ -1262,7 +1265,7 @@ vector<Jet> Vecbos::FastJetAlgorithm(vector<CaloTower> InputCollection, double R
   } else {
     theMode = 0;
   }
-
+  */
   theJetConfig->theJetDef = fastjet::JetDefinition(jet_finder, Rparam, strategy);
 
   std::vector<fastjet::PseudoJet> input_vectors;

@@ -256,7 +256,7 @@ public:
   float                      dr06PhotonPFIso;
 
   bool isBarrel(){return (fabs(this->SC.eta) < 1.48);}
-  int  getCategory(){ (SC.r9>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon
+  int  getCategory(){ return (SC.r9>0.94)+2*(isBarrel()); } //get the category 0-3 of the photon
   //PhoInfo getStruct();
 
   VecbosGen genMatch;
@@ -264,8 +264,7 @@ public:
 };
 
 struct ReducedPhotonData{
-  Float_t pt,eta,phi,E,EError;
-  Float_t pt_NoCorr, eta_NoCorr, phi_NoCorr, E_NoCorr;
+  Float_t pt,eta,phi,E,EError,EErrorSmeared;
   Float_t pt_Gen, eta_Gen, phi_Gen, E_Gen;
   Float_t etaSC;
   int index;
@@ -273,6 +272,16 @@ struct ReducedPhotonData{
   bool passPFCiC;
   int category;
   float idMVA;
+  float HoverE;
+  float sieie;
+  float dr03PFChargedIso;
+  float isosumGood;
+  float isosumBad;
+  float dr03EcalIso;
+  float dr04HcalIso;
+  float dr03TrackIso;
+  float dr02PFChargedIso;
+
 };
 
 class VecbosEle{

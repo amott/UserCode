@@ -56,9 +56,9 @@ void HggPhotonID::setVertices(int nPV, float* xPV, float *yPV, float *zPV){
 }
 
 void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
-  TVector3 selVtxPos = vertices.at(selVtxIndex);
+  selVtxPos = vertices.at(selVtxIndex);
 
-  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+  eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
   if(debugPhotonID) cout << "eT: " << eT << endl;
   hoe = pho->HoverE;
   sigietaieta=pho->SC.sigmaIEtaIEta;
@@ -93,7 +93,7 @@ void HggPhotonID::fillVariables(VecbosPho* pho, int nVertex, float rhoFastJet,in
 	worstVtx=i;
       }
   pfChargedIsoBad04  = maxIso;
-  float eTBad = pho->p4FromVtx(vertices.at(worstVtx),pho->finalEnergy,false).Et();
+  eTBad = pho->p4FromVtx(vertices.at(worstVtx),pho->finalEnergy,false).Et();
 
   pfChargedIsoGood03oet = pfChargedIsoGood03*50./eT;
   pfChargedIsoBad04oet  = pfChargedIsoBad04*50./eT;  
@@ -264,7 +264,11 @@ bool HggPhotonID::getIdCiCPF(VecbosPho* pho, int nVertex, float rhoFastJet,int s
   float cut_isoBad[nCats]   = {10.,6.5,5.6,4.4};
 
   int cat = this->getCiCCat(pho);
+  if(debugPhotonID) std::cout << "CiC Cat: " << cat << "   Photon SC Eta: " << pho->SC.eta << "  r9: " << pho->SC.r9 <<std::endl;
 
+  if(debugPhotonID) std::cout << "H/E: " << pho->HoverE << "\tsieie: " << pho->SC.sigmaIEtaIEta
+			      << "\tPFCharged: " << pfChargedIsoGood03oet << std::endl
+			      << "isosum: " << isosumoetPF << "\tisosumoetbadPF: " << isosumoetbadPF << std::endl;
   if(pho->SC.r9 < cut_r9[cat]) return false;
   if(pho->HoverE > cut_hoe[cat]) return false;
   if(pho->SC.sigmaIEtaIEta > cut_sieie[cat]) return false;
@@ -279,14 +283,35 @@ int HggPhotonID::getCiCCat(VecbosPho* pho){
   return (pho->SC.r9<0.94)+2*(fabs(pho->SC.eta) > 1.48);
 }
 
+void HggPhotonID::fillIsoVariables(VecbosPho* pho, ReducedPhotonData* data,int nVertex, float rhoFastJet,int selVtxIndex){
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
+  
+  data->HoverE = hoe;
+  data->sieie  = sigietaieta;
+  data->dr03PFChargedIso = pfChargedIsoGood03oet;
+  data->isosumGood = isosumoetPF;
+  data->isosumBad  = isosumoetbadPF;
+
+  data->dr03EcalIso  = pho->dr03EcalRecHitSumEtCone - 0.012*eT;
+  data->dr04HcalIso  = pho->dr03HcalTowerSumEtCone - 0.005*eT;
+  data->dr03TrackIso = pho->dr03TrackIso[selVtxIndex] - 0.002*eT;
+  data->dr02PFChargedIso = pho->dr02ChargedHadronPFIso[selVtxIndex];
+}
+
 bool HggPhotonID::getPreSelection(VecbosPho* pho, int nVertex, float rhoFastJet,int selVtxIndex){
+  this->fillVariables(pho,nVertex,rhoFastJet,selVtxIndex);
   if(version.compare("May2012")==0) return this->getPreSelectionMay2012(pho,nVertex,rhoFastJet,selVtxIndex);
   else return this->getPreSelection2011(pho,nVertex,rhoFastJet,selVtxIndex);
 }
 
 bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){
-  TVector3 selVtxPos = vertices.at(selVtxIndex);
-  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+  if(debugPhotonID) std::cout << "getPreSelectionMay2012" << std::endl;
+
+  if(debugPhotonID) std::cout << "et: " << eT << "\tecalIso: " << pho->dr03EcalRecHitSumEtCone -0.012*eT
+			      << "\thcalIso: " << pho->dr03HcalTowerSumEtCone - 0.005*eT 
+			      << "\ttrkIso:  " << pho->dr03TrackIso[selVtxIndex] - 0.002*eT
+			      << "\tpfCharged: " << pho->dr02ChargedHadronPFIso[selVtxIndex] 
+			      << std::endl;
 
   if(pho->SC.r9 < 0.9){
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
@@ -307,8 +332,7 @@ bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoF
 }
 
 bool HggPhotonID::getPreSelection2011(VecbosPho* pho, int nVertex, float rhoFastJet, int selVtxIndex){
-  TVector3 selVtxPos = vertices.at(selVtxIndex);
-  float eT = pho->p4FromVtx(selVtxPos,pho->finalEnergy,false).Et();
+  if(debugPhotonID) std::cout << "getPreSelection2011" << std::endl;
 
   if(pho->SC.r9 < 0.9){
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4

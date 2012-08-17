@@ -16,35 +16,37 @@ HggSelector::HggSelector():
   fChain(0),
   valid(false),
   doElectronVeto(true),
+  doMuMuGamma(false),
+  forceVtxZero(false),
+  isData_(true),
+  nSigma(3),
+  Photons_(0),
   ggVerticesPhotonIndices(0),
   ggVerticesVertexIndex(0),
   ggVerticesPerEvtMVA(0),
-  Photons_(0),
   Muons_(0),
   Jets_(0),
   GenHiggs(0),
-  GenPhotons(0),
-  nSigma(3),
-  doMuMuGamma(false),
-  isData_(true),
-  forceVtxZero(false)
+  GenPhotons(0)
 {
 }
 
 HggSelector::HggSelector(vector<string> fNames, string treeName,string outFName):
+  fChain(0),
+  valid(false),
+  doElectronVeto(true),
+  doMuMuGamma(false),
+  forceVtxZero(false),
+  isData_(true),
+  nSigma(3),
+  Photons_(0),
   ggVerticesPhotonIndices(0),
   ggVerticesVertexIndex(0),
   ggVerticesPerEvtMVA(0),
-  doElectronVeto(true),
-  Photons_(0),
   Muons_(0),
   Jets_(0),
   GenHiggs(0),
-  GenPhotons(0),
-  nSigma(3),
-  doMuMuGamma(false),
-  isData_(true),
-  forceVtxZero(false)
+  GenPhotons(0)
 {
   this->loadChain(fNames,treeName);
   outputFile = outFName;
@@ -100,6 +102,7 @@ int HggSelector::init(){
     std::string smearCFG = cfg.getParameter("EnergySmearCFG");
     smear = new HggEnergyScale(smearCFG);    
     applyScaleSmear = atoi(cfg.getParameter("ScaleSmear").c_str());
+    std::cout << "Doing smearing.  Config: " << smearCFG << "  ScaleSmear: " << applyScaleSmear <<std::endl;
   }
 
   cout << "Parameters: " << endl
@@ -114,7 +117,7 @@ int HggSelector::init(){
   //get kinematic cuts
   string leadPhoEtMinS  =    cfg.getParameter("leadPhoEtMin");
   string subleadPhoEtMinS  = cfg.getParameter("subleadPhoEtMin");
-  doPtOverM = cfg.getParameter("doPtOverM").compare("yes")==0;
+  doPtOverM = !(cfg.getParameter("doPtOverM").compare("no")==0);
   string PtOverMLeadS =    cfg.getParameter("PtOverMLead");
   string PtOverMSubLeadS  = cfg.getParameter("PtOverMSubLead");
 
@@ -158,6 +161,7 @@ int HggSelector::init(){
 
 
   this->setupTMVA();
+  return 0;
 }
 
 void HggSelector::Loop(){
@@ -188,28 +192,41 @@ void HggSelector::Loop(){
 
     if(debugSelector) cout << "Starting Photon Loop:  " << nPho_ << endl;
     for(int iPho=0; iPho<nPho_;iPho++){ //redo the scaling and smearing if needed
-      VecbosPho pho = Photons_->at(iPho);
+      VecbosPho *pho = &(Photons_->at(iPho));
       if(doScale){
-	std::pair<float,float> dE = scale->getDEoE(pho,runNumber);
-	pho.dEoE    = dE.first;
-        pho.dEoEErr = 0;
-        pho.scaledEnergy = pho.correctedEnergy*(1-pho.dEoE);
-        pho.scaledEnergyError = pho.correctedEnergyError*(1-(pho.dEoE+pho.dEoEErr));
+	std::pair<float,float> dE = scale->getDEoE(*pho,runNumber);
+	pho->dEoE    = dE.first;
+        pho->dEoEErr = 0;
+        pho->scaledEnergy = pho->correctedEnergy*(1-pho->dEoE);
+        pho->scaledEnergyError = pho->correctedEnergyError*(1-(pho->dEoE+pho->dEoEErr));
       }
       if(doSmear){
-	pho.scaledEnergy = pho.correctedEnergy;
-        pho.scaledEnergyError = pho.scaledEnergy*smear->getMCScaleErr(pho,applyScaleSmear);              
-	std::pair<float,float> dE = smear->getDEoE(pho,applyScaleSmear);
-        pho.dEoE    = dE.first;
-        pho.dEoEErr = dE.second;
+	pho->scaledEnergy = pho->correctedEnergy;
+        pho->scaledEnergyError = pho->scaledEnergy*smear->getMCScaleErr(*pho,applyScaleSmear);              
+	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
+        pho->dEoE    = dE.first;
+        pho->dEoEErr = dE.second;
       }
-      pho.finalEnergy = pho.scaledEnergy;
-      pho.finalEnergyError = pho.scaledEnergyError;
+      /*
+      if(doSigmaESmear){
+	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
+	//if(iPho==0)
+	  //std::cout << pho->scaledEnergyError << "   " <<pho->scaledEnergy << "  " << dE.first << std::endl;
+	pho->scaledEnergyError = TMath::Sqrt( pho->scaledEnergyError * pho->scaledEnergyError
+					     + dE.first*dE.first*pho->scaledEnergy*pho->scaledEnergy);
+	//if(iPho==0) std::cout << pho->scaledEnergyError << "   " <<pho->scaledEnergy << std::endl;
+      }
+      */
+
+      pho->finalEnergy = pho->scaledEnergy;
+      pho->finalEnergyError = pho->scaledEnergyError;
     }
     //    if(!trigger_){
     //  outTree->Fill();
     //  continue; // don't bother doing the MVA 
     //}
+
+    //std::cout << Photons_->at(0).scaledEnergyError << "   " <<Photons_->at(0).scaledEnergy << "  " << Photons_->at(0).scaledEnergyError/Photons_->at(0).scaledEnergy << std::endl << std::endl;
 
     if(debugSelector) cout << "done" << endl;
     if(debugSelector) cout << "# Photons: " << nPho_ << endl;
@@ -280,16 +297,18 @@ void HggSelector::Loop(){
     indices = getBestPair(&diPhoMVA_,0,0); // no scaling and default smearing
     index1 = indices.first;
     index2 = indices.second;
-
+    indices = make_pair(-1,-1);
     //Do the PFCiC selection as well!
     indices = getBestPairCiC(0,0,true); // no scaling and default smearing
     index1PFCiC = indices.first;
     index2PFCiC = indices.second;
+    indices = make_pair(-1,-1);
 
     //Do the CiC selection as well!
     indices = getBestPairCiC(0,0,false); // no scaling and default smearing
     index1CiC = indices.first;
     index2CiC = indices.second;
+    indices = make_pair(-1,-1);
 
     if(debugSelector) cout << "LOOP DONE" << endl;	  
     
@@ -467,7 +486,7 @@ bool HggSelector::preSelectPhotons(VecbosPho* pho1,VecbosPho* pho2,TVector3 vtxP
   if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt() < leadPhoEtMin && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt() < leadPhoEtMin ) return false;
 
   if(doPtOverM){
-    double M = (pho1->p4FromVtx(vtxPos,pho1->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
+    float M = (pho1->p4FromVtx(vtxPos,pho1->finalEnergy) + pho2->p4FromVtx(vtxPos,pho2->finalEnergy)).M();
     if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMSubLead || pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMSubLead ) return false;
     if( pho1->p4FromVtx(vtxPos,pho1->finalEnergy).Pt()/M < PtOverMLead && pho2->p4FromVtx(vtxPos,pho2->finalEnergy).Pt()/M < PtOverMLead ) return false;
     
@@ -713,14 +732,15 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
     p4Gen.SetPtEtaPhiE(0.,0.,0.,0.);
     data.pt_Gen = 0.; data.eta_Gen = 0.; data.phi_Gen = 0.; data.E_Gen = 0.;  
   }
-  data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E = p4.E(); data.EError = pho->finalEnergyError;
-  data.pt_NoCorr = p4NoCorr.Pt(); data.eta_NoCorr = p4NoCorr.Eta(); data.phi_NoCorr = p4NoCorr.Phi(); data.E_NoCorr = p4NoCorr.E();
+  data.pt = p4.Pt(); data.eta = p4.Eta(); data.phi = p4.Phi(); data.E =p4.E(); data.EError = pho->finalEnergyError;
+  data.EErrorSmeared = massRes->getResolution(pho);
   data.index = pho->index;
   data.etaSC = pho->SC.eta;
   data.r9 = pho->SC.r9;
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtxI); 
   data.category = (data.r9 < 0.94)+2*(fabs(data.etaSC) > 1.48); 
   data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtxI);
+  PhotonID->fillIsoVariables(pho,&data,nVtx,rho,selVtxI);
   if(debugSelector) cout << "DONE Filling Reduced Data" <<endl;
   return data;
 }
@@ -730,7 +750,7 @@ void HggSelector::setupTMVA(){
 
   // diphoton                
   diPhotonMVA->AddVariable("masserrsmeared/mass",&smearedMassErrByMass); 
-  diPhotonMVA->AddVariable("masserrsmearedwrongvtx/mass",&smearedMassErrByMass);         
+  diPhotonMVA->AddVariable("masserrsmearedwrongvtx/mass",&smearedMassErrByMassWrongVtx);         
   diPhotonMVA->AddVariable("vtxprob",&vtxprob);             
   diPhotonMVA->AddVariable("ph1.pt/mass",&pho1PtByMass);         
   diPhotonMVA->AddVariable("ph2.pt/mass",&pho2PtByMass);         
@@ -929,7 +949,7 @@ void HggSelector::fillMuMuGamma(){
     VecbosMu mu1 = Muons_->at(iMu1);    
     if(mu1.pt < 10) continue;
     if(!mu1.isGlobalMuon || !mu1.isTrackerMuon) continue;
-    if(mu1.nTrackHits <= 10 | mu1.nPixelHits==0) continue;
+    if(mu1.nTrackHits <= 10 || mu1.nPixelHits==0) continue;
     if(mu1.trackImpactPar >=0.2) continue;
     if(mu1.trkIso >= 3) continue;
     for(int iMu2=iMu1+1;iMu2<nMu_;iMu2++){
@@ -938,7 +958,7 @@ void HggSelector::fillMuMuGamma(){
       if(mu1.pt<20 && mu2.pt<20) continue; // 20/10 selection
       if(mu1.charge*mu2.charge >=0) continue; //opposite charge
       if(!mu2.isGlobalMuon || !mu2.isTrackerMuon) continue;
-      if(mu2.nTrackHits <= 10 | mu2.nPixelHits==0) continue;
+      if(mu2.nTrackHits <= 10 || mu2.nPixelHits==0) continue;
       if(mu2.trackImpactPar >=0.2) continue;
       if(mu2.trkIso >= 3) continue;
       for(int iPho=0; iPho<nPho_;iPho++){

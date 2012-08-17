@@ -877,7 +877,7 @@ void VecbosJet::Init(VecbosBase* o, int i,VecbosJet::JetType jtype = PFPUcorr){
    simpleSecondaryVertexHighEff = o->simpleSecondaryVertexHighEffBJetTagsAK5PFNoPUJet[i];
    break;
  
- Default:
+  default:
    index = -1;
    break;
   }

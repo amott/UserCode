@@ -440,6 +440,7 @@ JetCorrectorParameters const & JetCorrectorParametersCollection::operator[]( key
     if ( k == i->first ) return i->second;
   }
   std::cout << " cannot find key " << static_cast<int>(k) << std::endl;
+  return ibegin->second;
 }
 
 // Get a list of valid keys. These will contain hashed keys
@@ -521,7 +522,7 @@ JetCorrectorParametersCollection::findKey( std::string const & label ) const {
 
   // Didn't find default corrections, throw exception
   //throw cms::Exception("InvalidInput") << " Cannot find label " << label << std::endl;
-
+  return static_cast<key_type>(0);
 }
 
 

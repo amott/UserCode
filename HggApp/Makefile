@@ -7,7 +7,7 @@ FASTJETFLAGS = $(shell FASTJET/bin/fastjet-config --cxxflags)
 FASTJETLIBS  = $(shell FASTJET/bin/fastjet-config --libs --plugins)
 
 CXX           = g++ -m64
-CXXFLAGS      = -g -fPIC -Wno-deprecated -O -ansi -D_GNU_SOURCE -g -O2 -Xlinker -zmuldefs 
+CXXFLAGS      = -g -fPIC -Wno-deprecated -O -ansi -D_GNU_SOURCE -g -O2 -Xlinker -zmuldefs -Wall -Wno-error=unused-variable -Wno-error=sign-compare -Wno-error=unused-value -Wno-error=unused-but-set-variable
 LD            = g++ -m64
 LDFLAGS       = -g
 SOFLAGS       = -shared
@@ -147,6 +147,7 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMCWeight.o \
 			$(OUTLIB)HggPhotonID.o \
 			$(OUTLIB)HggMassResolution.o \
+			$(OUTLIB)HggEnergyScale.o \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
 

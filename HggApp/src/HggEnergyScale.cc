@@ -153,12 +153,13 @@ HggEnergyScale::HggEnergyScale(std::string path){
 
 int HggEnergyScale::getRunIndex(int run){
   if(debugEnergyScale) cout << "getRunIndex" << endl;
- int runIndex;
+  int runIndex;
   for(runIndex=0;runIndex<runs.size();runIndex++){
     if(run <= runs.at(runIndex)) break;
   }
   if(runIndex == runs.size()) runIndex--;
   if(debugEnergyScale) cout << runIndex << endl;
+  if(debugEnergyScale) cout << "run index: " << runIndex << endl;
   return runIndex;
 }
 
@@ -197,8 +198,8 @@ float HggEnergyScale::getCategory(VecbosPho pho){
   //cout << pho.eta << "  " << pho.SC.r9 << endl;
   for(int iReg = 0; iReg< nRegions; iReg++){
     //cout << ">> " << minEta[iReg] << "  " << maxEta[iReg] << "  " << r9Cut << "  " << highR9[iReg] << endl; 
-    if( fabs(pho.eta) >= minEta[iReg] 
-	&& fabs(pho.eta) <maxEta[iReg] 
+    if( fabs(pho.SC.eta) >= minEta[iReg] 
+	&& fabs(pho.SC.eta) <maxEta[iReg] 
 	&& ((pho.SC.r9 > r9Cut) == highR9[iReg]) ){
       selectRegion = iReg;
       break;

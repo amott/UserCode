@@ -36,6 +36,9 @@ public:
   std::map<std::string,TH1F*>* getHists(){return &InputDists;}
 
   void setVertices(int,float*,float*,float*);
+
+  void fillIsoVariables(VecbosPho*,ReducedPhotonData*,int, float, int );
+  
 private:
   string configFile;
   bool valid;
@@ -97,6 +100,8 @@ private:
   float isosumPF;
   float isosumbadPF;
 
-  std::vector<TVector3> vertices;
-  
+  float eT;
+  float eTBad;
+  std::vector<TVector3> vertices;  
+  TVector3 selVtxPos;
 };

@@ -6,9 +6,9 @@
 
 #define debugEGEnergy 0
 HggEGEnergyCorrector::HggEGEnergyCorrector(VecbosBase *r,string cfgFile,Bool_t realData):
-  base(r),
+  usePhoton(true),
   version(""),
-  usePhoton(true)
+  base(r)
 {
   isRealData = realData;
   configFile = cfgFile;

@@ -81,7 +81,7 @@ void HggMassResolution::init(){
       throw -100;
       return;
     }
-    smear[i] = pair<float,float>(atof(thisSmear[0].c_str()),atof(thisSmear[1].c_str()));
+    smear[i] = pair<float,float>(0.01*atof(thisSmear[0].c_str()),0.01*atof(thisSmear[1].c_str()));
   }
 }
 
@@ -109,7 +109,8 @@ float HggMassResolution::getResolution(VecbosPho* pho){
   if(debugMassRes) cout << "category: " << cat << endl;
   pair<float,float> catRes = smear[this->getCategory(pho)];
   if(debugMassRes) cout << "category Res: " << catRes.first << endl;
-  return TMath::Sqrt(pho->correctedEnergyError*pho->correctedEnergyError+catRes.first*catRes.first);
+  return TMath::Sqrt(pho->finalEnergyError*pho->finalEnergyError+
+		     catRes.first*catRes.first*pho->finalEnergy*pho->finalEnergy);
 }
 
 int HggMassResolution::getCategory(VecbosPho* pho){

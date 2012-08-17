@@ -38,10 +38,13 @@ public:
   void setIsData(bool d){isData_=d;}
   void Loop();
 private:
+  TChain* fChain;
   bool valid;
+  bool doElectronVeto;
   bool doMuMuGamma;
   bool forceVtxZero;
-  TChain* fChain;
+  bool isData_;
+
   TTree* outTree;
   TTree* outTreeMuMuG;
   string configFile;
@@ -50,8 +53,6 @@ private:
   std::pair<int,int> getBestPair(float*,int,int);
   std::pair<int,int> getBestPairCiC(int,int,bool);
   
-  bool doElectronVeto;
-  bool isData_;
 
   bool preSelectPhotons(VecbosPho*,VecbosPho*,TVector3); // kinematic photons selections
   

@@ -27,7 +27,6 @@ public:
   void setCategoryType(string s){categoryType = s;}
   void init();
   double getMassResolution(VecbosPho*,VecbosPho*,TVector3,bool);
-
   double getMassResolutionEonly(VecbosPho*,VecbosPho*,TVector3);
   const static int nCategories=9;
   std::vector<string>Categories;
@@ -37,13 +36,13 @@ public:
   std::vector<float> maxEta;
   std::vector<float> dzRes;
   const static int sphericalIndex=1;
+  float getResolution(VecbosPho*);
 private:
   void clear();
   string config;
   string categoryType;
   double diPhoMass;
   int getCategory(VecbosPho*);
-  float getResolution(VecbosPho*);
   double getAngleResolution(VecbosPho*, VecbosPho*, TVector3, bool);
   bool isSphericalPhoton(int,int);
 
