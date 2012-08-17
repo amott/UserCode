@@ -324,7 +324,7 @@ bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoF
     if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
         || (pho->dr03HcalTowerSumEtCone - 0.005*eT) > 50
         || (pho->dr03TrackIso[selVtxIndex] - 0.002*eT) > 50 
-	|| pho->dr02ChargedHadronPFIso[selVtxIndex] > 4) false;
+	|| pho->dr02ChargedHadronPFIso[selVtxIndex] > 4) return false;
     if( (pho->isBarrel() && (pho->HoverE > 0.082 || pho->SC.sigmaIEtaIEta > 0.014) )
         || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
   }
