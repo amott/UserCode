@@ -27,9 +27,9 @@ void HggScaling::LoadConfig(std::string cfg){
     if(vals.size() != 4) continue; //format needs to be: barrel_lin,barrel_const,endcap_lin,endcap_const
     Corrections[ std::pair<std::string,bool>(*iRescale,0) ] = std::pair<float,float>(vals.at(0),vals.at(1));
     Corrections[ std::pair<std::string,bool>(*iRescale,1) ] = std::pair<float,float>(vals.at(2),vals.at(3));
-    if(debugScaling) std::cout <<"Loading Correction: " << *iRescale
-			       << ":  " << vals.at(0) << "  " << vals.at(1)
-			       << vals.at(2) << "  " << vals.at(3) << std::endl;
+    std::cout <<"Loading Correction: " << *iRescale
+	      << ":  " << vals.at(0) << "  " << vals.at(1)
+	      << vals.at(2) << "  " << vals.at(3) << std::endl;
   }
 }
 
@@ -62,7 +62,7 @@ void HggScaling::ApplyScaling(VecbosPho &pho, std::pair<std::string,bool> correc
     pho.SC.phiWidth = cor.first*pho.SC.phiWidth+cor.second;
   }
   if(corType.compare("s4ratio") == 0){
-    pho.SC.phiWidth = cor.first*pho.SC.s4ratio+cor.second;
+    pho.SC.s4ratio = cor.first*pho.SC.s4ratio+cor.second;
   }
 
 }

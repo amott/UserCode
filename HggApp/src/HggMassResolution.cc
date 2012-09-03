@@ -40,22 +40,12 @@ void HggMassResolution::clear(){
 double HggMassResolution::getMassResolution(VecbosPho *leadPho,VecbosPho *subleadPho, TVector3 vtx,bool isWrongVtx){
   TLorentzVector p4Pho1 = leadPho->p4FromVtx(vtx,leadPho->finalEnergy);
   TLorentzVector p4Pho2 = subleadPho->p4FromVtx(vtx,subleadPho->finalEnergy);
-  double angle   = p4Pho1.Angle(p4Pho2.Vect());
-  if(debugMassRes) cout << ">> >> doing getResolution" << endl;
-  double resPho1 = this->getResolution(leadPho);
-  double resPho2 = this->getResolution(subleadPho);
-  if(debugMassRes) cout << ">> >> doing getAngleResolution" << endl;
+  double eRes = this->getMassResolutionEonly(leadPho,subleadPho,vtx);
   double angleRes = this->getAngleResolution(leadPho,subleadPho,vtx,isWrongVtx);
   double higgsMass = (p4Pho1+p4Pho2).M();
   
-  if(isWrongVtx){
-    angleRes*=0.5*higgsMass;
-    double massResEOnly = 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(leadPho->finalEnergy*leadPho->finalEnergy) + (resPho2*resPho2)/(subleadPho->finalEnergy*subleadPho->finalEnergy) );
-    return TMath::Sqrt((massResEOnly*massResEOnly)+(angleRes*angleRes));
-  }
-  
-  return 0.5*higgsMass*TMath::Sqrt( (resPho1*resPho1)/(p4Pho1.E()*p4Pho1.E()) + (resPho2*resPho2)/(p4Pho2.E()*p4Pho2.E()) +
-				    + ((angleRes*angleRes)*(TMath::Sin(angle)/(1.-TMath::Cos(angle))) * (TMath::Sin(angle)/(1.-TMath::Cos(angle)))) );
+  angleRes*=higgsMass;
+  return TMath::Sqrt((eRes*eRes)+(angleRes*angleRes));
 }
 
 double HggMassResolution::getMassResolutionEonly(VecbosPho *leadPho,VecbosPho *subleadPho,TVector3 vtx){
@@ -86,8 +76,8 @@ void HggMassResolution::init(){
 }
 
 double HggMassResolution::getAngleResolution(VecbosPho* pho1,VecbosPho* pho2, TVector3 vtx, bool wrongVtx){
-  TVector3 pho1Pos= pho1->CaloPos - vtx;
-  TVector3 pho2Pos = pho2->CaloPos - vtx;
+  TVector3 pho1Pos= pho1->SC.CaloPos - vtx;
+  TVector3 pho2Pos = pho2->SC.CaloPos - vtx;
 
   double r1 = pho1Pos.Mag();
   double r2 = pho2Pos.Mag();
@@ -100,8 +90,38 @@ double HggMassResolution::getAngleResolution(VecbosPho* pho1,VecbosPho* pho2, TV
   double numerator1 = sech1*(sech1*tanh2-tanh1*sech2*cos);
   double numerator2 = sech2*(sech2*tanh1-tanh2*sech1*cos);
   double denominator = 1. - tanh1*tanh2 - sech1*sech2*cos;
-  if(debugMassRes) cout << ">> >> got Angle Resolution: " << (-1.*dzRes[wrongVtx]/denominator)*(numerator1/r1 + numerator2/r2) << endl;
-  return (-1.*dzRes[wrongVtx]/denominator)*(numerator1/r1 + numerator2/r2);
+  if(debugMassRes) cout << ">> >> got Angle Resolution: " << fabs((0.5*dzRes[wrongVtx]/denominator)*(numerator1/r1 + numerator2/r2)) << endl;
+  if(debugMassRes) cout << " >> dz: " << dzRes[wrongVtx] << endl;
+  return fabs((0.5*dzRes[wrongVtx]/denominator)*(numerator1/r1 + numerator2/r2));
+  /*
+  //do this exactly like MIT
+
+  Double_t x1= pho1Pos.X();
+  Double_t y1= pho1Pos.Y();
+  Double_t z1= pho1Pos.Z();
+
+  Double_t x2= pho2Pos.X();
+  Double_t y2= pho2Pos.Y();
+  Double_t z2= pho2Pos.Z();
+
+  Double_t r1 = sqrt(x1*x1+y1*y1+z1*z1);
+  Double_t r2 = sqrt(x2*x2+y2*y2+z2*z2);
+  Double_t phi1 = atan2(y1,x1);
+  Double_t theta1 = atan2(sqrt(x1*x1+y1*y1),z1);
+  Double_t phi2 = atan2(y2,x2);
+  Double_t theta2 = atan2(sqrt(x2*x2+y2*y2),z2);
+
+  Double_t sech1 = sin(theta1);
+  Double_t tanh1 = cos(theta1);
+  Double_t sech2 = sin(theta2);
+  Double_t tanh2 = cos(theta2);
+  Double_t cos12 = cos(phi1-phi2);
+
+  Double_t rad1 = sech1*(sech1*tanh2-tanh1*sech2*cos12)/(1-tanh1*tanh2-sech1*sech2*cos12);
+  Double_t rad2 = sech2*(sech2*tanh1-tanh2*sech1*cos12)/(1-tanh2*tanh1-sech2*sech1*cos12);
+  if(debugMassRes) cout << " >> Angle Resolution: " << dzRes[wrongVtx] * 0.5*fabs(rad1/r1 + rad2/r2) << endl;
+  return dzRes[wrongVtx] * 0.5*fabs(rad1/r1 + rad2/r2);
+  */
 }
 
 float HggMassResolution::getResolution(VecbosPho* pho){

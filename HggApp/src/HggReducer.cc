@@ -169,9 +169,9 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 
     for(int iPho=0;iPho<nPho;iPho++){
       VecbosPho pho(this,iPho);
-      if(!_isData) scaler->ScalePhoton(pho);
+      //if(!_isData) scaler->ScalePhoton(pho);
       if(debugReducer) cout << iPho << ": energy=" <<  pho.energy << "  eta=" << pho.SC.eta << endl;
-      if(pho.energy/cosh(pho.eta) < 5) continue;
+      if(pho.energy/cosh(pho.eta) < 10) continue;
       if(fabs(pho.SC.eta) > 3.) continue;
       //if(!this->passPreselection(&pho)) continue;
       if(debugReducer) cout << "pass" << endl;
@@ -239,12 +239,12 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
     std::sort(Photons_.begin(),Photons_.end(),less_than_pt_photon());
 
 
-    /*
+    
     if(nSelectedPho<minPhoSel){
       if(debugReducer) cout << "Fewer than " << minPhoSel << " selected photons" << endl;
       continue; // skip the event if there are fewer than 2 photons
     }
-    */
+    
     if(debugReducer) cout << "More than 1 selected photons" << endl;
     //do the vertexing TMVA
     std::vector<VecbosPho>::iterator iPho1;
@@ -283,8 +283,8 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
 
 	ggVerticesPerEvtMVA.push_back(perEvt);
 	nPair_++;
-      }
-    }
+      }//for(iPho2 = iPho1+1; iPho2 != Photons_.end(); iPho2++)
+    }//for(iPho1 = Photons_.begin(); iPho1 != Photons_.end(); iPho1++)
     
     // fill the isolation variables for the photons
     if(debugReducer) cout << "Filling IsoVars" << endl;
@@ -660,6 +660,7 @@ void HggReducer::fillGeneratorInfo(){
   nGenPho=0;
   nGenMu =0;
   nGenEle=0;
+  nGenOthers=0;
   nGenHiggs=0;
 
   for(int iGen=0;iGen<nMc;iGen++){
@@ -674,7 +675,7 @@ void HggReducer::fillGeneratorInfo(){
       GenMuons.push_back(part); break;
     case 11: //Electrons
       GenElectrons.push_back(part); break;
-    default:
+    Default:
       GenOthers.push_back(part); break;
     }
     nGenHiggs = GenHiggs.size();

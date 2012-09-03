@@ -405,7 +405,7 @@ void VecbosPho::Init(VecbosBase* o, int i){
     return;
   }
   SC.Init(o,o->superClusterIndexPho[i]);
-  PFSC.Init(o,SC.eta,SC.phi);
+  //PFSC.Init(o,SC.eta,SC.phi);
   energy = o->energyPho[i];
   eta    = o->etaPho[i];
   phi    = o->phiPho[i];

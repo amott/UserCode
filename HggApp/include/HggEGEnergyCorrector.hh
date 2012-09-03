@@ -15,7 +15,7 @@ using namespace TMVA;
 class HggEGEnergyCorrector{
  public:
   HggEGEnergyCorrector(VecbosBase*,string,Bool_t);
-  void getPhotonEnergyCorrection(VecbosPho&);
+  void getPhotonEnergyCorrection(VecbosPho& pho, bool rescale=true);
   void getElectronEnergyCorrection(VecbosEle&);
   //std::pair<double,double> getElectronEnergyCorrection(int);
 
@@ -24,7 +24,7 @@ class HggEGEnergyCorrector{
   std::pair<double,double> electronEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosEle&);
   std::pair<double,double> photonEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosPho&);
 
-  std::pair<double,double> photonEnergyCorrector_May2012(VecbosPho&);
+  std::pair<double,double> photonEnergyCorrector_May2012(VecbosPho& pho,bool rescale=true);
   std::pair<double,double> electronEnergyCorrector_May2012(VecbosEle&);
 
   void useElectronWeights(){usePhoton=false;}

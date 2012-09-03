@@ -197,12 +197,12 @@ void HggSelector::Loop(){
 	std::pair<float,float> dE = scale->getDEoE(*pho,runNumber);
 	pho->dEoE    = dE.first;
         pho->dEoEErr = 0;
-        pho->scaledEnergy = pho->correctedEnergy*(1-pho->dEoE);
-        pho->scaledEnergyError = pho->correctedEnergyError*(1-(pho->dEoE+pho->dEoEErr));
+        pho->scaledEnergy = pho->correctedEnergy*(pho->dEoE);
+        pho->scaledEnergyError = pho->correctedEnergyError*((pho->dEoE+pho->dEoEErr));
       }
       if(doSmear){
 	pho->scaledEnergy = pho->correctedEnergy;
-        pho->scaledEnergyError = pho->scaledEnergy*smear->getMCScaleErr(*pho,applyScaleSmear);              
+        pho->scaledEnergyError = pho->correctedEnergyError;
 	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
         pho->dEoE    = dE.first;
         pho->dEoEErr = dE.second;
@@ -217,9 +217,8 @@ void HggSelector::Loop(){
 	//if(iPho==0) std::cout << pho->scaledEnergyError << "   " <<pho->scaledEnergy << std::endl;
       }
       */
-
-      pho->finalEnergy = pho->scaledEnergy;
-      pho->finalEnergyError = pho->scaledEnergyError;
+	pho->finalEnergy = pho->scaledEnergy;
+	pho->finalEnergyError = pho->scaledEnergyError;
     }
     //    if(!trigger_){
     //  outTree->Fill();
@@ -695,7 +694,13 @@ void HggSelector::fillGenInfo(){
   if(debugSelector) std::cout << "Clearing Output Variables" << std::endl;
   int selGenPho=0;
   GenCollection::const_iterator genPho;
-  for(genPho = GenPhotons->begin(); genPho != GenPhotons->end(); genPho++){
+  if(GenPhotons == 0){
+    std::cout << "WARNING: GenPhotons Collection is EMPTY!" << std::endl;
+    return;
+  }
+  
+  for(int i=0;i<nGenPho;i++){
+    VecbosGen* genPho = &(GenPhotons->at(i));
     if(genPho->idMother != 25) continue; // not a higgs
     if(selGenPho==0){
       etaGenPho1 = genPho->eta;
@@ -1173,6 +1178,11 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
   VecbosPho pho1 = Photons_->at(indexPho1);
   VecbosPho pho2 = Photons_->at(indexPho2);
   if(debugSelector) cout << "selected Vertex: " << selectedVertex <<endl;  
+
+  if(debugSelector){
+    std::cout << "pho1: " << pho1.finalEnergy << "  " << pho1.eta << "  " << std::endl;
+    std::cout << "pho2: " << pho2.finalEnergy << "  " << pho2.eta << "  " << std::endl;
+  }
   TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
 
   TLorentzVector p1 = pho1.p4FromVtx(vtxPos,pho1.finalEnergy);
@@ -1195,6 +1205,7 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
   float mvaSubLead = (p1.Et() > p2.Et() ? mva2 : mva1);
 
   float mPair = (p1+p2).M();
+  if(debugSelector) std::cout << "mPair: " << mPair << std::endl;
   //fill variables
   smearedMassErrByMass = massRes->getMassResolutionEonly(&pho1,&pho2,vtxPos)/mPair;
   smearedMassErrByMassWrongVtx = massRes->getMassResolution(&pho1,&pho2,vtxPos,true)/mPair;
@@ -1206,9 +1217,14 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
   if(debugSelector) cout << "vtx prob: " << vtxprob << endl;
   pho1PtByMass = max(p1.Et(),p2.Et())/mPair;
   pho2PtByMass = min(p1.Et(),p2.Et())/mPair;
+  if(debugSelector) cout << "pho1/m: " << pho1PtByMass << endl;
+  if(debugSelector) cout << "pho2/m: " << pho2PtByMass << endl;
   pho1Eta = (p1.Et() > p2.Et() ? p1.Eta(): p2.Eta());
   pho2Eta = (p1.Et() > p2.Et() ? p2.Eta(): p1.Eta());
+  if(debugSelector) cout << "pho1 eta: " << pho1Eta << endl;
+  if(debugSelector) cout << "pho2 eta: " << pho2Eta << endl;
   cosDPhi = TMath::Cos(DeltaPhi(scLead->phi,scSubLead->phi));
+  if(debugSelector) cout << "cos dPhi: " << cosDPhi << endl;
   pho1IdMVA = mvaLead;
   pho2IdMVA = mvaSubLead;
 
