@@ -113,7 +113,7 @@ void MuMuGammaSelector::Loop(){
       }//for(int jMu=iMu+1;
 
     }//for(int iMu=0;
-    outTree->Write();
+    outTree->Fill();
 
   }
   TFile *f = new TFile(outputFile.c_str(),"RECREATE");
