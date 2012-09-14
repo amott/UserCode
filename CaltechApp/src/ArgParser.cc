@@ -144,6 +144,7 @@ int ArgParser::internalProcess(std::string& ret){
 	std::string nextString(argv[i+1]);
 	if(nextString[0]=='-'){ret=std::string(&flag); return -3;}
 	shortFlagMap[flag]=nextString;
+	i++; // skip the next argument since we already used it
       }else{  //ok, its of the form -fValue
 	if(!shortFlagReqArgMap[flag]) {ret=std::string(&flag); return -4;}
 	std::string val = thisString.substr(2,std::string::npos);
