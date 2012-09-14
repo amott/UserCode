@@ -5,6 +5,7 @@
 
 ArgParser::ArgParser(int ac,char** av){
   status=0;
+  unlimitedArgMode=false;
   this->setInputs(ac,av);
 }
 
@@ -33,6 +34,12 @@ void ArgParser::addArgument(std::string name,bool required, std::string desc){
   }
 }
 
+void ArgParser::addUnlimitedArgument(std::string name, std::string desc){
+  unlimitedArg = name;
+  unlimitedArgDesc=desc;
+  unlimitedArgMode=true;
+}
+
 void ArgParser::printOptions(std::string appName){
   std::cout << "Usage:  " << appName << "  [options] ";
   std::vector<std::string>::const_iterator argIt;
@@ -41,6 +48,10 @@ void ArgParser::printOptions(std::string appName){
   }
   for(argIt = optArgs.begin(); argIt != optArgs.end(); argIt++){
     std::cout << "[" << *argIt << "] ";
+  }
+  if(unlimitedArgMode){
+    std:: cout << "[" << unlimitedArg << " 1] "
+	       << "[" << unlimitedArg << " 2] ...";
   }
   std::cout << std::endl
 	    << "Required Arguments: " <<std::endl;
@@ -51,6 +62,10 @@ void ArgParser::printOptions(std::string appName){
   std::cout << "Optional Arguments: " << std::endl;
   for(smapIt = optArgDesc.begin(); smapIt !=optArgDesc.end(); smapIt++){
     printf("\t%-60s%s\n",smapIt->first.c_str(),smapIt->second.c_str());
+  }
+  if(unlimitedArgMode){
+    std::cout << "Unlimited Arguemnts: " <<std::endl;
+    printf("\t%-60s%s\n",unlimitedArg.c_str(),unlimitedArgDesc.c_str());
   }
   std::cout << "Options: " << std::endl;
   std::map<char,std::string>::const_iterator cmapIt;
@@ -156,7 +171,7 @@ int ArgParser::internalProcess(std::string& ret){
   //check required arguments
 
   if(inputArgs.size() < reqArgs.size()) return -6;
-  if(inputArgs.size() > reqArgs.size()+optArgs.size()) return -7;
+  if(!unlimitedArgMode) if(inputArgs.size() > reqArgs.size()+optArgs.size()) return -7;
 
   return 0;
 }
@@ -187,6 +202,13 @@ std::string ArgParser::getArgument(std::string a){
   }
   return "";
   
+}
+
+std::vector<std::string>::const_iterator ArgParser::getUnlimitedArgument(std::string a){
+  if(!unlimitedArgMode) return inputArgs.end();
+  if(inputArgs.size() == reqArgs.size() + optArgs.size()) return inputArgs.end();
+  return inputArgs.begin()+reqArgs.size()+optArgs.size();
+
 }
 
 template<typename T,typename S>

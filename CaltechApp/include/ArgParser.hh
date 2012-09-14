@@ -16,7 +16,8 @@ public:
   void addShortOption(char opt,bool argument,std::string desc="");
   enum {optional,required};
   void addArgument(std::string name,bool required,std::string desc="");
-  
+  void addUnlimitedArgument(std::string,std::string desc=""); // unlimited arguments must be optional
+
   int process(std::string& ret);
 
   bool shortFlagPres(char);
@@ -25,6 +26,8 @@ public:
   std::string getLongFlag(std::string);
   std::string getShortFlag(char);
   std::string getArgument(std::string);
+  std::vector<std::string>::const_iterator getUnlimitedArgument(std::string);
+  std::vector<std::string>::const_iterator args_end(){return inputArgs.end();}
 
   int getStatus(){return status;}
   void reset();
@@ -52,6 +55,8 @@ private:
   std::map<char,bool> shortFlagPresMap;
   std::vector<std::string> reqArgs;
   std::vector<std::string> optArgs;
+  bool unlimitedArgMode;
+  std::string unlimitedArg;
   std::vector<std::string> inputArgs;
 
   //descriptions
@@ -59,6 +64,8 @@ private:
   std::map<char,std::string> shortFlagDesc;
   stringmap reqArgDesc;
   stringmap optArgDesc;
+  std::string unlimitedArgDesc;
+
 };
 
 #endif
