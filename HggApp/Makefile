@@ -137,6 +137,25 @@ ZeeSelectorApp: $(SRCDIR)ZeeSelectorApp.C \
 	$(OUTLIB)ZeeSelector.o
 	$(CXX) $(CXXFLAGS) -o ZeeSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
+MuMuGammaSelectorApp: $(SRCDIR)MuMuGammaSelectorApp.C \
+	$(OUTLIBCOMMON)Conditions.o \
+	$(OUTLIBCOMMON)Selection.o \
+	$(OUTLIBCOMMON)Counters.o \
+	$(OUTLIBCOMMON)TriggerMask.o \
+	$(OUTLIBCOMMON)Utils.o \
+	$(OUTLIBCOMMON)Skimmer.o \
+	$(OUTLIBEGAMMA)ElectronTrackerIsolation.o \
+	$(OUTLIBEGAMMA)ElectronCaloIsolation.o \
+	$(OUTLIBEGAMMA)ElectronBestCandidateSelector.o \
+	$(OUTLIBEGAMMA)LikelihoodPdf.o \
+	$(OUTLIBEGAMMA)LikelihoodSpecies.o \
+	$(OUTLIBEGAMMA)LikelihoodPdfProduct.o \
+	$(OUTLIBEGAMMA)ElectronLikelihood.o \
+	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
+	$(OUTLIB)VecbosEGObject.o \
+	$(OUTLIB)MuMuGammaSelector.o
+	$(CXX) $(CXXFLAGS) -o MuMuGammaSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
+
 $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggMassResolution.o \
 			$(OUTLIB)HggPhotonID.o \
@@ -158,6 +177,15 @@ $(OUTLIB)ZeeSelector.o: $(SRCDIR)ZeeSelector.cc \
 			$(OUTLIB)GBRTree.o \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)ZeeSelector.o $<
+
+$(OUTLIB)MuMuGammaSelector.o: $(SRCDIR)MuMuGammaSelector.cc \
+			$(OUTLIB)Vecbos.o \
+			$(OUTLIB)VecbosEGObject.o \
+			$(OUTLIB)HggDict.o \
+			$(OUTLIB)GBRTree.o \
+			$(OUTLIB)HggPhotonID.o \
+			$(OUTLIB)MitDict.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MuMuGammaSelector.o $<
 
 $(OUTLIB)HggPhotonID.o: $(SRCDIR)HggPhotonID.cc \
 			$(OUTLIB)VecbosEGObject.o \
