@@ -39,6 +39,7 @@ private:
   void setBranchAddresses();
   void setupOutputTree();
   
+  bool passPresel(VecbosEle&);
 
   // Mass Selection
   float DZmassref; 
@@ -66,10 +67,24 @@ private:
   int   nEleOut;
   float Ele1mva;
   float Ele2mva;
+
+  float Ele1pt;
   float Ele1eta;
+  float Ele1phi;
+  float Ele1E;
+
+  float Ele2pt;
   float Ele2eta;
+  float Ele2phi;
+  float Ele2E;
+
+  float Ele1etaSC;
+  float Ele2etaSC;
+
   float Ele1r9;
   float Ele2r9;
+  float Ele1sigEoE;
+  float Ele2sigEoE;
   float passtight;
   float passmva;	
   float passloose;

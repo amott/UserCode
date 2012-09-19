@@ -46,6 +46,10 @@ int ZeeSelector::init(){
   this->setupOutputTree();
 }
 
+void swap(VecbosEle& e1, VecbosEle &e2){
+  VecbosEle t= e1; e1=e2; e2=e1;
+}
+
 void ZeeSelector::Loop(){
   if(!valid) return;
 
@@ -69,7 +73,7 @@ void ZeeSelector::Loop(){
       // Choose First Electron
       for (int k=0; k<nEle-1;k++) { 
 	VecbosEle ele1 = Electrons->at(k);
-
+	if(!passPresel(ele1)) continue;
 	// Choose Second Electron
 	for (int j=k+1; j<nEle;j++) {   
 	  lpass   = 0;
@@ -77,8 +81,11 @@ void ZeeSelector::Loop(){
 	  mvapass = 0;
 	  Zeemass = 0;
 	  VecbosEle ele2 = Electrons->at(j);
+	  if(!passPresel(ele2)) continue;
 	  // Verify Opposite Charges
 	  if (ele1.charge != ele2.charge) {
+
+	    if(ele1.pt < ele2.pt) swap(ele1,ele2);
 
 	    // Calculate Invariant Mass for Z Boson from Two Electrons
 	    TLorentzVector Ele1;
@@ -87,6 +94,9 @@ void ZeeSelector::Loop(){
 	    Ele2.SetPtEtaPhiM(ele2.correctedEnergy/cosh(ele2.eta),ele2.eta,ele2.phi,0);
 	    TLorentzVector Zee = Ele1 + Ele2;
 	    Zeemass = Zee.M();
+
+	    //preselection cuts:
+	    
 
 	    PFIsoOverPT1 = (ele1.dr03ChargedHadronPFIso + max(0.d,(ele1.dr03NeutralHadronPFIso+ele1.dr03PhotonPFIso) - pow(0.3, 2)*PI*max(0.f,rho)))/(ele1.pt);
 	    PFIsoOverPT2 = (ele2.dr03ChargedHadronPFIso + max(0.d,(ele2.dr03NeutralHadronPFIso+ele2.dr03PhotonPFIso) - pow(0.3, 2)*PI*max(0.f,rho)))/(ele2.pt);
@@ -118,14 +128,27 @@ void ZeeSelector::Loop(){
 	    // Calculate Difference from True Z Mass 
 	    DZmass = fabs(Zeemass - 91.2);
 	    // Compare the proximity of uncut Z mass to real Z mass with other electron pairs in event
-	    if (DZmass < DZmassref && (lpass + mvapass + tpass)>0) {
+	    if (DZmass < DZmassref && (lpass + mvapass + tpass)>=0) {
 		// Reset the selected Z mass and reference point to this pair
 		mass = Zeemass;
 		DZmassref = DZmass;          
-		Ele1eta = ele1.SC.eta;
-		Ele2eta = ele2.SC.eta;
+
+		Ele1pt = ele1.pt;
+		Ele1eta = ele1.eta;
+		Ele1phi = ele1.phi;
+		Ele1E   = ele1.correctedEnergy;
+
+		Ele2pt = ele2.pt;
+		Ele2eta = ele2.eta;
+		Ele2phi = ele2.phi;
+		Ele2E   = ele2.correctedEnergy;
+
+		Ele1etaSC = ele1.SC.eta;
+		Ele2etaSC = ele2.SC.eta;
 		Ele1r9  = ele1.SC.r9;
 		Ele2r9  = ele2.SC.r9;
+		Ele1sigEoE = ele1.correctedEnergyError/ele1.correctedEnergy;
+		Ele2sigEoE = ele2.correctedEnergyError/ele2.correctedEnergy;
 		passloose = lpass;
 		passtight = tpass;
 		passmva   = mvapass;
@@ -171,19 +194,50 @@ void ZeeSelector::setBranchAddresses(){
 void ZeeSelector::setupOutputTree(){
   outTree = new TTree("ZeeOutput","");
   outTree->Branch("mass",&mass,"mass");
+
+  outTree->Branch("Ele1pt",&Ele1pt,"Ele1pt");
   outTree->Branch("Ele1eta",&Ele1eta,"Ele1eta");
+  outTree->Branch("Ele1phi",&Ele1phi,"Ele1phi");
+  outTree->Branch("Ele1E",&Ele1E,"Ele1E");
+
+  outTree->Branch("Ele2pt",&Ele2pt,"Ele2pt");
+  outTree->Branch("Ele2eta",&Ele2eta,"Ele2eta");
+  outTree->Branch("Ele2phi",&Ele2phi,"Ele2phi");
+  outTree->Branch("Ele2E",&Ele2E,"Ele2E");
+
   outTree->Branch("Ele1r9",&Ele1r9,"Ele1r9");
   outTree->Branch("Ele1mva",&Ele1mva,"Ele1mva");
-  outTree->Branch("Ele2eta",&Ele2eta,"Ele2eta");
+  outTree->Branch("Ele1etaSC",&Ele1etaSC,"Ele1etaSC");
+  outTree->Branch("Ele1sigEoE",&Ele1sigEoE,"Ele1sigEoE");
   outTree->Branch("Ele2r9",&Ele2r9,"Ele2r9");
   outTree->Branch("Ele2mva",&Ele2mva,"Ele2mva");
+  outTree->Branch("Ele2etaSC",&Ele2etaSC,"Ele2etaSC");
+  outTree->Branch("Ele2sigEoE",&Ele2sigEoE,"Ele2sigEoE");
+
   outTree->Branch("passloose",&passloose,"passloose");  
   outTree->Branch("passtight",&passtight,"passtight");
   outTree->Branch("passmva",&passmva,"passmva");
   outTree->Branch("nEle",&nEleOut,"nEle");
 }
 
+bool ZeeSelector::passPresel(VecbosEle &ele){
+  //cuts barrel_low,endcap_low,barrel_high,endcap_high
+  float ecal[4] = {4.,4.,50.,50.};
+  float hcal[4] = {4.,4.,50.,50.};
+  float trk[4] = {4.,4.,50.,50.};
+  float he[4] = {0.075,0.075,0.082,0.075};
+  float sieie[4] = { 0.014,0.034,0.014,0.034};
 
+  int index = (ele.SC.r9>0.9)*2+(fabs(ele.SC.eta)>1.48);
+
+  if( ele.dr03EcalRecHitSumEt - 0.012*ele.pt > ecal[index] ||
+      ele.dr03HcalTowerSumEt  - 0.005*ele.pt > hcal[index] ||
+      ele.dr03TkSumPt         - 0.002*ele.pt > trk[index]) return false;
+  if( ele.HoverE > he[index] || ele.SC.sigmaIEtaIEta > sieie[index]) return false;
+  
+  return true;
+  
+}
 
 
 
