@@ -189,6 +189,7 @@ void MonoJet::Loop(string outFileName, int start, int stop) {
     double m0=9999, m12=9999, mc=9999;
      
       // to integrate with others
+    /*
     if(!_isData && _isSMS){
       //find the simplified model parameters for T1tttt                                                                                              
       std::vector<std::string>::const_iterator c_begin = commentLHE->begin();
@@ -221,11 +222,13 @@ void MonoJet::Loop(string outFileName, int start, int stop) {
 	}
       }
     }
+    */
     
     mg=m12;
     mst=m0;
     mchi=mc;
     
+    /*
     // event filter
     if(_isData && (METFlags >> 0) % 2 == 0) continue;
     //drBoundary
@@ -238,7 +241,7 @@ void MonoJet::Loop(string outFileName, int start, int stop) {
     if(_isData && (METFlags >> 4) % 2 == 0) continue;
     // BE ECAL flag
     if(_isData && (METFlags >> 5) % 2 == 0) continue;
-
+    */
     // find highest-pT PV
     int iHighestPtVTX = -99;
     double HighestPtVTX = -99999.;

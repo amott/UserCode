@@ -2678,7 +2678,7 @@ void Vecbos::isMuonID2012(int muonIndex, bool *muonIdOutput) {
 
   if(kinkMuon[muonIndex]>=20) *muonIdOutput = false;
 
-  if(pfmuonIdMuon[muonIndex]==0) *muonIdOutput = false;
+  //if(pfmuonIdMuon[muonIndex]==0) *muonIdOutput = false;
 
   float ptTrack = sqrt( pxTrack[track]*pxTrack[track] + pyTrack[track]*pyTrack[track] );
   float sign = fabs(ptErrorTrack[track]/ptTrack);
@@ -2934,6 +2934,7 @@ bool Vecbos::isPFIsolatedMuon(int muonIndex, bool CorrectingIsoforMuons) {
 
 
 
+/*
 bool Vecbos::isLooseTau(int iTau){
   if(abs(thehpsTauDiscrByTightElectronRejectionPFTau[iTau]-1.) < 0.0001 && 
      abs(thehpsTauDiscrByTightMuonRejectionPFTau[iTau]-1.) < 0.0001 &&
@@ -2969,7 +2970,7 @@ bool Vecbos::isTightTau(int iTau){
 
   return false;
 }
-
+*/
 //2012 good PV selection (returns highest-pV good vtx
 int Vecbos::passPV(){
   int i_sum_pt_max = -1;
