@@ -143,7 +143,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
       fVals[6] = 1.00002*pho.SC.phiWidth + 0.000371;
       fVals[14] = fVals[3]*pho.SC.e3x3/BC.energy;
       if(fVals[15] <=1.0)
-	fVals[15] = TMath::Min(1.0,1.0022*ele.SC.e5x5/BC.energy);
+	fVals[15] = TMath::Min(1.0,1.0022*pho.SC.e5x5/BC.energy);
       
       fVals[4] = fVals[15]*fVals[4];
 
