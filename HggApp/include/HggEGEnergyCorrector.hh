@@ -28,6 +28,8 @@ class HggEGEnergyCorrector{
   std::pair<double,double> electronEnergyCorrector_May2012(VecbosEle&,bool rescale=false);
 
   void useElectronWeights(){usePhoton=false;}
+
+  void setEventInfo(float r,int pv){rho=r; nPV=pv;}
  private:
   //private methods
   void Init();
@@ -45,4 +47,7 @@ class HggEGEnergyCorrector{
   GBRForest *fReaderee;
   GBRForest *fReadereevariance;
   Float_t *fVals;
+
+  float rho;
+  int nPV;
 };
