@@ -23,10 +23,10 @@ void HggEGEnergyCorrector::getPhotonEnergyCorrection(VecbosPho& pho, bool rescal
   pho.correctedEnergy = corr.first;
   pho.correctedEnergyError = corr.second;
 }
-void HggEGEnergyCorrector::getElectronEnergyCorrection(VecbosEle& ele){
+void HggEGEnergyCorrector::getElectronEnergyCorrection(VecbosEle& ele, bool rescale){
   std::pair<double,double> corr(ele.energy,0);
 
-  if(version.compare("May2012")==0) corr = this->electronEnergyCorrector_May2012(ele);
+  if(version.compare("May2012")==0) corr = this->electronEnergyCorrector_May2012(ele,rescale);
   if(version.compare("2011")==0) corr = this->electronEnergyCorrector_CorrectedEnergyWithErrorv2(ele);
   
   ele.correctedEnergy = corr.first;
@@ -187,7 +187,7 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   return std::pair<double,double>(ecor,ecorerr);
 }
 
-std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(VecbosEle &ele){
+std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(VecbosEle &ele,bool rescale){
   int index=0;
   fVals[0] = ele.SC.rawE;
   fVals[1] = ele.SC.eta;
@@ -258,6 +258,57 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(V
     greadervar = fReadereevariance;
   }
   Double_t ecor = greader->GetResponse(fVals)*den;
+
+  if(rescale){
+    if( fabs(ele.SC.eta) < 1.48 ){
+      fVals[3] = 1.0045*ele.SC.r9 + 0.001;
+      fVals[5] = 1.04301*ele.SC.etaWidth + 0.000618;
+      fVals[6] = 1.00002*ele.SC.phiWidth + 0.000371;
+      fVals[14] = fVals[3]*BC.e3x3/BC.energy;
+      if(fVals[15] <=1.0)
+	fVals[15] = TMath::Min(1.0,1.0022*BC.e5x5/BC.energy);
+      
+      fVals[4] = fVals[15]*fVals[4];
+
+      fVals[16] = 0.891832*BC.sigmaIEtaIEta + 0.0009133;
+      fVals[17] = 0.993*BC.sigmaIPhiIPhi;
+      
+      fVals[19]*=1.012;
+      //fVals[20] = 
+      fVals[21]*=0.94;
+      fVals[22]*=0.94;
+      fVals[23]*=0.94;
+      fVals[24]*=0.94;
+      fVals[25]*=1.006;
+      fVals[26]*=1.09;
+      fVals[27]*=1.09;
+      fVals[28]*=1.09;
+      fVals[29]*=1.09;
+    }else{ //endcap
+      fVals[3] = 1.0086*fVals[3]- 0.0007;
+      fVals[5] = 1.04302*fVals[5] - 0.000618;
+      fVals[6] = 1.00002*fVals[6] - 0.000371;
+      fVals[14]= fVals[3]*fVals[14];
+      if(fVals[15] <=1.0)
+	fVals[15] = TMath::Min(1.0,1.0022*fVals[15]);
+      
+      fVals[4] = fVals[15]*fVals[4];
+      fVals[16]*= 0.9947;
+      
+      fVals[19]*=1.005;
+      fVals[20]*=1.02;
+      fVals[21]*=0.96;
+      fVals[22]*=0.96;
+      fVals[23]*=0.96;
+      fVals[24]*=0.96;
+      fVals[25]*=1.0075;
+      fVals[26]*=1.13;
+      fVals[27]*=1.13;
+      fVals[28]*=1.13;
+      fVals[29]*=1.13;
+    }
+  }
+
   Double_t ecorerr = greadervar->GetResponse(fVals)*den*varscale;
   
   return std::pair<double,double>(ecor,ecorerr);

@@ -41,6 +41,8 @@ void ZeeSelector::loadChain(vector<string> fNames,string treeName){
 
 int ZeeSelector::init(){
   if(!valid) return -1;
+
+  elecorr = new HggEGEnergyCorrector(0,config,isData_);
   
   this->setBranchAddresses();
   this->setupOutputTree();
@@ -129,6 +131,11 @@ void ZeeSelector::Loop(){
 	    DZmass = fabs(Zeemass - 91.2);
 	    // Compare the proximity of uncut Z mass to real Z mass with other electron pairs in event
 	    if (DZmass < DZmassref && (lpass + mvapass + tpass)>=0) {
+	      std::pair<double,double> ele1corr = elecorr->electronEnergyCorrector_May2012(ele1,false);
+	      std::pair<double,double> ele2corr = elecorr->electronEnergyCorrector_May2012(ele2,false);
+	      std::pair<double,double> ele1corrScale = elecorr->electronEnergyCorrector_May2012(ele1,true);
+	      std::pair<double,double> ele2corrScale = elecorr->electronEnergyCorrector_May2012(ele2,true);
+
 		// Reset the selected Z mass and reference point to this pair
 		mass = Zeemass;
 		DZmassref = DZmass;          
@@ -137,18 +144,24 @@ void ZeeSelector::Loop(){
 		Ele1eta = ele1.eta;
 		Ele1phi = ele1.phi;
 		Ele1E   = ele1.correctedEnergy;
-
+		Ele1Epho = ele1corr.first;
+		Ele1sigEoE = ele1.correctedEnergyError/ele1.correctedEnergy;
+		Ele1sigEoEpho = ele1corr.second/ele1corr.first;
+		Ele1sigEscaleoEpho = ele1corrScale.second/ele1corrScale.first;
+		
 		Ele2pt = ele2.pt;
 		Ele2eta = ele2.eta;
 		Ele2phi = ele2.phi;
 		Ele2E   = ele2.correctedEnergy;
+		Ele2Epho = ele2corr.first;
+		Ele2sigEoE = ele2.correctedEnergyError/ele2.correctedEnergy;
+		Ele2sigEoEpho = ele2corr.second/ele2corr.first;
+		Ele2sigEscaleoEpho = ele2corrScale.second/ele2corrScale.first;
 
 		Ele1etaSC = ele1.SC.eta;
 		Ele2etaSC = ele2.SC.eta;
 		Ele1r9  = ele1.SC.r9;
 		Ele2r9  = ele2.SC.r9;
-		Ele1sigEoE = ele1.correctedEnergyError/ele1.correctedEnergy;
-		Ele2sigEoE = ele2.correctedEnergyError/ele2.correctedEnergy;
 		passloose = lpass;
 		passtight = tpass;
 		passmva   = mvapass;
@@ -199,20 +212,26 @@ void ZeeSelector::setupOutputTree(){
   outTree->Branch("Ele1eta",&Ele1eta,"Ele1eta");
   outTree->Branch("Ele1phi",&Ele1phi,"Ele1phi");
   outTree->Branch("Ele1E",&Ele1E,"Ele1E");
+  outTree->Branch("Ele1Epho",&Ele1Epho,"Ele1Epho");
 
   outTree->Branch("Ele2pt",&Ele2pt,"Ele2pt");
   outTree->Branch("Ele2eta",&Ele2eta,"Ele2eta");
   outTree->Branch("Ele2phi",&Ele2phi,"Ele2phi");
   outTree->Branch("Ele2E",&Ele2E,"Ele2E");
+  outTree->Branch("Ele2Epho",&Ele2Epho,"Ele2Epho");
 
   outTree->Branch("Ele1r9",&Ele1r9,"Ele1r9");
   outTree->Branch("Ele1mva",&Ele1mva,"Ele1mva");
   outTree->Branch("Ele1etaSC",&Ele1etaSC,"Ele1etaSC");
   outTree->Branch("Ele1sigEoE",&Ele1sigEoE,"Ele1sigEoE");
+  outTree->Branch("Ele1sigEoEpho",&Ele1sigEoEpho,"Ele1sigEoEpho");
+  outTree->Branch("Ele1sigEscaleoEpho",&Ele1sigEscaleoEpho,"Ele1sigEscaleoEpho");
   outTree->Branch("Ele2r9",&Ele2r9,"Ele2r9");
   outTree->Branch("Ele2mva",&Ele2mva,"Ele2mva");
   outTree->Branch("Ele2etaSC",&Ele2etaSC,"Ele2etaSC");
   outTree->Branch("Ele2sigEoE",&Ele2sigEoE,"Ele2sigEoE");
+  outTree->Branch("Ele2sigEoEpho",&Ele2sigEoEpho,"Ele2sigEoEpho");
+  outTree->Branch("Ele2sigEscaleoEpho",&Ele2sigEscaleoEpho,"Ele2sigEscaleoEpho");
 
   outTree->Branch("passloose",&passloose,"passloose");  
   outTree->Branch("passtight",&passtight,"passtight");
