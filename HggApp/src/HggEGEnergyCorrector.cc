@@ -61,6 +61,10 @@ void HggEGEnergyCorrector::Init(){
 }
 
 std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(VecbosPho &pho, bool rescale){
+  if(base){
+    rho = base->rhoJetsFastJet;
+    nPV = base->nPV;
+  }
   int index=0;
   fVals[0] = pho.SC.rawE;
   fVals[1] = pho.SC.eta;
@@ -71,33 +75,33 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
   fVals[6] = pho.SC.phiWidth;
   fVals[7] = pho.SC.nBCs;
   fVals[8] = pho.HTowOverE; //H/E tower
-  fVals[9] = base->rhoJetsFastJet;
-  fVals[10] = base->nPV;
+  fVals[9] = rho;
+  fVals[10] = nPV;
 
   //seed cluster variables
   VecbosBC BC = pho.SC.BCSeed;
   fVals[11] = BC.eta - pho.SC.eta;
   fVals[12] = DeltaPhi(pho.SC.phi,BC.phi);
   fVals[13] = BC.energy/pho.SC.rawE;
-  fVals[14] = BC.e3x3/BC.energy;
-  fVals[15] = BC.e5x5/BC.energy;
+  fVals[14] = pho.SC.e3x3/BC.energy;
+  fVals[15] = pho.SC.e5x5/BC.energy;
 
-  fVals[16] = BC.sigmaIEtaIEta;
-  fVals[17] = BC.sigmaIPhiIPhi;
-  fVals[18] = BC.sigmaIEtaIPhi;
+  fVals[16] = pho.SC.sigmaIEtaIEta;
+  fVals[17] = pho.SC.sigmaIPhiIPhi;
+  fVals[18] = pho.SC.sigmaIEtaIPhi;
 
-  fVals[19] = BC.eMax/BC.energy;
-  fVals[20] = BC.e2nd/BC.energy;
-  fVals[21] = BC.eTop/BC.energy;
-  fVals[22] = BC.eBottom/BC.energy;
-  fVals[23] = BC.eLeft/BC.energy;
-  fVals[24] = BC.eRight/BC.energy;
+  fVals[19] = pho.SC.eMax/BC.energy;
+  fVals[20] = pho.SC.e2nd/BC.energy;
+  fVals[21] = pho.SC.eTop/BC.energy;
+  fVals[22] = pho.SC.eBottom/BC.energy;
+  fVals[23] = pho.SC.eLeft/BC.energy;
+  fVals[24] = pho.SC.eRight/BC.energy;
 
-  fVals[25] = BC.e2x5Max/BC.energy;
-  fVals[26] = BC.e2x5Top/BC.energy;
-  fVals[27] = BC.e2x5Bottom/BC.energy;
-  fVals[28] = BC.e2x5Left/BC.energy;
-  fVals[29] = BC.e2x5Right/BC.energy;
+  fVals[25] = pho.SC.e2x5Max/BC.energy;
+  fVals[26] = pho.SC.e2x5Top/BC.energy;
+  fVals[27] = pho.SC.e2x5Bottom/BC.energy;
+  fVals[28] = pho.SC.e2x5Left/BC.energy;
+  fVals[29] = pho.SC.e2x5Right/BC.energy;
   
   if(pho.isBarrel()){
     fVals[30] = BC.iEta;
@@ -137,14 +141,14 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
       fVals[3] = 1.0045*pho.SC.r9 + 0.001;
       fVals[5] = 1.04301*pho.SC.etaWidth + 0.000618;
       fVals[6] = 1.00002*pho.SC.phiWidth + 0.000371;
-      fVals[14] = fVals[3]*BC.e3x3/BC.energy;
+      fVals[14] = fVals[3]*pho.SC.e3x3/BC.energy;
       if(fVals[15] <=1.0)
 	fVals[15] = TMath::Min(1.0,1.0022*BC.e5x5/BC.energy);
       
       fVals[4] = fVals[15]*fVals[4];
 
-      fVals[16] = 0.891832*BC.sigmaIEtaIEta + 0.0009133;
-      fVals[17] = 0.993*BC.sigmaIPhiIPhi;
+      fVals[16] = 0.891832*pho.SC.sigmaIEtaIEta + 0.0009133;
+      fVals[17] = 0.993*pho.SC.sigmaIPhiIPhi;
       
       fVals[19]*=1.012;
       //fVals[20] = 
@@ -188,6 +192,10 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_May2012(Vec
 }
 
 std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(VecbosEle &ele,bool rescale){
+  if(base){
+    rho = base->rhoJetsFastJet;
+    nPV = base->nPV;
+  }
   int index=0;
   fVals[0] = ele.SC.rawE;
   fVals[1] = ele.SC.eta;
@@ -198,33 +206,33 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(V
   fVals[6] = ele.SC.phiWidth;
   fVals[7] = ele.SC.nBCs;
   fVals[8] = ele.HoverE; //H/E 
-  fVals[9] = base->rhoJetsFastJet;
-  fVals[10] = base->nPV;
+  fVals[9] = rho;
+  fVals[10] = nPV;
 
   //seed cluster variables
   VecbosBC BC = ele.SC.BCSeed;
   fVals[11] = BC.eta - ele.SC.eta;
   fVals[12] = DeltaPhi(ele.SC.phi,BC.phi);
   fVals[13] = BC.energy/ele.SC.rawE;
-  fVals[14] = BC.e3x3/BC.energy;
-  fVals[15] = BC.e5x5/BC.energy;
+  fVals[14] = ele.SC.e3x3/BC.energy;
+  fVals[15] = ele.SC.e5x5/BC.energy;
 
-  fVals[16] = BC.sigmaIEtaIEta;
-  fVals[17] = BC.sigmaIPhiIPhi;
-  fVals[18] = BC.sigmaIEtaIPhi;
+  fVals[16] = ele.SC.sigmaIEtaIEta;
+  fVals[17] = ele.SC.sigmaIPhiIPhi;
+  fVals[18] = ele.SC.sigmaIEtaIPhi;
 
-  fVals[19] = BC.eMax/BC.energy;
-  fVals[20] = BC.e2nd/BC.energy;
-  fVals[21] = BC.eTop/BC.energy;
-  fVals[22] = BC.eBottom/BC.energy;
-  fVals[23] = BC.eLeft/BC.energy;
-  fVals[24] = BC.eRight/BC.energy;
+  fVals[19] = ele.SC.eMax/BC.energy;
+  fVals[20] = ele.SC.e2nd/BC.energy;
+  fVals[21] = ele.SC.eTop/BC.energy;
+  fVals[22] = ele.SC.eBottom/BC.energy;
+  fVals[23] = ele.SC.eLeft/BC.energy;
+  fVals[24] = ele.SC.eRight/BC.energy;
 
-  fVals[25] = BC.e2x5Max/BC.energy;
-  fVals[26] = BC.e2x5Top/BC.energy;
-  fVals[27] = BC.e2x5Bottom/BC.energy;
-  fVals[28] = BC.e2x5Left/BC.energy;
-  fVals[29] = BC.e2x5Right/BC.energy;
+  fVals[25] = ele.SC.e2x5Max/BC.energy;
+  fVals[26] = ele.SC.e2x5Top/BC.energy;
+  fVals[27] = ele.SC.e2x5Bottom/BC.energy;
+  fVals[28] = ele.SC.e2x5Left/BC.energy;
+  fVals[29] = ele.SC.e2x5Right/BC.energy;
   
   if( fabs(ele.SC.eta)<1.48 ){
     fVals[30] = BC.iEta;
@@ -264,14 +272,14 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_May2012(V
       fVals[3] = 1.0045*ele.SC.r9 + 0.001;
       fVals[5] = 1.04301*ele.SC.etaWidth + 0.000618;
       fVals[6] = 1.00002*ele.SC.phiWidth + 0.000371;
-      fVals[14] = fVals[3]*BC.e3x3/BC.energy;
+      fVals[14] = fVals[3]*ele.SC.e3x3/BC.energy;
       if(fVals[15] <=1.0)
 	fVals[15] = TMath::Min(1.0,1.0022*BC.e5x5/BC.energy);
       
       fVals[4] = fVals[15]*fVals[4];
 
-      fVals[16] = 0.891832*BC.sigmaIEtaIEta + 0.0009133;
-      fVals[17] = 0.993*BC.sigmaIPhiIPhi;
+      fVals[16] = 0.891832*ele.SC.sigmaIEtaIEta + 0.0009133;
+      fVals[17] = 0.993*ele.SC.sigmaIPhiIPhi;
       
       fVals[19]*=1.012;
       //fVals[20] = 
