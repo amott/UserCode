@@ -5,6 +5,10 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
+#include <string>
+#include <TTree.h>
+#include <TFile.h>
+
 //
 // class declaration
 //
@@ -34,14 +38,14 @@ class DataScoutingAnalyzer : public edm::EDAnalyzer {
   edm::InputTag tag_recoElectrons;
   edm::InputTag tag_recoMuons;
   edm::InputTag tag_hcalNoise;
-  string s_outputFile;
+  std::string s_outputFile;
   
-  double jetMatchThreshold;
+  double jetThreshold;
 
   TFile *outputFile;
   TTree *outputTree;
 
-  const static int _kMaxJets = 200;
+  static const int _kMaxJets = 200;
 
   int nDSJets;
   float dsJetPt[_kMaxJets];
@@ -49,7 +53,7 @@ class DataScoutingAnalyzer : public edm::EDAnalyzer {
   float dsJetPhi[_kMaxJets];
   float dsJetE[_kMaxJets];
   float dsJetFracHad[_kMaxJets];
-  int dsJetMatchIndex[_kMatchJets];
+  int dsJetMatchIndex[_kMaxJets];
 
 
   float dsRho;

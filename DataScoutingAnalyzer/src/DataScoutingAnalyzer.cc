@@ -13,7 +13,7 @@
 //
 // Original Author:  Alex Mott
 //         Created:  Wed Sep  5 16:25:41 CEST 2012
-// $Id$
+// $Id: DataScoutingAnalyzer.cc,v 1.1 2012/09/26 12:19:47 amott Exp $
 //
 //
 
@@ -27,13 +27,15 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "DataScoutingAnalyzer.h"
+#include "amott/DataScoutingAnalyzer/interface/DataScoutingAnalyzer.h"
 
 //objects
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
-#include "DataFormats/JetReco/interface/CaloMetCollection.h"
-#include "DataFormats/JetReco/interface/CaloMet.h"
+//#include "DataFormats/METReco/interface/CaloMetCollection.h"
+#include "DataFormats/METReco/interface/MET.h"
+#include "DataFormats/METReco/interface/CaloMET.h"
+#include "DataFormats/METReco/interface/CaloMETCollection.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/EgammaCandidates/interface/Electron.h"
 #include "DataFormats/EgammaCandidates/interface/ElectronIsolationAssociation.h"
@@ -44,7 +46,7 @@
 
 #include "DataFormats/Common/interface/AssociationMap.h"
 
-#incluce "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 //
 // constants, enums and typedefs
@@ -60,12 +62,12 @@
 DataScoutingAnalyzer::DataScoutingAnalyzer(const edm::ParameterSet& iConfig):
   tag_recoJet(iConfig.getParameter<edm::InputTag>("jets")),
   tag_recoRho(iConfig.getParameter<edm::InputTag>("rho")),  
-  jetMatchThreshold(iConfig.getParameter<double>("jetMatchingThreshold")),
+  jetThreshold(iConfig.getParameter<double>("jetThreshold")),
   tag_recoMet(iConfig.getParameter<edm::InputTag>("met")),
   tag_recoElectrons(iConfig.getParameter<edm::InputTag>("electrons")),
   tag_recoMuons(iConfig.getParameter<edm::InputTag>("muons")),
   tag_hcalNoise(iConfig.getParameter<edm::InputTag>("noise")),
-  s_outputFile(iConfig.getParameter<string>("outputFile"))
+  s_outputFile(iConfig.getParameter<std::string>("outputFile"))
 {
    //now do what ever initialization is needed
 
@@ -91,8 +93,9 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 {
   using namespace edm;
 
-  Handle<reco::JetCollection> h_recoJet;
-  Handle<reco::MetCollection> h_recoMet;
+  Handle<reco::CaloJetCollection> h_recoJet;
+  //Handle<std::vector<reco::MET> > h_recoMet;
+  Handle<reco::CaloMETCollection> h_recoMet;
   Handle<double> h_recoRho;
 
   //Handle<reco::Electron> h_recoElectrons;
@@ -105,9 +108,9 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //iEvent.getByLabel(tag_recoMuons,h_recoMuons);
 
   Handle<reco::CaloJetCollection> h_dsJet;
-  Handle<reco::CaloMetCollection> h_dsMet;
-  Handle<reco::CaloMetCollection> h_dsMetClean;
-  Handle<double> h_rho;
+  Handle<reco::CaloMETCollection> h_dsMet;
+  Handle<reco::CaloMETCollection> h_dsMetClean;
+  Handle<double> h_dsRho;
   /*
   Handle<reco::Electron> h_dsElectrons;
   Handle<reco::SuperCluster> h_dsSC;
@@ -125,7 +128,7 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByLabel("hltCaloJetIDPassed",h_dsJet);
   iEvent.getByLabel("hltMet",h_dsMet);
   iEvent.getByLabel("hltMetClean",h_dsMetClean);
-  iEvent.getByLabel("hltKT6CaloJets","rhos",h_dsRho);
+  iEvent.getByLabel("hltKT6CaloJets","rho",h_dsRho);
   /*
   iEvent.getByLabel("hltPixelMatchElectronsActivity",h_dsElectrons);
   iEvent.getByLabel("hltRecoEcalSuperClusterActivityCandidate",h_dsSC);
@@ -144,19 +147,20 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //fill the tree
   
   //MET
-  dsMetPt = h_dsMet->Front().pt();
-  dsMetPhi = h_dsMet->Front().phi();
-  dsMetCleanPt = h_dsMetClean->Front().pt();
-  dsMetCleanPhi = h_dsMetClean->Front().phi();
-  recoMetPt = h_recoMet->Front().pt();
-  recoMetPhi = h_recoMet->Front().phi();
+  dsMetPt = h_dsMet->front().pt();
+  dsMetPhi = h_dsMet->front().phi();
+  dsMetCleanPt = h_dsMetClean->front().pt();
+  dsMetCleanPhi = h_dsMetClean->front().phi();
+  recoMetPt = h_recoMet->front().pt();
+  recoMetPhi = h_recoMet->front().phi();
   
   dsRho = *h_dsRho;
   recoRho = *h_recoRho;
   
-  reco::JetCollection::const_iterator i_recoJet;
+  reco::CaloJetCollection::const_iterator i_recoJet;
   nRECOJets=0;
-  for(i_recoJet = h_recoJet->begin(); i_recoJet != h_recoJet->end(); irecoJet++){
+  for(i_recoJet = h_recoJet->begin(); i_recoJet != h_recoJet->end(); i_recoJet++){
+    if(i_recoJet->pt() < jetThreshold - 10) continue;
     recoJetPt[nRECOJets] = i_recoJet->pt();
     recoJetEta[nRECOJets] = i_recoJet->eta();
     recoJetPhi[nRECOJets] = i_recoJet->phi();
@@ -166,7 +170,8 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
   reco::CaloJetCollection::const_iterator i_dsJet;
   nDSJets=0;
-  for(i_dsJet = h_dsJet->begin(); i_dsJet != h_dsJet->end(); idsJet++){
+  for(i_dsJet = h_dsJet->begin(); i_dsJet != h_dsJet->end(); i_dsJet++){
+    if(i_dsJet->pt() < jetThreshold) continue;
     dsJetPt[nDSJets] = i_dsJet->pt();
     dsJetEta[nDSJets] = i_dsJet->eta();
     dsJetPhi[nDSJets] = i_dsJet->phi();
@@ -181,7 +186,7 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	  > 0.5) continue; //require DR match
       
       float dEoE = (i_dsJet->energy() - recoJetE[iRECOJet])/recoJetE[iRECOJet];
-      if(dEoE < bestdEoE){
+      if(dEoE < 2 && dEoE > 0.5 && dEoE < bestdEoE){
 	bestdEoE = dEoE;
 	bestIndex = iRECOJet;
       }
@@ -198,7 +203,7 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 void 
 DataScoutingAnalyzer::beginJob()
 {
-  outputFile = new TFile(s_outputFile,"RECREATE");
+  outputFile = new TFile(s_outputFile.c_str(),"RECREATE");
   outputTree = new TTree("DSComp","");
 
   outputTree->Branch("nDSJets",&nDSJets,"nDSJets/I");

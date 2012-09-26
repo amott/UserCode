@@ -11,5 +11,5 @@
 
 <flags EDM_PLUGIN="1"/>
 <export>
-   <lib name="DataScoutingAnalyzer"/>
+   <lib name="amott/DataScoutingAnalyzer"/>
 </export>
