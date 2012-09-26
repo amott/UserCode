@@ -9,11 +9,11 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        'file:myfile.root'
+    '/store/cmst3/user/wreece/CMG/JetHT/Run2012B-v1/RAW/V00-01-03/AOD/outputPhysicsDST_HLTplusAOD_39.root',
     )
 )
 
-process.demo = cms.EDAnalyzer('DataScoutingAnalyzer'
+process.demo = cms.EDAnalyzer('DataScoutingAnalyzer',
                               jets = cms.InputTag("ak5CaloJets"),
                               rho  = cms.InputTag("kt6CaloJets","rhos"),
                               jetMatchingThreshold = cms.double(20),
