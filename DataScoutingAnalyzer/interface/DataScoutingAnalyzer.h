@@ -33,6 +33,7 @@ class DataScoutingAnalyzer : public edm::EDAnalyzer {
       // ----------member data ---------------------------
   
   edm::InputTag tag_recoJet;
+  std::string s_recoJetCorrector;
   edm::InputTag tag_recoRho;
   edm::InputTag tag_recoMet;
   edm::InputTag tag_recoElectrons;

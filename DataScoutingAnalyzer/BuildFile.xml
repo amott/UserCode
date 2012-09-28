@@ -8,7 +8,7 @@
 <use name="DataFormats/RecoCandidates"/>
 <use name="DataFormats/Math"/>
 <use name="DataFormats/Common"/>
-
+<use name="JetMETCorrections/Objects"/>
 <flags EDM_PLUGIN="1"/>
 <export>
    <lib name="amott/DataScoutingAnalyzer"/>

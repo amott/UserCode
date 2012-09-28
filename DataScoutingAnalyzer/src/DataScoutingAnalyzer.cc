@@ -13,7 +13,7 @@
 //
 // Original Author:  Alex Mott
 //         Created:  Wed Sep  5 16:25:41 CEST 2012
-// $Id: DataScoutingAnalyzer.cc,v 1.1 2012/09/26 12:19:47 amott Exp $
+// $Id: DataScoutingAnalyzer.cc,v 1.2 2012/09/26 14:29:56 amott Exp $
 //
 //
 
@@ -30,7 +30,9 @@
 #include "amott/DataScoutingAnalyzer/interface/DataScoutingAnalyzer.h"
 
 //objects
+//#include "DataFormats/JetReco/interface/JetCollection.h"
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
+#include "DataFormats/JetReco/interface/Jet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
 //#include "DataFormats/METReco/interface/CaloMetCollection.h"
 #include "DataFormats/METReco/interface/MET.h"
@@ -47,6 +49,7 @@
 #include "DataFormats/Common/interface/AssociationMap.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
+#include "JetMETCorrections/Objects/interface/JetCorrector.h"
 
 //
 // constants, enums and typedefs
@@ -61,6 +64,7 @@
 //
 DataScoutingAnalyzer::DataScoutingAnalyzer(const edm::ParameterSet& iConfig):
   tag_recoJet(iConfig.getParameter<edm::InputTag>("jets")),
+  s_recoJetCorrector(iConfig.getParameter<std::string>("jetCorrections")),
   tag_recoRho(iConfig.getParameter<edm::InputTag>("rho")),  
   jetThreshold(iConfig.getParameter<double>("jetThreshold")),
   tag_recoMet(iConfig.getParameter<edm::InputTag>("met")),
@@ -94,6 +98,8 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   using namespace edm;
 
   Handle<reco::CaloJetCollection> h_recoJet;
+  const JetCorrector* corrector = JetCorrector::getJetCorrector (s_recoJetCorrector, iSetup);  
+  //Handle<std::vector<reco::Jet> > h_recoJet;
   //Handle<std::vector<reco::MET> > h_recoMet;
   Handle<reco::CaloMETCollection> h_recoMet;
   Handle<double> h_recoRho;
@@ -158,8 +164,11 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   recoRho = *h_recoRho;
   
   reco::CaloJetCollection::const_iterator i_recoJet;
+  //std::vector<reco::Jet>::const_iterator i_recoJet;
   nRECOJets=0;
   for(i_recoJet = h_recoJet->begin(); i_recoJet != h_recoJet->end(); i_recoJet++){
+    double scale = corrector->correction(*i_recoJet,iEvent,iSetup);
+    ((reco::Jet)*i_recoJet).scaleEnergy(scale);
     if(i_recoJet->pt() < jetThreshold - 10) continue;
     recoJetPt[nRECOJets] = i_recoJet->pt();
     recoJetEta[nRECOJets] = i_recoJet->eta();
