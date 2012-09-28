@@ -819,8 +819,8 @@ void HggSelector::setBranchAddresses(){
 
  fChain->SetBranchAddress("nPU",&inPU);
 
- fChain->SetBranchAddress("PFMet",&pfMet);
- fChain->SetBranchAddress("PFMetPhi",&pfMetPhi);
+ fChain->SetBranchAddress("PFMET",&pfMet);
+ fChain->SetBranchAddress("PFMETPhi",&pfMetPhi);
 
  vector<string>::const_iterator trigIt;
  int i=0;

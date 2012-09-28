@@ -17,20 +17,6 @@ public:
   float energy;
   float eta;
   float phi;
-  float e3x3;
-  float e5x5;
-  float eTop;
-  float eLeft;
-  float eRight;
-  float eBottom;
-  float eMax;
-  float e2nd;
-
-  float e2x5Max;
-  float e2x5Left;
-  float e2x5Right;
-  float e2x5Top;
-  float e2x5Bottom;
 
   float etaCrystal;
   float phiCrystal;
@@ -38,11 +24,7 @@ public:
   int iPhi;
   float thetaTilt;
   float phiTilt;
-  float sigmaIEtaIEta;
-  float sigmaIEtaIPhi;
-  float sigmaIPhiIPhi;
 
-  //BCInfo getStruct();
 };
 
 class VecbosPFBC : public VecbosBC{

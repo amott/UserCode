@@ -22,20 +22,7 @@ void VecbosBC::Init(VecbosBase* o, int i){
   energy  = o->energyBC[i];
   eta     = o->etaBC[i];
   phi     = o->phiBC[i];
-  e3x3    = o->e3x3BC[i];
-  e5x5    = o->e5x5BC[i];
-  eTop    = o->eTopBC[i]; 
-  eLeft   = o->eLeftBC[i];
-  eRight  = o->eRightBC[i];
-  eBottom = o->eBottomBC[i];
-  eMax    = o->eMaxBC[i];
-  e2nd    = o->e2ndBC[i];
 
-  e2x5Max  = o->e2x5MaxBC[i];
-  e2x5Left = o->e2x5LeftBC[i];
-  e2x5Right = o->e2x5RightBC[i];
-  e2x5Top = o->e2x5TopBC[i];
-  e2x5Bottom = o->e2x5BottomBC[i];
   
   etaCrystal = o->etaCrystalBC[i];
   phiCrystal = o->phiCrystalBC[i];
@@ -43,40 +30,8 @@ void VecbosBC::Init(VecbosBase* o, int i){
   iPhi = o->iPhiBC[i];
   thetaTilt = o->thetaTiltBC[i];
   phiTilt   = o->phiTiltBC[i];
-
-  sigmaIEtaIEta = sqrt(o->covIEtaIEtaBC[i]);
-  sigmaIEtaIPhi = o->covIEtaIPhiBC[i];
-  sigmaIPhiIPhi = sqrt(o->covIPhiIPhiBC[i]);
 };
 
-/*
-BCInfo VecbosBC::getStruct(){
-  BCInfo out = {
-    index,
-    energy,
-    eta,
-    phi,
-    e3x3,
-    e5x5,
-    eTop,
-    eLeft,
-    eRight,
-    eBottom,
-    eMax,
-    e2nd,
-    etaCrystal,
-    phiCrystal,
-    iEta,
-    iPhi,
-    etaTilt,
-    phiTilt,
-    sigmaIEtaIEta,
-    sigmaIEtaIPhi,
-    sigmaIPhiIPhi    
-  };
-  return out;
-}
-*/
 VecbosPFBC::VecbosPFBC(){
 
 }
@@ -91,20 +46,6 @@ void VecbosPFBC::Init(VecbosBase* o, int i){
   energy  = o->energyPFBC[i];
   eta     = o->etaPFBC[i];
   phi     = o->phiPFBC[i];
-  e3x3    = o->e3x3PFBC[i];
-  e5x5    = o->e5x5PFBC[i];
-  eTop    = o->eTopPFBC[i]; 
-  eLeft   = o->eLeftPFBC[i];
-  eRight  = o->eRightPFBC[i];
-  eBottom = o->eBottomPFBC[i];
-  eMax    = o->eMaxPFBC[i];
-  e2nd    = o->e2ndPFBC[i];
-
-  e2x5Max  = o->e2x5MaxPFBC[i];
-  e2x5Left = o->e2x5LeftPFBC[i];
-  e2x5Right = o->e2x5RightPFBC[i];
-  e2x5Top = o->e2x5TopPFBC[i];
-  e2x5Bottom = o->e2x5BottomPFBC[i];
   
   etaCrystal = o->etaCrystalPFBC[i];
   phiCrystal = o->phiCrystalPFBC[i];
@@ -113,9 +54,6 @@ void VecbosPFBC::Init(VecbosBase* o, int i){
   thetaTilt = o->thetaTiltPFBC[i];
   phiTilt   = o->phiTiltPFBC[i];
 
-  sigmaIEtaIEta = o->covIEtaIEtaPFBC[i];
-  sigmaIEtaIPhi = o->covIEtaIPhiPFBC[i];
-  sigmaIPhiIPhi = o->covIPhiIPhiPFBC[i];
 };
 
 
@@ -200,6 +138,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
   //}
   
   BCSeed.Init(o,maxI);
+  BCSeed.energy = o->seedEnergySC[i];
  }
 
 /*

@@ -451,6 +451,8 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
 
 
 std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosEle &ele){
+    return std::pair<double,double>(ele.SC.energy,0);
+#if false 
   ///no correction for electron of tracker-deriven seed only ( not used in analysis anyway)
   if( !ele.isEcalDriven ){
     return std::pair<double,double>(ele.SC.energy,0);
@@ -611,15 +613,15 @@ std::pair<double,double> HggEGEnergyCorrector::electronEnergyCorrector_Corrected
   
   return std::pair<double,double>(ecor,ecorerr);
   
-  
+#endif  
 }
 
 
 
 
 std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEnergyWithErrorv2(VecbosPho &pho){
-    
-  
+  return std::pair<double,double>(0,0);
+#if false  // new vecbos version totally breaks compatibility
   if(debugEGEnergy) cout << "Getting ECAL Coordinates" << endl;
   THIS_ECAL_GEO thisGeometry = getGapCoordinates(ecalGeometry, pho.SC.eta, pho.SC.phi);
   if(debugEGEnergy) cout << "Done" << endl;
@@ -847,5 +849,5 @@ std::pair<double,double> HggEGEnergyCorrector::photonEnergyCorrector_CorrectedEn
 
   return std::pair<double,double>(ecor,ecorerr);
   
-  
+#endif  
 }
