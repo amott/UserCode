@@ -580,13 +580,13 @@ int main(int argc, char* argv[]) {
   std::vector<std::string> mask;
   if(isData == true)
   {
-     LQ3Analysis Analysis(theChain, true, true);
+     LQ3Analysis Analysis(theChain, true, json);
      Analysis.setRequiredTriggers(mask);
      Analysis.Loop(string(outFileName), start, stop);
   }
   else
   {
-     LQ3Analysis Analysis(theChain, false, true);
+     LQ3Analysis Analysis(theChain, false, "");
      Analysis.Loop(string(outFileName), start, stop);
   }
 #endif
