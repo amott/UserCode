@@ -138,7 +138,7 @@ void VecbosSC::Init(VecbosBase* o, int i){
   //}
   
   BCSeed.Init(o,maxI);
-  BCSeed.energy = o->seedEnergySC[i];
+  BCSeed.energy = o->seedClusterEnergySC[i];
  }
 
 /*
