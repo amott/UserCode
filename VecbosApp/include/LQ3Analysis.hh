@@ -27,7 +27,7 @@ class LQ3OutputRecord;
 class LQ3Analysis : public Vecbos
 {
 public:
-   LQ3Analysis(TTree *tree = 0); /// Class Constructor
+   LQ3Analysis(TTree *tree); /// Class Constructor
    LQ3Analysis(TTree *tree = 0, bool isData = false, string JSONFile = ""); /// Class Constructor
    virtual ~LQ3Analysis();     /// Class Destructor
    void Loop(string outFileName, int start, int stop);
@@ -90,6 +90,7 @@ private:
    void FillPFJet(LQ3OutputRecord &M);
    void FillPV(LQ3OutputRecord &M);
    void FillMET(LQ3OutputRecord &M);
+   void FillPhoton(LQ3OutputRecord &M);
 };
 //---------------------------------------------------------------------------
 struct MuonCandidate
@@ -113,6 +114,20 @@ struct MuonCandidate
    double Py;
    double Pz;
    int Charge;
+   double TrackIso03;
+   double EcalIso03;
+   double HcalIso03;
+   double TrackCount03;
+   double JetCount03;
+   double TrackIso05;
+   double EcalIso05;
+   double HcalIso05;
+   double TrackCount05;
+   double JetCount05;
+   double EMS9;
+   double HadS9;
+   double EcalExpDepo;
+   double HcalExpDepo;
 
    bool PassMuonID;
    bool PassMuonTight;
@@ -136,6 +151,7 @@ struct ElectronCandidate
    double HcalIsolation;
    double TrackIsolation;
    double EcalIsolation;
+   double CombinedIsolation;
    double HOverE;
    double Phi;
    double Eta;
@@ -196,6 +212,26 @@ public:
    double PFJetSSVHETag[100];
    double PFJetSSVHPTag[100];
 
+   int PhotonCount;
+   double PhotonE[10];
+   double PhotonPT[10];
+   double PhotonEta[10];
+   double PhotonPhi[10];
+   int PhotonFiducialFlag[10];
+   int PhotonRecoFlag[10];
+   double PhotonHOverE[10];
+   double PhotonTrackIsolation[10];
+   double PhotonHollowTrackIsolation[10];
+   double PhotonEcalIsolation[10];
+   double PhotonHcalIsolation[10];
+   double PhotonIsolation[10];
+   bool PhotonPixelSeed[10];
+   bool PhotonMatchedConversion[10];
+   double PhotonSigmaIEtaIEta[10];
+   double PhotonR9[10];
+
+   double Rho;
+
    int PrimaryVertexCount;
    double PrimaryVertexMaxSumPT;
 
@@ -213,6 +249,9 @@ public:
    int GoodElectronCount90;
    int GoodElectronCount95;
    ElectronCandidate Electrons[10];
+
+   int AllElectronCount;
+   ElectronCandidate AllElectrons[10];
 
    bool PassHLT;
    bool PassNoiseFilter;
@@ -251,6 +290,9 @@ public:
    bool PassSingleMu40;
    bool PassSingleMu100;
 
+   bool PassR014MR150;
+   bool PassR020MR150;
+   bool PassR025MR150;
    bool PassR020MR500;
    bool PassR020MR550;
    bool PassR023MR550;
@@ -278,6 +320,50 @@ public:
 
    bool PassMu8EleL17;
    bool PassMu17EleL8;
+
+   bool PassMET65;
+   bool PassMET100;
+   bool PassMET120;
+   bool PassMET200;
+   bool PassMET400;
+
+   bool PassHT150;
+   bool PassHT200;
+   bool PassHT250;
+   bool PassHT300;
+   bool PassHT350;
+   bool PassHT400;
+   bool PassHT450;
+   bool PassHT500;
+   bool PassHT550;
+   bool PassHT600;
+   bool PassHT650;
+   bool PassHT2000;
+
+   double SBMass1;
+   double SBMass2;
+   double ChiMass;
+   double m0;
+   double m12;
+
+   int WENuCount;
+   int WMuNuCount;
+   int WTauNuCount;
+   int WJJCount;
+
+   int NCTEQ66;
+   double WCTEQ66[201];
+   int NMRST2006NNLO;
+   double WMRST2006NNLO[201];
+   int NNNPDF10100;
+   double WNNPDF10100[201];
+
+   double SB1PT;
+   double SB1Eta;
+   double SB1Phi;
+   double SB2PT;
+   double SB2Eta;
+   double SB2Phi;
 
 public:
    void Clear()
@@ -323,6 +409,57 @@ public:
 
       PrimaryVertexCount = 0;
       PrimaryVertexMaxSumPT = 0;
+
+      SBMass1 = 0;
+      SBMass2 = 0;
+      ChiMass = 0;
+      m0 = 0;
+      m12 = 0;
+
+      WENuCount = 0;
+      WMuNuCount = 0;
+      WTauNuCount = 0;
+      WJJCount = 0;
+
+      PhotonCount = 0;
+      for(int i = 0; i < 10; i++)
+      {
+         PhotonE[i] = 0;
+         PhotonPT[i] = 0;
+         PhotonEta[i] = 0;
+         PhotonPhi[i] = 0;
+         PhotonFiducialFlag[i] = 0;
+         PhotonRecoFlag[i] = 0;
+         PhotonHOverE[i] = 100;
+         PhotonTrackIsolation[i] = -1;
+         PhotonHollowTrackIsolation[i] = -1;
+         PhotonEcalIsolation[i] = -1;
+         PhotonHcalIsolation[i] = -1;
+         PhotonIsolation[i] = -1;
+         PhotonPixelSeed[i] = true;
+         PhotonMatchedConversion[i] = true;
+         PhotonSigmaIEtaIEta[i] = -999;
+         PhotonR9[i] = -999;
+      }
+
+      Rho = 0;
+
+      NCTEQ66 = 0;
+      NMRST2006NNLO = 0;
+      NNNPDF10100 = 0;
+      for(int i = 0; i < 201; i++)
+      {
+         WCTEQ66[i] = 0;
+         WMRST2006NNLO[i] = 0;
+         WNNPDF10100[i] = 0;
+      }
+
+      SB1PT = 0;
+      SB1Eta = 0;
+      SB1Phi = 0;
+      SB2PT = 0;
+      SB2Eta = 0;
+      SB2Phi = 0;
    }
    
    void MakeBranches(TTree *Tree)
@@ -387,8 +524,25 @@ public:
          Tree->Branch(Form("Muon%dPT", i + 1), &Muons[i].PT, Form("Muon%dPT/D", i + 1));
          Tree->Branch(Form("Muon%dEta", i + 1), &Muons[i].Eta, Form("Muon%dEta/D", i + 1));
          Tree->Branch(Form("Muon%dPhi", i + 1), &Muons[i].Phi, Form("Muon%dPhi/D", i + 1));
+         Tree->Branch(Form("Muon%dIsolation", i + 1), &Muons[i].CombinedIsolation, Form("Muon%dIsolation", i + 1));
          Tree->Branch(Form("Muon%dPassTight", i + 1), &Muons[i].PassMuonTight, Form("Muon%dPassTight/O", i + 1));
          Tree->Branch(Form("Muon%dPassLoose", i + 1), &Muons[i].PassMuonLoose, Form("Muon%dPassLoose/O", i + 1));
+         Tree->Branch(Form("Muon%dTrackIso03", i + 1), &Muons[i].TrackIso03, Form("Muon%dTrackIso03/D", i + 1));
+         Tree->Branch(Form("Muon%dHcalIso03", i + 1), &Muons[i].HcalIso03, Form("Muon%dHcalIso03/D", i + 1));
+         Tree->Branch(Form("Muon%dEcalIso03", i + 1), &Muons[i].EcalIso03, Form("Muon%dEcalIso03/D", i + 1));
+         Tree->Branch(Form("Muon%dTrackCount03", i + 1), &Muons[i].TrackCount03,
+            Form("Muon%dTrackCount03/D", i + 1));
+         Tree->Branch(Form("Muon%dJetCount03", i + 1), &Muons[i].JetCount03, Form("Muon%dJetCount03/D", i + 1));
+         Tree->Branch(Form("Muon%dTrackIso05", i + 1), &Muons[i].TrackIso05, Form("Muon%dTrackIso05/D", i + 1));
+         Tree->Branch(Form("Muon%dHcalIso05", i + 1), &Muons[i].HcalIso05, Form("Muon%dHcalIso05/D", i + 1));
+         Tree->Branch(Form("Muon%dEcalIso05", i + 1), &Muons[i].EcalIso05, Form("Muon%dEcalIso05/D", i + 1));
+         Tree->Branch(Form("Muon%dTrackCount05", i + 1), &Muons[i].TrackCount05,
+            Form("Muon%dTrackCount05/D", i + 1));
+         Tree->Branch(Form("Muon%dJetCount05", i + 1), &Muons[i].JetCount05, Form("Muon%dJetCount05/D", i + 1));
+         Tree->Branch(Form("Muon%dEMS9", i + 1), &Muons[i].EMS9, Form("Muon%dEMS9/D", i + 1));
+         Tree->Branch(Form("Muon%dHadS9", i + 1), &Muons[i].HadS9, Form("Muon%dHadS9/D", i + 1));
+         Tree->Branch(Form("Muon%dEcalExpDepo", i + 1), &Muons[i].EcalExpDepo, Form("Muon%dEcalExpDepo/D", i + 1));
+         Tree->Branch(Form("Muon%dHcalExpDepo", i + 1), &Muons[i].HcalExpDepo, Form("Muon%dHcalExpDepo/D", i + 1));
       }
 
       // Electrons
@@ -403,10 +557,38 @@ public:
          Tree->Branch(Form("Electron%dPT", i + 1), &Electrons[i].PT, Form("Electron%dPT/D", i + 1));
          Tree->Branch(Form("Electron%dEta", i + 1), &Electrons[i].Eta, Form("Electron%dEta/D", i + 1));
          Tree->Branch(Form("Electron%dPhi", i + 1), &Electrons[i].Phi, Form("Electron%dPhi/D", i + 1));
+         Tree->Branch(Form("Electron%dIsolation", i + 1), &Electrons[i].CombinedIsolation,
+            Form("Electron%dIsolation/D", i + 1));
          Tree->Branch(Form("Electron%dPass95", i + 1), &Electrons[i].PassWP95, Form("Electron%dPass95/O", i + 1));
          Tree->Branch(Form("Electron%dPass90", i + 1), &Electrons[i].PassWP90, Form("Electron%dPass90/O", i + 1));
          Tree->Branch(Form("Electron%dPass85", i + 1), &Electrons[i].PassWP85, Form("Electron%dPass85/O", i + 1));
          Tree->Branch(Form("Electron%dPass80", i + 1), &Electrons[i].PassWP80, Form("Electron%dPass80/O", i + 1));
+      }
+
+      // All electrons
+      Tree->Branch("AllElectronCount", &AllElectronCount, "AllElectronCount/I");
+
+      for(int i = 0; i < 10; i++)
+      {
+         Tree->Branch(Form("AllElectron%dPT", i + 1), &AllElectrons[i].PT, Form("AllElectron%dPT/D", i + 1));
+         Tree->Branch(Form("AllElectron%dEta", i + 1), &AllElectrons[i].Eta, Form("AllElectron%dEta/D", i + 1));
+         Tree->Branch(Form("AllElectron%dPhi", i + 1), &AllElectrons[i].Phi, Form("AllElectron%dPhi/D", i + 1));
+         Tree->Branch(Form("AllElectron%dIsolation", i + 1), &AllElectrons[i].CombinedIsolation,
+            Form("AllElectron%dIsolation/D", i + 1));
+         Tree->Branch(Form("AllElectron%dConversionDistance", i + 1), &AllElectrons[i].ConversionDistance,
+            Form("AllElectron%dConversionDistance/D", i + 1));
+         Tree->Branch(Form("AllElectron%dConversionDeltaCotTheta", i + 1), &AllElectrons[i].ConversionDeltaCotTheta,
+            Form("AllElectron%dConversionDeltaCotTheta/D", i + 1));
+         Tree->Branch(Form("AllElectron%dSigmaIEtaIEta", i + 1), &AllElectrons[i].SuperClusterSigmaIEtaIEta,
+            Form("AllElectron%dSigmaIEtaIEta/D", i + 1));
+         Tree->Branch(Form("AllElectron%dPass95", i + 1), &AllElectrons[i].PassWP95,
+            Form("AllElectron%dPass95/O", i + 1));
+         Tree->Branch(Form("AllElectron%dPass90", i + 1), &AllElectrons[i].PassWP90,
+            Form("AllElectron%dPass90/O", i + 1));
+         Tree->Branch(Form("AllElectron%dPass85", i + 1), &AllElectrons[i].PassWP85,
+            Form("AllElectron%dPass85/O", i + 1));
+         Tree->Branch(Form("AllElectron%dPass80", i + 1), &AllElectrons[i].PassWP80,
+            Form("AllElectron%dPass80/O", i + 1));
       }
 
       // baseline event selection
@@ -448,6 +630,9 @@ public:
       Tree->Branch("PassSingleMu40", &PassSingleMu40, "PassSingleMu40/O");
       Tree->Branch("PassSingleMu100", &PassSingleMu100, "PassSingleMu100/O");
 
+      Tree->Branch("PassR014MR150", &PassR014MR150, "PassR014MR150/O");
+      Tree->Branch("PassR020MR150", &PassR020MR150, "PassR020MR150/O");
+      Tree->Branch("PassR025MR150", &PassR025MR150, "PassR025MR150/O");
       Tree->Branch("PassR020MR500", &PassR020MR500, "PassR020MR500/O");
       Tree->Branch("PassR020MR550", &PassR020MR550, "PassR020MR550/O");
       Tree->Branch("PassR023MR550", &PassR023MR550, "PassR023MR550/O");
@@ -475,6 +660,74 @@ public:
 
       Tree->Branch("PassMu8EleL17", &PassMu8EleL17, "PassMu8EleL17/O");
       Tree->Branch("PassMu17EleL8", &PassMu17EleL8, "PassMu17EleL8/O");
+
+      Tree->Branch("PassMET65", &PassMET65, "PassMET65/O");
+      Tree->Branch("PassMET100", &PassMET100, "PassMET100/O");
+      Tree->Branch("PassMET120", &PassMET120, "PassMET120/O");
+      Tree->Branch("PassMET200", &PassMET200, "PassMET200/O");
+      Tree->Branch("PassMET400", &PassMET400, "PassMET400/O");
+
+      Tree->Branch("PassHT150", &PassHT150, "PassHT150/O");
+      Tree->Branch("PassHT200", &PassHT200, "PassHT200/O");
+      Tree->Branch("PassHT250", &PassHT250, "PassHT250/O");
+      Tree->Branch("PassHT300", &PassHT300, "PassHT300/O");
+      Tree->Branch("PassHT350", &PassHT350, "PassHT350/O");
+      Tree->Branch("PassHT400", &PassHT400, "PassHT400/O");
+      Tree->Branch("PassHT450", &PassHT450, "PassHT450/O");
+      Tree->Branch("PassHT500", &PassHT500, "PassHT500/O");
+      Tree->Branch("PassHT550", &PassHT550, "PassHT550/O");
+      Tree->Branch("PassHT600", &PassHT600, "PassHT600/O");
+      Tree->Branch("PassHT650", &PassHT650, "PassHT650/O");
+      Tree->Branch("PassHT2000", &PassHT2000, "PassHT2000/O");
+
+      // SMS-specific ones
+      Tree->Branch("SBMass1", &SBMass1, "SBMass1/D");
+      Tree->Branch("SBMass2", &SBMass2, "SBMass2/D");
+      Tree->Branch("ChiMass", &ChiMass, "ChiMass/D");
+      Tree->Branch("m0", &m0, "m0/D");
+      Tree->Branch("m12", &m12, "m12/D");
+
+      // W decays
+      Tree->Branch("WENuCount", &WENuCount, "WENuCount/I");
+      Tree->Branch("WMuNuCount", &WMuNuCount, "WMuNuCount/I");
+      Tree->Branch("WTauNuCount", &WTauNuCount, "WTauNuCount/I");
+      Tree->Branch("WJJCount", &WJJCount, "WJJCount/I");
+
+      // Photons
+      Tree->Branch("PhotonCount", &PhotonCount, "PhotonCount/I");
+      Tree->Branch("PhotonE", PhotonE, "PhotonE[10]/D");
+      Tree->Branch("PhotonPT", PhotonPT, "PhotonPT[10]/D");
+      Tree->Branch("PhotonEta", PhotonEta, "PhotonEta[10]/D");
+      Tree->Branch("PhotonPhi", PhotonPhi, "PhotonPhi[10]/D");
+      Tree->Branch("PhotonFiducialFlag", PhotonFiducialFlag, "PhotonFiducialFlag[10]/I");
+      Tree->Branch("PhotonRecoFlag", PhotonRecoFlag, "PhotonRecoFlag[10]/I");
+      Tree->Branch("PhotonHOverE", PhotonHOverE, "PhotonHOverE[10]/D");
+      Tree->Branch("PhotonTrackIsolation", PhotonTrackIsolation, "PhotonTrackIsolation[10]/D");
+      Tree->Branch("PhotonHollowTrackIsolation", PhotonHollowTrackIsolation, "PhotonHollowTrackIsolation[10]/D");
+      Tree->Branch("PhotonEcalIsolation", PhotonEcalIsolation, "PhotonEcalIsolation[10]/D");
+      Tree->Branch("PhotonHcalIsolation", PhotonHcalIsolation, "PhotonHcalIsolation[10]/D");
+      Tree->Branch("PhotonIsolation", PhotonIsolation, "PhotonIsolation[10]/D");
+      Tree->Branch("PhotonPixelSeed", PhotonPixelSeed, "PhotonPixelSeed[10]/O");
+      Tree->Branch("PhotonMatchedConversion", PhotonMatchedConversion, "PhotonMatchedConversion[10]/O");
+      Tree->Branch("PhotonSigmaIEtaIEta", PhotonSigmaIEtaIEta, "PhotonSigmaIEtaIEta[10]/D");
+      Tree->Branch("PhotonR9", PhotonR9, "PhotonR9[10]/D");
+
+      // Fastjet rho
+      Tree->Branch("Rho", &Rho, "Rho/D");
+
+      // PDF shit
+      Tree->Branch("NCTEQ66", &NCTEQ66, "NCTEQ66/I");
+      Tree->Branch("WCTEQ66", WCTEQ66, "WCTEQ66[201]/D");
+      Tree->Branch("NMRST2006NNLO", &NMRST2006NNLO, "NMRST2006NNLO/I");
+      Tree->Branch("WMRST2006NNLO", WMRST2006NNLO, "WMRST2006NNLO[201]/D");
+      Tree->Branch("NNNPDF10100", &NNNPDF10100, "NNNPDF10100/I");
+      Tree->Branch("WNNPDF10100", WNNPDF10100, "WNNPDF10100[201]/D");
+      Tree->Branch("SB1PT", &SB1PT, "SB1PT/D");
+      Tree->Branch("SB1Eta", &SB1Eta, "SB1Eta/D");
+      Tree->Branch("SB1Phi", &SB1Phi, "SB1Phi/D");
+      Tree->Branch("SB2PT", &SB2PT, "SB2PT/D");
+      Tree->Branch("SB2Eta", &SB2Eta, "SB2Eta/D");
+      Tree->Branch("SB2Phi", &SB2Phi, "SB2Phi/D");
    }
 };
 //---------------------------------------------------------------------------

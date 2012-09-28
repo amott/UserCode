@@ -63,7 +63,7 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
    LQ3OutputRecord Messenger;
 
    // prepare output trees!!!
-   TTree* outTree = new TTree("LQ3Tree", "LQ3Tree");
+   TTree* outTree = new TTree("LQ3Tree", "LQ3Tree ((1)1112 with PDF weights and sbottom info)");
    Messenger.MakeBranches(outTree);
 
    // prepare quality monitoring histograms!!!!
@@ -118,12 +118,65 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
       vector<MuonCandidate> MuonCandidates = MakeMuonCandidates();
       vector<ElectronCandidate> ElectronCandidates = MakeElectronCandidates();
 
+      // MC Stuff!  SMSs
+      if(_isData == false)
+      {
+         double MaxSBottomMass = 0;
+         double MaxNeutralinoMass = 0;
+
+         for(int i = 0; i < nMc; i++)
+         {
+            double Mass = sqrt(energyMc[i] * energyMc[i] - pMc[i] * pMc[i]);
+
+            if(abs(idMc[i]) == 1000005 && Mass > MaxSBottomMass)   // sbottom
+               MaxSBottomMass = Mass;
+            if(idMc[i] == 1000022)   // lightest neutralino
+               MaxNeutralinoMass = Mass;
+         }
+
+         QualityMonitoring2DHistograms["HSBottomMassVsNeutralinoMass"]->Fill(MaxSBottomMass, MaxNeutralinoMass);
+      }
+
+      // cout << "CaloJet Count = " << nAK5Jet << endl;
+      // cout << "PFJet Count = " << nAK5PFPUcorrJet << endl;
+      // cout << "PU count = " << nPU[0] << endl;
+
+      // MC Stuff!  W decay count
+      int WENuCount = 0;
+      int WMuNuCount = 0;
+      int WTauNuCount = 0;
+      int WJJCount = 0;
+      if(_isData == false)
+      {
+         for(int i = 0; i < nMc; i++)
+         {
+            if(mothMc[i] < 0)
+               continue;
+            if(idMc[mothMc[i]] != 24 && idMc[mothMc[i]] != -24)
+               continue;
+
+            if(idMc[i] == 11 || idMc[i] == -11)
+               WENuCount = WENuCount + 1;
+            if(idMc[i] == 13 || idMc[i] == -13)
+               WMuNuCount = WMuNuCount + 1;
+            if(idMc[i] == 15 || idMc[i] == -15)
+               WTauNuCount = WTauNuCount + 1;
+            if(idMc[i] >= 1 && idMc[i] <= 6)
+               WJJCount = WJJCount + 1;
+            if(idMc[i] >= -6 && idMc[i] <= -1)
+               WJJCount = WJJCount + 1;
+         }
+      }
+
       // Check HLT bits for the event!!
       reloadTriggerMask(true);
 
       bool PassingHLTrigger = hasPassedHLT();   // not sure which bits to use yet!!!!!
+      PassingHLTrigger = true;
 
       bool failHcal2011Filter = false;    // not in 41X MC!!!
+      if(_isData == true)
+         failHcal2011Filter = fail2011Filter;
 
       if(PassingHLTrigger == true)
       {
@@ -229,6 +282,8 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
       FillPFJet(Messenger);
       FillPV(Messenger);
       FillMET(Messenger);
+      FillPhoton(Messenger);
+      Messenger.Rho = rhoFastjet;
       Messenger.PassHLT = PassingHLTrigger;
       Messenger.PassNoiseFilter = !failHcal2011Filter;
       Messenger.PassCaloJetID = AllCaloJetsPassingID;
@@ -262,6 +317,9 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
       Messenger.PassSingleMu30 = CheckHLTBit("HLT_Mu30_");
       Messenger.PassSingleMu40 = CheckHLTBit("HLT_Mu40_");
       Messenger.PassSingleMu100 = CheckHLTBit("HLT_Mu100_");
+      Messenger.PassR014MR150 = CheckHLTBit("HLT_R014_MR150_");
+      Messenger.PassR020MR150 = CheckHLTBit("HLT_R020_MR150_");
+      Messenger.PassR025MR150 = CheckHLTBit("HLT_R025_MR150_");
       Messenger.PassR020MR500 = CheckHLTBit("HLT_R020_MR500_");
       Messenger.PassR020MR550 = CheckHLTBit("HLT_R020_MR550_");
       Messenger.PassR023MR550 = CheckHLTBit("HLT_R023_MR550_");
@@ -286,6 +344,80 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
       Messenger.PassMu13Mu8 = CheckHLTBit("HLT_Mu13_Mu8_");
       Messenger.PassMu8EleL17 = CheckHLTBit("HLT_Mu8_Ele17_CaloIdL_");
       Messenger.PassMu17EleL8 = CheckHLTBit("HLT_Mu17_Ele8_CaloIdL_");
+
+      Messenger.PassMET65 = CheckHLTBit("HLT_MET65_");
+      Messenger.PassMET100 = CheckHLTBit("HLT_MET100_");
+      Messenger.PassMET120 = CheckHLTBit("HLT_MET120_");
+      Messenger.PassMET200 = CheckHLTBit("HLT_MET200_");
+      Messenger.PassMET400 = CheckHLTBit("HLT_MET400_");
+
+      Messenger.WENuCount = WENuCount;
+      Messenger.WMuNuCount = WMuNuCount;
+      Messenger.WTauNuCount = WTauNuCount;
+      Messenger.WJJCount = WJJCount;
+      
+      // MC Stuff!  SMSs
+      if(_isData == false)
+      {
+         double MaxNeutralinoMass = 0;
+
+         for(int i = 0; i < nMc; i++)
+         {
+            double Mass = sqrt(energyMc[i] * energyMc[i] - pMc[i] * pMc[i]);
+
+            if(idMc[i] == 1000005)   // sbottom
+               Messenger.SBMass1 = Mass;
+            if(idMc[i] == -1000005)   // sbottom
+               Messenger.SBMass2 = Mass;
+            if(idMc[i] == 1000022)   // lightest neutralino
+               MaxNeutralinoMass = Mass;
+         }
+
+         Messenger.ChiMass = MaxNeutralinoMass;
+
+         /*
+         if(commentLHE != 0 && commentLHE->size() > 0)
+         {
+            string model = (*commentLHE)[0];
+            for(int i = 0; i < (int)model.size(); i++)
+               if(model[i] == '_')
+                  model[i] = ' ';
+
+            stringstream modelstr(model);
+
+            string temp;
+            modelstr >> temp >> temp >> temp;
+            modelstr >> Messenger.m0 >> Messenger.m12;
+         }
+
+         Messenger.NCTEQ66 = nCTEQ66;
+         for(int i = 0; i < nCTEQ66; i++)
+            Messenger.WCTEQ66[i] = wCTEQ66[i];
+         Messenger.NMRST2006NNLO = nMRST2006NNLO;
+         for(int i = 0; i < nMRST2006NNLO; i++)
+            Messenger.WMRST2006NNLO[i] = wMRST2006NNLO[i];
+         Messenger.NNNPDF10100 = nNNPDF10100;
+         for(int i = 0; i < nNNPDF10100; i++)
+            Messenger.WNNPDF10100[i] = wNNPDF10100[i];
+         */
+
+         for(int i = 0; i < nMc; i++)
+         {
+            if(idMc[i] == 1000005)   // sbottom
+            {
+               Messenger.SB1PT = pMc[i] / cosh(etaMc[i]);
+               Messenger.SB1Eta = etaMc[i];
+               Messenger.SB1Phi = phiMc[i];
+            }
+            if(idMc[i] == -1000005)   // sbottom
+            {
+               Messenger.SB2PT = pMc[i] / cosh(etaMc[i]);
+               Messenger.SB2Eta = etaMc[i];
+               Messenger.SB2Phi = phiMc[i];
+            }
+         }
+      }
+
       outTree->Fill();
 
       bool PassBaselineCalo = PassingHLTrigger && !failHcal2011Filter && AllCaloJetsPassingID && HasTwoCaloJets60;
@@ -319,11 +451,19 @@ void LQ3Analysis::Loop(string outFileName, int start, int stop)
          if(etaAK5Jet[i] > 3 || etaAK5Jet[i] < -3)   continue;
          if(CheckCaloJetID(i) == false)              continue;
 
+         /*
          if(caloJetPassTCHEL(i) == true)
             NumberOfCaloJetTCHEL = NumberOfCaloJetTCHEL + 1;
          if(caloJetPassTCHET(i) == true)
             NumberOfCaloJetTCHET = NumberOfCaloJetTCHET + 1;
          if(caloJetPassSSVHEM(i) == true)
+            NumberOfCaloJetSSVHEM = NumberOfCaloJetSSVHEM + 1;
+         */
+         if(trackCountingHighEffBJetTagsAK5Jet[i] > 1.7)
+            NumberOfCaloJetTCHEL = NumberOfCaloJetTCHEL + 1;
+         if(trackCountingHighEffBJetTagsAK5Jet[i] > 10.2)
+            NumberOfCaloJetTCHET = NumberOfCaloJetTCHET + 1;
+         if(simpleSecondaryVertexHighEffBJetTagsAK5Jet[i] > 1.74)
             NumberOfCaloJetSSVHEM = NumberOfCaloJetSSVHEM + 1;
       }
 
@@ -735,6 +875,9 @@ map<string, TH2D *> LQ3Analysis::GenerateQM2DHistograms()
    Histograms.insert(pair<string, TH2D *>("HProcessedEvents",
       new TH2D("HProcessedEvents", "Number of events processed", 1, -0.5, 0.5, 1, -0.5, 0.5)));
 
+   Histograms.insert(pair<string, TH2D *>("HSBottomMassVsNeutralinoMass",
+      new TH2D("HSBottomMassVsNeutralinoMass", "~b vs. ~#chi1;~b;~#chi1", 400, 0.0, 2000.0, 400, 0.0, 2000.0)));
+
    Histograms.insert(pair<string, TH2D *>("HCaloMRStarVsRStar",
       new TH2D("HCaloMRStarVsRStar", "MRStar vs. RStar from calo system", 100, 0, 1500, 100, 0, 1.5)));
    Histograms.insert(pair<string, TH2D *>("HCaloMRStarVsRStarTCHEL",
@@ -896,8 +1039,8 @@ void LQ3Analysis::QMFillPFJet(map<string, TH1D *> &QM1DHistograms, map<string, T
          continue;
 
       QM1DHistograms["HPFJetPT"]->Fill(PT);
-      QM1DHistograms["HPFJetEta"]->Fill(etaAK5PFJet[i]);
-      QM1DHistograms["HPFJetPhi"]->Fill(phiAK5PFJet[i]);
+      QM1DHistograms["HPFJetEta"]->Fill(etaAK5PFPUcorrJet[i]);
+      QM1DHistograms["HPFJetPhi"]->Fill(phiAK5PFPUcorrJet[i]);
    }
 }
 //---------------------------------------------------------------------------
@@ -1072,6 +1215,8 @@ void LQ3Analysis::QMFillPFRazor(map<string, TH1D *> &QM1DHistograms, map<string,
 //---------------------------------------------------------------------------
 bool LQ3Analysis::CheckCaloJetID(int Index)
 {
+   return true;   // not in the tree....
+
    // pure09, loose, 2011 Mar. 9
    if(etaAK5Jet[Index] < 3 && etaAK5Jet[Index] > -3)
    {
@@ -1088,6 +1233,8 @@ bool LQ3Analysis::CheckCaloJetID(int Index)
 //---------------------------------------------------------------------------
 bool LQ3Analysis::CheckPFJetID(int Index)
 {
+   return true;   // not there....
+
    // loose jet ID, 2011 Mar. 9
    if(neutralHadronEnergyAK5PFPUcorrJet[Index] / energyAK5PFPUcorrJet[Index] >= 0.99)
       return false;
@@ -1197,7 +1344,8 @@ vector<MuonCandidate> LQ3Analysis::MakeMuonCandidates()
          vertexXMuon[i], vertexYMuon[i], vertexZMuon[i],
          pxMuon[i], pyMuon[i], pzMuon[i]);
       Candidate.Isolation = sumPt03Muon[i];
-      Candidate.CombinedIsolation = sumPt03Muon[i] + emEt03Muon[i] + hadEt03Muon[i];
+      Candidate.CombinedIsolation = sumPt03Muon[i] + emEt03Muon[i] + hadEt03Muon[i]
+         - rhoFastjet * TMath::Pi() * 0.3 * 0.3;
 
       Candidate.Eta = etaMuon[i];
       Candidate.Phi = phiMuon[i];
@@ -1210,6 +1358,21 @@ vector<MuonCandidate> LQ3Analysis::MakeMuonCandidates()
       Candidate.PassMuonID = muonPassTight(i);
       Candidate.PassMuonTight = muonPassTight(i);
       Candidate.PassMuonLoose = muonPassLoose(i);
+
+      Candidate.TrackIso03 = sumPt03Muon[i];
+      Candidate.EcalIso03 = emEt03Muon[i];
+      Candidate.HcalIso03 = hadEt03Muon[i];
+      Candidate.TrackCount03 = nTrk03Muon[i];
+      Candidate.JetCount03 = nJets03Muon[i];
+      Candidate.TrackIso05 = sumPt05Muon[i];
+      Candidate.EcalIso05 = emEt05Muon[i];
+      Candidate.HcalIso05 = hadEt05Muon[i];
+      Candidate.TrackCount05 = nTrk05Muon[i];
+      Candidate.JetCount05 = nJets05Muon[i];
+      Candidate.EMS9 = emS9Muon[i];
+      Candidate.HadS9 = hadS9Muon[i];
+      Candidate.EcalExpDepo = EcalExpDepoMuon[i];
+      Candidate.HcalExpDepo = HcalExpDepoMuon[i];
    }
 
    return MuonCandidates;
@@ -1238,8 +1401,8 @@ vector<ElectronCandidate> LQ3Analysis::MakeElectronCandidates()
       Candidate.SuperClusterEtaWidth = etaWidthSC[SuperClusterIndex];
       Candidate.SuperClusterPhi = phiSC[SuperClusterIndex];
       Candidate.SuperClusterPhiWidth = phiWidthSC[SuperClusterIndex];
-      Candidate.SuperClusterHcalTowerSumEt03 =
-         hcalTowerSumEtConeDR03SC[SuperClusterIndex];
+      // Candidate.SuperClusterHcalTowerSumEt03 =
+      //    hcalTowerSumEtConeDR03SC[SuperClusterIndex];
       Candidate.SuperClusterSigmaIEtaIEta = covIEtaIEtaSC[SuperClusterIndex];
 
       Candidate.MissingHits = trackLostHitsTrack[TrackIndex];
@@ -1251,6 +1414,8 @@ vector<ElectronCandidate> LQ3Analysis::MakeElectronCandidates()
       Candidate.HcalIsolation = dr03HcalTowerSumEtEle[i];
       Candidate.TrackIsolation = dr03TkSumPtEle[i];
       Candidate.EcalIsolation = dr03EcalRecHitSumEtEle[i];
+      Candidate.CombinedIsolation = dr03HcalTowerSumEtEle[i] + dr03TkSumPtEle[i] + dr03EcalRecHitSumEtEle[i]
+         - rhoFastjet * TMath::Pi() * 0.3 * 0.3;
       Candidate.HOverE = hOverEEle[i];
       Candidate.Phi = phiEle[i];
       Candidate.Eta = etaEle[i];
@@ -1260,7 +1425,7 @@ vector<ElectronCandidate> LQ3Analysis::MakeElectronCandidates()
       Candidate.Py = pyEle[i];
       Candidate.Pz = pzEle[i];
       Candidate.Charge = chargeEle[i];
-         
+
       double CombinedRelativeIsolation = (Candidate.HcalIsolation
          + Candidate.EcalIsolation + Candidate.TrackIsolation) / Candidate.PT;
 
@@ -1320,6 +1485,7 @@ void LQ3Analysis::FillTopElectrons(vector<ElectronCandidate> &Candidates, LQ3Out
    M.GoodElectronCount80 = 0;
 
    multimap<double, int, greater<double> > GoodElectronIndices;
+   multimap<double, int, greater<double> > AllElectronIndices;
    for(int i = 0; i < (int)Candidates.size(); i++)
    {
       if(Candidates[i].PT < 20)
@@ -1336,6 +1502,7 @@ void LQ3Analysis::FillTopElectrons(vector<ElectronCandidate> &Candidates, LQ3Out
       if(Candidates[i].PassWP80 == true)
          M.GoodElectronCount80 = M.GoodElectronCount80 + 1;
 
+      AllElectronIndices.insert(pair<double, int>(Candidates[i].PT, i));
       if(Candidates[i].PassWP95 == false)
          continue;
       GoodElectronIndices.insert(pair<double, int>(Candidates[i].PT, i));
@@ -1345,6 +1512,10 @@ void LQ3Analysis::FillTopElectrons(vector<ElectronCandidate> &Candidates, LQ3Out
    for(multimap<double, int>::iterator iter = GoodElectronIndices.begin();
       iter!= GoodElectronIndices.end(); iter++)
       GoodElectrons.push_back(iter->second);
+   vector<int> AllElectrons;
+   for(multimap<double, int>::iterator iter = AllElectronIndices.begin();
+      iter!= AllElectronIndices.end(); iter++)
+      AllElectrons.push_back(iter->second);
 
    M.GoodElectronCount = GoodElectrons.size();
    if(GoodElectrons.size() > 0)   M.Electrons[0] = Candidates[GoodElectrons[0]];
@@ -1357,6 +1528,18 @@ void LQ3Analysis::FillTopElectrons(vector<ElectronCandidate> &Candidates, LQ3Out
    if(GoodElectrons.size() > 7)   M.Electrons[7] = Candidates[GoodElectrons[7]];
    if(GoodElectrons.size() > 8)   M.Electrons[8] = Candidates[GoodElectrons[8]];
    if(GoodElectrons.size() > 9)   M.Electrons[9] = Candidates[GoodElectrons[9]];
+
+   M.AllElectronCount = AllElectrons.size();
+   if(AllElectrons.size() > 0)   M.AllElectrons[0] = Candidates[AllElectrons[0]];
+   if(AllElectrons.size() > 1)   M.AllElectrons[1] = Candidates[AllElectrons[1]];
+   if(AllElectrons.size() > 2)   M.AllElectrons[2] = Candidates[AllElectrons[2]];
+   if(AllElectrons.size() > 3)   M.AllElectrons[3] = Candidates[AllElectrons[3]];
+   if(AllElectrons.size() > 4)   M.AllElectrons[4] = Candidates[AllElectrons[4]];
+   if(AllElectrons.size() > 5)   M.AllElectrons[5] = Candidates[AllElectrons[5]];
+   if(AllElectrons.size() > 6)   M.AllElectrons[6] = Candidates[AllElectrons[6]];
+   if(AllElectrons.size() > 7)   M.AllElectrons[7] = Candidates[AllElectrons[7]];
+   if(AllElectrons.size() > 8)   M.AllElectrons[8] = Candidates[AllElectrons[8]];
+   if(AllElectrons.size() > 9)   M.AllElectrons[9] = Candidates[AllElectrons[9]];
 }
 //---------------------------------------------------------------------------
 void LQ3Analysis::FillCaloJet(LQ3OutputRecord &M)
@@ -1389,16 +1572,16 @@ void LQ3Analysis::FillCaloJet(LQ3OutputRecord &M)
       M.CaloJetPhi[CurrentCount] = phiAK5Jet[iter->second];
       M.CaloJetCSVTag[CurrentCount] =
          combinedSecondaryVertexBJetTagsAK5Jet[iter->second];
-      M.CaloJetCSVMTag[CurrentCount] =
-         combinedSecondaryVertexMVABJetTagsAK5Jet[iter->second];
+      // M.CaloJetCSVMTag[CurrentCount] =
+      //    combinedSecondaryVertexMVABJetTagsAK5Jet[iter->second];
       M.CaloJetTCHPTag[CurrentCount] =
          trackCountingHighPurBJetTagsAK5Jet[iter->second];
       M.CaloJetTCHETag[CurrentCount] =
          trackCountingHighEffBJetTagsAK5Jet[iter->second];
-      M.CaloJetProbabilityTag[CurrentCount] =
-         jetProbabilityBJetTagsAK5Jet[iter->second];
-      M.CaloJetBProbabilityTag[CurrentCount] =
-         jetBProbabilityBJetTagsAK5Jet[iter->second];
+      // M.CaloJetProbabilityTag[CurrentCount] =
+      //    jetProbabilityBJetTagsAK5Jet[iter->second];
+      // M.CaloJetBProbabilityTag[CurrentCount] =
+      //    jetBProbabilityBJetTagsAK5Jet[iter->second];
       M.CaloJetSSVHETag[CurrentCount] =
          simpleSecondaryVertexHighEffBJetTagsAK5Jet[iter->second];
       M.CaloJetSSVHPTag[CurrentCount] =
@@ -1438,16 +1621,16 @@ void LQ3Analysis::FillPFJet(LQ3OutputRecord &M)
       M.PFJetPhi[CurrentCount] = phiAK5PFPUcorrJet[iter->second];
       M.PFJetCSVTag[CurrentCount] =
          combinedSecondaryVertexBJetTagsAK5PFPUcorrJet[iter->second];
-      M.PFJetCSVMTag[CurrentCount] =
-         combinedSecondaryVertexMVABJetTagsAK5PFPUcorrJet[iter->second];
+      // M.PFJetCSVMTag[CurrentCount] =
+      //    combinedSecondaryVertexMVABJetTagsAK5PFPUcorrJet[iter->second];
       M.PFJetTCHPTag[CurrentCount] =
          trackCountingHighPurBJetTagsAK5PFPUcorrJet[iter->second];
       M.PFJetTCHETag[CurrentCount] =
          trackCountingHighEffBJetTagsAK5PFPUcorrJet[iter->second];
-      M.PFJetProbabilityTag[CurrentCount] =
-         jetProbabilityBJetTagsAK5PFPUcorrJet[iter->second];
-      M.PFJetBProbabilityTag[CurrentCount] =
-         jetBProbabilityBJetTagsAK5PFPUcorrJet[iter->second];
+      // M.PFJetProbabilityTag[CurrentCount] =
+      //    jetProbabilityBJetTagsAK5PFPUcorrJet[iter->second];
+      // M.PFJetBProbabilityTag[CurrentCount] =
+      //    jetBProbabilityBJetTagsAK5PFPUcorrJet[iter->second];
       M.PFJetSSVHETag[CurrentCount] =
          simpleSecondaryVertexHighEffBJetTagsAK5PFPUcorrJet[iter->second];
       M.PFJetSSVHPTag[CurrentCount] =
@@ -1483,6 +1666,58 @@ void LQ3Analysis::FillMET(LQ3OutputRecord &M)
    M.CaloMET[1] = pyMet[0];
    M.PFMET[0] = pxPFMet[0];
    M.PFMET[1] = pyPFMet[0];
+}
+//---------------------------------------------------------------------------
+void LQ3Analysis::FillPhoton(LQ3OutputRecord &M)
+{
+   if(nPho == 0)
+      return;
+
+   multimap<double, int, greater<double> > PhotonSorter;
+   for(int i = 0; i < nPho; i++)
+   {
+      double PT2 = pxPho[i] * pxPho[i] + pyPho[i] * pyPho[i];
+      PhotonSorter.insert(pair<double, int>(PT2, i));
+   }
+
+   int count = 0;
+   for(multimap<double, int, greater<double> >::iterator iter = PhotonSorter.begin();
+      iter != PhotonSorter.end(); iter++)
+   {
+      int index = iter->second;
+      int indexSC = superClusterIndexPho[index];
+
+      M.PhotonE[count] = energyPho[index];
+      M.PhotonPT[count] = sqrt(iter->first);
+      M.PhotonEta[count] = etaPho[index];
+      M.PhotonPhi[count] = phiPho[index];
+      M.PhotonFiducialFlag[count] = fiducialFlagsPho[index];
+      M.PhotonRecoFlag[count] = recoFlagsPho[index];
+      // M.PhotonHOverE[count] = hOverEPho[index];
+      M.PhotonTrackIsolation[count] = dr04TkSumPtPho[index];
+      M.PhotonHollowTrackIsolation[count] = dr04HollowTkSumPtPho[index];
+      M.PhotonEcalIsolation[count] = dr04EcalRecHitSumEtPho[index];
+      M.PhotonHcalIsolation[count] = dr04HcalTowerSumEtPho[index];
+      // M.PhotonIsolation[count] = photonIsoPho[index];
+      M.PhotonPixelSeed[count] = hasPixelSeedPho[index];
+      M.PhotonMatchedConversion[count] = hasMatchedConversionPho[index];
+
+      if(indexSC >= 0)
+      {
+         M.PhotonSigmaIEtaIEta[count] = sqrt(covIEtaIEtaSC[indexSC]);
+         M.PhotonR9[count] = e3x3SC[indexSC] / energySC[indexSC];
+         M.PhotonHOverE[count] = hOverESC[indexSC];
+         // M.PhotonEcalIsolation[count] = ecalRecHitSumEtConeDR04SC[indexSC];
+         // M.PhotonHcalIsolation[count] = hcalTowerSumEtConeDR04SC[indexSC];
+      }
+
+      count = count + 1;
+
+      if(count >= 10)
+         break;
+   }
+
+   M.PhotonCount = count;
 }
 //---------------------------------------------------------------------------
 
