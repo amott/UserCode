@@ -101,6 +101,7 @@ VecbosApp:  $(SRCDIR)VecbosApp.C \
 	$(OUTLIB)RedEleIDOptimTree.o \
 	$(OUTLIB)LQ3Helper.o \
 	$(OUTLIB)VBTFLeptEff.o \
+	$(OUTLIB)LQ3Analysis.o \
 	$(OUTLIB)SUSYNLO.o 	
 	$(CXX) $(CXXFLAGS) -o VecbosApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<
 # fix for 2012 data format
@@ -109,7 +110,6 @@ VecbosApp:  $(SRCDIR)VecbosApp.C \
 #	$(OUTLIB)SUSYMultiTop.o \
 #	$(OUTLIB)SUSYMultiB.o \
 #	$(OUTLIB)CreateWJetDataset.o \
-#	$(OUTLIB)LQ3Analysis.o \
 
 FindDuplicatedApp:  $(SRCDIR)FindDuplicatedApp.C \
 	$(OUTLIB)FindDuplicatedEvents.o 
