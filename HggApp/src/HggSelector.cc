@@ -179,6 +179,7 @@ void HggSelector::Loop(){
     if(jentry%500==0) cout << ">> Processing Entry " << jentry << "/" << nEntries << endl;
 
     nPU_ = inPU;
+    nVtxOut = nVtx;
     this->clear();
     if(!isData_) this->fillGenInfo();
     if(doMuMuGamma) this->fillMuMuGamma();
@@ -629,6 +630,7 @@ void HggSelector::setDefaults(){
   mPairNoCorr_=-1;
   genHiggsPt = -1;
   nPU_ = inPU;
+  nVtxOut = nVtx;
   evtWeight=1;
 }
 void HggSelector::clear(){
@@ -921,7 +923,8 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("mPairSmearCiC",&mPairSmearCiC);
 
   outTree->Branch("nPU",&nPU_);
-  
+  outTree->Branch("nVtx",&nVtxOut);
+
   outTree->Branch("runNumber",&runNumberOut);
   outTree->Branch("evtNumber",&evtNumberOut);
   outTree->Branch("lumiBlock",&lumiBlockOut);

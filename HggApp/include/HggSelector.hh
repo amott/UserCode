@@ -241,7 +241,7 @@ private:
   float energyGenPho2;
   
   float nPU_;
-
+  int nVtxOut;
   int lumiBlockOut;
   int runNumberOut;
   int evtNumberOut;
