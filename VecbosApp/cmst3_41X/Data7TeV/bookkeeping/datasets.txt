@@ -1,0 +1,13 @@
+     CMST3  LIST                                               ===>                                                        DATASET
+DoubleElectron.list                                                                                                        /DoubleElectron/Run2011A-PromptReco-v1/AOD
+DoubleMu.list                                                                                                              /DoubleMu/Run2011A-PromptReco-v1/AOD
+ElectronHad.list                                                                                                           /ElectronHad/Run2011A-PromptReco-v1/AOD
+Jet.list                                                                                                                   /Jet/Run2011A-PromptReco-v1/AOD /Jet/Run2011A-PromptReco-v2/AOD
+MuEG.list                                                                                                                  /MuEG/Run2011A-PromptReco-v1/AOD
+MuHad.list                                                                                                                 /MuHad/Run2011A-PromptReco-v1/AOD /MuHad/Run2011A-PromptReco-v2/AOD
+MultiJet.list                                                                                                              
+Photon.list                                                                                                                /Photon/Run2011A-PromptReco-v1/AOD /Photon/Run2011A-PromptReco-v2/AOD
+PhotonHad.list                                                                                                             /PhotonHad/Run2011A-PromptReco-v1/AOD        
+SingleElectron.list                                                                                                        /SingleElectron/Run2011A-PromptReco-v1/AOD
+SingleMu.list                                                                                                              /SingleMu/Run2011A-PromptReco-v1/AOD
+HT.list                                                                                                                    /HT/Run2011A-PromptReco-v1/AOD                                      
