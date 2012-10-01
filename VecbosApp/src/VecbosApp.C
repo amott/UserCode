@@ -169,11 +169,16 @@ int main(int argc, char* argv[]) {
     if (!strstr(Buffer,"#") && !(strspn(Buffer," ") == strlen(Buffer)))
       {
 	sscanf(Buffer,"%s",MyRootFile);
-	if(string(MyRootFile).find("eos") != std::string::npos) {
-	  theChain->Add("root:/"+TString(MyRootFile));
-        } else {
+	if(string(MyRootFile).find("eos") != std::string::npos)
+   {
+      if(string(MyRootFile).find("root:") == std::string::npos)
+         theChain->Add("root:/"+TString(MyRootFile));
+      else
+         theChain->Add(TString(MyRootFile));
+   }
+   else
 	  theChain->Add("rfio:"+TString(MyRootFile));
-	}
+
         // theChain->Add("root://castorcms/"+TString(MyRootFile));
 	//        theChain->Add(TString(MyRootFile));
 	std::cout << "chaining " << MyRootFile << std::endl;
