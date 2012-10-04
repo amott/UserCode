@@ -254,6 +254,7 @@ struct ReducedPhotonData{
   bool passPFCiC;
   int category;
   float idMVA;
+  int mother;
   float HoverE;
   float sieie;
   float dr03PFChargedIso;

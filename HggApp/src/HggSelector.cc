@@ -746,7 +746,8 @@ ReducedPhotonData HggSelector::getReducedData(VecbosPho* pho,TVector3 selVtx,int
   data.r9 = pho->SC.r9;
   data.passPFCiC = PhotonID->getIdCiCPF(pho,nVtx,rho,selVtxI); 
   data.category = (data.r9 < 0.94)+2*(fabs(data.etaSC) > 1.48); 
-  data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtxI);
+  data.idMVA = PhotonID->getIdMVA(pho,nVtx,rho,selVtxI);  
+  data.mother = pho->genMatch.idMother; 
   PhotonID->fillIsoVariables(pho,&data,nVtx,rho,selVtxI);
   if(debugSelector) cout << "DONE Filling Reduced Data" <<endl;
   return data;
