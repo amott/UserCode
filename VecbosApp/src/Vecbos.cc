@@ -315,6 +315,30 @@ void Vecbos::InitParameters() {
   endcaplimit = 3.0;
 }
 
+TLorentzVector Vecbos::GetJESCorrected(TLorentzVector p4jet, const char *ScaleDirection) {
+
+  float mass = p4jet.M();
+  float ptUnscaled = p4jet.Pt();
+
+  // estimate the uncertainty
+  jecUnc_PF->setJetEta(p4jet.Eta());
+  jecUnc_PF->setJetPt(ptUnscaled);
+
+  int scaleEnergy = 0;
+  if(TString(ScaleDirection).Contains("Up")) scaleEnergy = 1.0;
+  if(TString(ScaleDirection).Contains("Down")) scaleEnergy = -1.0;
+
+  // apply the uncertainty                                                                                                                             
+  float pt = ptUnscaled + scaleEnergy*jecUnc_PF->getUncertainty(true)*ptUnscaled;
+  float p = pt/fabs(sin(p4jet.Theta()));
+  float energy = sqrt(p*p+mass*mass);
+
+  TLorentzVector p4Scaled;
+  p4Scaled.SetPtEtaPhiE(pt,p4jet.Eta(),p4jet.Phi(),energy);
+
+  return p4Scaled;
+}
+
 vector<Jet> Vecbos::SortJet(vector<Jet> v){
   vector<Jet> sorted;
   vector<pair<double,int> > pT;

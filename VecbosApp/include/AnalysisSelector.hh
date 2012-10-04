@@ -7,15 +7,12 @@
 //   6 = At least one lepton
 
 #define AnalysisSelector 1
-
 #define isBaseline false
-
 #define isNoMETScaling true
-
 #define isJustScaling false
-
 #define isBtagCut false
-
 #define isSMS true
-
 #define isThreeBCut false
+#define is8TeV false
+#define JES -1
+#define isJESSystematic false

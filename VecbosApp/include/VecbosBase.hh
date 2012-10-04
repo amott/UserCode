@@ -61,6 +61,7 @@ public :
    Int_t           nHLT;
    Int_t           indexHLT[600];   //[nHLT]
    vector<string>  *nameHLT;
+   vector<string>  *commentLHE;
    Int_t           nTriggerPaths;
    Int_t           nTriggerObsPassing;
    Int_t           sizePassing[1200];   //[nTriggerPaths]
@@ -1074,6 +1075,7 @@ public :
    TBranch        *b_nHLT;   //!
    TBranch        *b_indexHLT;   //!
    TBranch        *b_nameHLT;   //!
+   TBranch        *b_commentLHE; //!
    TBranch        *b_nTriggerPaths;   //!
    TBranch        *b_nTriggerObsPassing;   //!
    TBranch        *b_sizePassing;   //!
@@ -2116,6 +2118,7 @@ void VecbosBase::Init(TTree *tree)
 
    // Set object pointer
    nameHLT = 0;
+   commentLHE=0;
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
@@ -2158,6 +2161,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("nHLT", &nHLT, &b_nHLT);
    fChain->SetBranchAddress("indexHLT", indexHLT, &b_indexHLT);
    fChain->SetBranchAddress("nameHLT", &nameHLT, &b_nameHLT);
+   fChain->SetBranchAddress("commentLHE", &commentLHE, &b_commentLHE);
    fChain->SetBranchAddress("nTriggerPaths", &nTriggerPaths, &b_nTriggerPaths);
    fChain->SetBranchAddress("nTriggerObsPassing", &nTriggerObsPassing, &b_nTriggerObsPassing);
    fChain->SetBranchAddress("sizePassing", sizePassing, &b_sizePassing);

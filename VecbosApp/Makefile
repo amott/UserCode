@@ -105,9 +105,9 @@ VecbosApp:  $(SRCDIR)VecbosApp.C \
 	$(OUTLIB)SUSYNLO.o 	
 	$(CXX) $(CXXFLAGS) -o VecbosApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<
 # fix for 2012 data format
+#	$(OUTLIB)SUSYMultiTop.o \
 #	$(OUTLIB)RazorDiPhoton.o \
 #	$(OUTLIB)RazorBoostedTop.o \
-#	$(OUTLIB)SUSYMultiTop.o \
 #	$(OUTLIB)SUSYMultiB.o \
 #	$(OUTLIB)CreateWJetDataset.o \
 
@@ -163,9 +163,9 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 #	$(OUTLIB)ThiagoAnalysis.o \
 #	$(OUTLIB)VecbosAnalysis.o   \
 # fix for 2012 data format
+#	$(OUTLIB)SUSYMultiTop.o \
 #	$(OUTLIB)RazorDiPhoton.o \
 #	$(OUTLIB)RazorBoostedTop.o \
-#	$(OUTLIB)SUSYMultiTop.o \
 #	$(OUTLIB)SUSYMultiB.o \
 #	$(OUTLIB)VecbosEESelection.o \
 #	$(OUTLIB)TopControlSample.o \

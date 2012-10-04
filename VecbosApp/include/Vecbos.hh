@@ -118,6 +118,8 @@ public:
   bool triggerMatch(float eta, float phi, float Dr);
   //get the value of the requested bits
   vector<int> getHLTOutput();
+  //Returns jet corrected for JES+/-1sigma 
+  TLorentzVector GetJESCorrected(TLorentzVector, const char *);
 
 private:
   struct JetConfig;
