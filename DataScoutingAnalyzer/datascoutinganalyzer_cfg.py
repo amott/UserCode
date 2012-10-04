@@ -49,7 +49,7 @@ process.options = cms.untracked.PSet(
     SkipEvent = cms.untracked.vstring('ProductNotFound'),
     )
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
@@ -121,11 +121,11 @@ process.correctedJets = cms.EDProducer('CaloJetCorrectionProducer',
                                        correctors = cms.vstring( 'ak5CaloJetsL2L3')
                                        )
 
-process.demo = cms.EDAnalyzer('DataScoutingAnalyzer',
-                              #jets = cms.InputTag("ak5CaloL1FastL2L3"),
-                              jets = cms.InputTag("ak5CaloJets"),
-                              jetCorrections = cms.string("ak5CaloL2L3Residual"),
-                              rho  = cms.InputTag("kt6CaloJets","rho"),
+process.demo = cms.EDAnalyzer('PFJetScoutingAnalyzer',
+                              #jets = cms.InputTag("ak5PFL1FastL2L3"),
+                              jets = cms.InputTag("ak5PFJets"),
+                              jetCorrections = cms.string("ak5PFL1FastL2L3Residual"),
+                              rho  = cms.InputTag("kt6PFJets","rho"),
                               jetThreshold = cms.double(20),
                               met = cms.InputTag("met"),
                               electrons = cms.InputTag(""),

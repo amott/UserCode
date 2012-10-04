@@ -12,6 +12,7 @@
 //
 // class declaration
 //
+template <typename jettype, typename mettype>
 class DataScoutingAnalyzer : public edm::EDAnalyzer {
    public:
       explicit DataScoutingAnalyzer(const edm::ParameterSet&);

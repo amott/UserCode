@@ -13,7 +13,7 @@
 //
 // Original Author:  Alex Mott
 //         Created:  Wed Sep  5 16:25:41 CEST 2012
-// $Id: DataScoutingAnalyzer.cc,v 1.4 2012/10/04 11:56:22 amott Exp $
+// $Id: DataScoutingAnalyzer.cc,v 1.5 2012/10/04 13:16:44 amott Exp $
 //
 //
 
@@ -32,12 +32,16 @@
 //objects
 //#include "DataFormats/JetReco/interface/JetCollection.h"
 #include "DataFormats/JetReco/interface/CaloJetCollection.h"
+#include "DataFormats/JetReco/interface/PFJetCollection.h"
 #include "DataFormats/JetReco/interface/Jet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/PFJet.h"
 //#include "DataFormats/METReco/interface/CaloMetCollection.h"
 #include "DataFormats/METReco/interface/MET.h"
 #include "DataFormats/METReco/interface/CaloMET.h"
 #include "DataFormats/METReco/interface/CaloMETCollection.h"
+#include "DataFormats/METReco/interface/PFMET.h"
+#include "DataFormats/METReco/interface/PFMETCollection.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/EgammaCandidates/interface/Electron.h"
 #include "DataFormats/EgammaCandidates/interface/ElectronIsolationAssociation.h"
@@ -62,7 +66,8 @@
 //
 // constructors and destructor
 //
-DataScoutingAnalyzer::DataScoutingAnalyzer(const edm::ParameterSet& iConfig):
+template <typename jettype, typename mettype>
+DataScoutingAnalyzer<jettype,mettype>::DataScoutingAnalyzer(const edm::ParameterSet& iConfig):
   tag_recoJet(iConfig.getParameter<edm::InputTag>("jets")),
   s_recoJetCorrector(iConfig.getParameter<std::string>("jetCorrections")),
   tag_recoRho(iConfig.getParameter<edm::InputTag>("rho")),  
@@ -78,7 +83,9 @@ DataScoutingAnalyzer::DataScoutingAnalyzer(const edm::ParameterSet& iConfig):
 }
 
 
-DataScoutingAnalyzer::~DataScoutingAnalyzer()
+
+template <typename jettype, typename mettype>
+DataScoutingAnalyzer<jettype,mettype>::~DataScoutingAnalyzer()
 {
  
    // do anything here that needs to be done at desctruction time
@@ -92,16 +99,17 @@ DataScoutingAnalyzer::~DataScoutingAnalyzer()
 //
 
 // ------------ method called for each event  ------------
+template <typename jettype, typename mettype>
 void
-DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+DataScoutingAnalyzer<jettype,mettype>::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace edm;
 
-  Handle<reco::CaloJetCollection> h_recoJet;
+  Handle<std::vector<jettype> > h_recoJet;
   const JetCorrector* corrector = JetCorrector::getJetCorrector (s_recoJetCorrector, iSetup);  
   //Handle<std::vector<reco::Jet> > h_recoJet;
   //Handle<std::vector<reco::MET> > h_recoMet;
-  Handle<reco::CaloMETCollection> h_recoMet;
+  Handle<std::vector<mettype> > h_recoMet;
   Handle<double> h_recoRho;
 
   //Handle<reco::Electron> h_recoElectrons;
@@ -113,9 +121,9 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   //iEvent.getByLabel(tag_recoElectrons,h_recoElectrons);
   //iEvent.getByLabel(tag_recoMuons,h_recoMuons);
 
-  Handle<reco::CaloJetCollection> h_dsJet;
-  Handle<reco::CaloMETCollection> h_dsMet;
-  Handle<reco::CaloMETCollection> h_dsMetClean;
+  Handle<std::vector<reco::CaloJet> > h_dsJet;
+  Handle<std::vector<reco::CaloMET> > h_dsMet;
+  Handle<std::vector<reco::CaloMET> > h_dsMetClean;
   Handle<double> h_dsRho;
   /*
   Handle<reco::Electron> h_dsElectrons;
@@ -194,7 +202,7 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   dsRho = *h_dsRho;
   recoRho = *h_recoRho;
   
-  reco::CaloJetCollection::const_iterator i_recoJet;
+  typename std::vector<jettype>::const_iterator i_recoJet;
   //std::vector<reco::Jet>::const_iterator i_recoJet;
   nRECOJets=0;
   for(i_recoJet = h_recoJet->begin(); i_recoJet != h_recoJet->end(); i_recoJet++){
@@ -208,7 +216,7 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     nRECOJets++;
   }
 
-  reco::CaloJetCollection::const_iterator i_dsJet;
+  std::vector<reco::CaloJet>::const_iterator i_dsJet;
   nDSJets=0;
   for(i_dsJet = h_dsJet->begin(); i_dsJet != h_dsJet->end(); i_dsJet++){
     //apply pileup correction
@@ -244,8 +252,9 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 
 
 // ------------ method called once each job just before starting event loop  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::beginJob()
+DataScoutingAnalyzer<jettype,mettype>::beginJob()
 {
   outputFile = new TFile(s_outputFile.c_str(),"RECREATE");
   outputTree = new TTree("DSComp","");
@@ -287,8 +296,9 @@ DataScoutingAnalyzer::beginJob()
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::endJob() 
+DataScoutingAnalyzer<jettype,mettype>::endJob() 
 {
   outputFile->cd();
   outputTree->Write();
@@ -296,32 +306,37 @@ DataScoutingAnalyzer::endJob()
 }
 
 // ------------ method called when starting to processes a run  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
+DataScoutingAnalyzer<jettype,mettype>::beginRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when ending the processing of a run  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
+DataScoutingAnalyzer<jettype,mettype>::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when starting to processes a luminosity block  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+DataScoutingAnalyzer<jettype,mettype>::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method called when ending the processing of a luminosity block  ------------
+template <typename jettype, typename mettype>
 void 
-DataScoutingAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+DataScoutingAnalyzer<jettype,mettype>::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
+template <typename jettype, typename mettype>
 void
-DataScoutingAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+DataScoutingAnalyzer<jettype,mettype>::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -329,5 +344,11 @@ DataScoutingAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descripti
   descriptions.addDefault(desc);
 }
 
+
+typedef DataScoutingAnalyzer<reco::CaloJet,reco::CaloMET> CaloScoutingAnalyzer;
+typedef DataScoutingAnalyzer<reco::PFJet,reco::CaloMET> PFJetScoutingAnalyzer;
+typedef DataScoutingAnalyzer<reco::PFJet,reco::PFMET> PFScoutingAnalyzer;
 //define this as a plug-in
-DEFINE_FWK_MODULE(DataScoutingAnalyzer);
+DEFINE_FWK_MODULE(CaloScoutingAnalyzer);
+DEFINE_FWK_MODULE(PFJetScoutingAnalyzer);
+DEFINE_FWK_MODULE(PFScoutingAnalyzer);
