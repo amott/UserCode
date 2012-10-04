@@ -4,6 +4,47 @@ process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
+process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+process.load("Configuration.StandardSequences.GeometryRecoDB_cff")
+process.load("Configuration.StandardSequences.Reconstruction_Data_cff")
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.GlobalTag.globaltag = 'GR_P_V41_AN1::All'
+
+process.load("HiggsAnalysis.HiggsToWW2e.metProducerSequence_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.btagProducerSequence_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.btagPFJetsProducerSequence_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.btagPFPUcorrJetsProducerSequence_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.btagPFNoPUJetsProducerSequence_cff")
+#process.load("HiggsAnalysis.HiggsToWW2e.btagJPTJetsProducerSequence_cff")
+process.load("WWAnalysis.Tools.chargedMetProducer_cfi")
+process.chargedMetProducer.collectionTag = "particleFlow"
+process.chargedMetProducer.vertexTag = "offlinePrimaryVertices"
+
+# --- noise filters ---
+process.load("HiggsAnalysis.HiggsToWW2e.METOptionalFilterFlags_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.jetProducerSequenceFastJet_cff")
+
+process.load('JetMETCorrections.Configuration.DefaultJEC_cff')
+
+# --- track sequences ---
+process.load("HiggsAnalysis.HiggsToWW2e.leptonLinkedTracks_cfi")
+
+# --- electron sequences ---
+process.load("HiggsAnalysis.HiggsToWW2e.electronIdSequence_cff")
+
+# --- pf isolation sequence ---
+process.load("HiggsAnalysis.HiggsToWW2e.leptonPFIsoSequence_cff")
+
+# --- calotowers sequence ---
+process.load("HiggsAnalysis.HiggsToWW2e.lowThrCaloTowers_cfi")
+
+# --- ECAL clusters merging in a unique collection ---
+process.load("HiggsAnalysis.HiggsToWW2e.electronAndPhotonSuperClusters_cff")
+process.load("HiggsAnalysis.HiggsToWW2e.seedBasicClusters_cff")
+
+# --- good vertex filter ---
+process.load("HiggsAnalysis.HiggsToWW2e.vertexFiltering_cff")
+
 process.options = cms.untracked.PSet(
     SkipEvent = cms.untracked.vstring('ProductNotFound'),
     )
@@ -64,10 +105,28 @@ process.source = cms.Source("PoolSource",
 )
 )
 
+ak5CaloL2Relative = cms.ESSource('LXXXCorrectionService',
+                                 era = cms.string('Jec11V12'),
+                                 section   = cms.string(''),
+                                 level     = cms.string('L2Relative'),
+                                 # the above 3 elements are needed only when the service is initialized from local txt files
+                                 algorithm = cms.string('AK5'),
+                                 # the 'algorithm' tag is also the name of the DB payload
+                                 useCondDB = cms.untracked.bool(True)
+                                 )
+
+
+process.correctedJets = cms.EDProducer('CaloJetCorrectionProducer',
+                                       src = cms.InputTag('ak5CaloJets'),
+                                       correctors = cms.vstring( 'ak5CaloJetsL2L3')
+                                       )
+
 process.demo = cms.EDAnalyzer('DataScoutingAnalyzer',
+                              #jets = cms.InputTag("ak5CaloL1FastL2L3"),
                               jets = cms.InputTag("ak5CaloJets"),
+                              jetCorrections = cms.string("ak5CaloL2L3Residual"),
                               rho  = cms.InputTag("kt6CaloJets","rho"),
-                              jetThreshold = cms.double(30),
+                              jetThreshold = cms.double(20),
                               met = cms.InputTag("met"),
                               electrons = cms.InputTag(""),
                               muons = cms.InputTag(""),
@@ -77,4 +136,4 @@ process.demo = cms.EDAnalyzer('DataScoutingAnalyzer',
 )
 
 
-process.p = cms.Path(process.demo)
+process.p = cms.Path(process.goodPrimaryVertices * process.metOptionalFilterSequence * process.pfIsolationAllSequence * process.ourJetSequenceDataReduced * process.demo)

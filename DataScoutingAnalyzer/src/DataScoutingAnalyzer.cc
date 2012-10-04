@@ -13,7 +13,7 @@
 //
 // Original Author:  Alex Mott
 //         Created:  Wed Sep  5 16:25:41 CEST 2012
-// $Id: DataScoutingAnalyzer.cc,v 1.2 2012/09/26 14:29:56 amott Exp $
+// $Id: DataScoutingAnalyzer.cc,v 1.3 2012/09/28 09:34:13 amott Exp $
 //
 //
 
@@ -149,6 +149,37 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   iEvent.getByLabel("hltActivityPhotonHcalIso",hcalIsoMap);
   iEvent.getByLabel("hltActivityPhotonHcalForHE",hforHEMap);
   */
+
+  //MET FILTERS
+  edm::Handle< bool > ECALTPFilter;
+  try { iEvent.getByLabel("EcalDeadCellEventFlagProducer", ECALTPFilter); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get bool: " << ECALTPFilter; }
+  ECALTPFilterFlag = *ECALTPFilter;
+
+  edm::Handle< bool > HBHENoiseFilterResult;
+  try { iEvent.getByLabel(edm::InputTag("HBHENoiseFilterResultProducer","HBHENoiseFilterResult"), HBHENoiseFilterResult); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get bool: " << HBHENoiseFilterResult; }
+  HBHENoiseFilterResultFlag = *HBHENoiseFilterResult;
+
+  edm::Handle< bool > hcalLaserEventFilter;
+  try { iEvent.getByLabel("hcalLaserEventFilter", hcalLaserEventFilter); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get bool: " << hcalLaserEventFilter; }
+  hcalLaserEventFilterFlag = *hcalLaserEventFilter;
+
+  edm::Handle< bool > eeBadScFilter;
+  try { iEvent.getByLabel("eeBadScFilter", eeBadScFilter); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get bool: " << eeBadScFilter; }
+  eeBadScFilterFlag = *eeBadScFilter;
+
+  edm::Handle< int > ECALDeadDRFilter;
+  try { iEvent.getByLabel("simpleDRFlagProducer","deadCellStatus", ECALDeadDRFilter); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get int: " << ECALDeadDRFilter; }
+  ECALDeadDRFilterFlag = *ECALDeadDRFilter;
+    
+  edm::Handle< int > ECALBoundaryDRFilter;
+  try { iEvent.getByLabel("simpleDRFlagProducer","boundaryStatus", ECALBoundaryDRFilter); }
+  catch ( cms::Exception& ex ) { edm::LogWarning("CmsMetFiller") << "Can't get int: " << ECALBoundaryDRFilter; }
+  ECALBoundaryDRFilterFlag = *ECALBoundaryDRFilter;
   
   //fill the tree
   
@@ -180,22 +211,24 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
   reco::CaloJetCollection::const_iterator i_dsJet;
   nDSJets=0;
   for(i_dsJet = h_dsJet->begin(); i_dsJet != h_dsJet->end(); i_dsJet++){
-    if(i_dsJet->pt() < jetThreshold) continue;
-    dsJetPt[nDSJets] = i_dsJet->pt();
+    //apply pileup correction
+    float pileupCorr = i_dsJet->jetArea()*dsRho;
+
+    if(i_dsJet->pt()-pileupCorr < jetThreshold) continue;
+    dsJetPt[nDSJets] = i_dsJet->pt()-pileupCorr;
     dsJetEta[nDSJets] = i_dsJet->eta();
     dsJetPhi[nDSJets] = i_dsJet->phi();
-    dsJetE[nDSJets] = i_dsJet->energy();
+    dsJetE[nDSJets] = i_dsJet->energy()-pileupCorr*cosh(i_dsJet->eta());
     dsJetFracHad[nDSJets] = i_dsJet->energyFractionHadronic();
 
     //do jet matching
     float bestdEoE = 9999;
     int bestIndex=-1;
     for( int iRECOJet=0; iRECOJet < nRECOJets; iRECOJet++){
-      if( reco::deltaR(i_dsJet->eta(),i_dsJet->phi(),recoJetEta[iRECOJet],recoJetPhi[iRECOJet])
-	  > 0.5) continue; //require DR match
+      if( reco::deltaR(i_dsJet->eta(),i_dsJet->phi(),recoJetEta[iRECOJet],recoJetPhi[iRECOJet])> 0.5) continue; //require DR match
       
       float dEoE = (i_dsJet->energy() - recoJetE[iRECOJet])/recoJetE[iRECOJet];
-      if(dEoE < 2 && dEoE > 0.5 && dEoE < bestdEoE){
+      if(dEoE < 4 && dEoE > 0.25 && dEoE < bestdEoE){
 	bestdEoE = dEoE;
 	bestIndex = iRECOJet;
       }
@@ -241,12 +274,21 @@ DataScoutingAnalyzer::beginJob()
   outputTree->Branch("recoMetPhi",&recoMetPhi);
   outputTree->Branch("recoMetCleanPt",&recoMetCleanPt);
   outputTree->Branch("recoMetCleanPhi",&recoMetCleanPhi);
+
+  outputTree->Branch("ECALTPFilterFlag",&ECALTPFilterFlag,"ECALTPFilterFlag/B");
+  outputTree->Branch("HBHENoiseFilterResultFlag",&HBHENoiseFilterResultFlag,"HBHENoiseFilterResultFlag/B");
+  outputTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlag,"hcalLaserEventFilterFlag/B");
+  outputTree->Branch("eeBadScFilterFlag",&eeBadScFilterFlag,"eeBadScFilterFlag/B");
+  outputTree->Branch("ECALDeadDRFilterFlag",&ECALDeadDRFilterFlag,"ECALDeadDRFilterFlag/I");
+  outputTree->Branch("ECALBoundaryDRFilterFlag",&ECALBoundaryDRFilterFlag,"ECALBoundaryDRFilterFlag/I");
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 DataScoutingAnalyzer::endJob() 
 {
+  outputFile->cd();
   outputTree->Write();
   outputFile->Close();
 }

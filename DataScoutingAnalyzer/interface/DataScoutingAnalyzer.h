@@ -40,6 +40,15 @@ class DataScoutingAnalyzer : public edm::EDAnalyzer {
   edm::InputTag tag_recoMuons;
   edm::InputTag tag_hcalNoise;
   std::string s_outputFile;
+
+  //Optional MET filters
+  // 1 means we KEEP the event
+  bool ECALTPFilterFlag;
+  bool HBHENoiseFilterResultFlag;
+  bool hcalLaserEventFilterFlag;
+  bool eeBadScFilterFlag;
+  int  ECALDeadDRFilterFlag;
+  int  ECALBoundaryDRFilterFlag;
   
   double jetThreshold;
 
