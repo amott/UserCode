@@ -13,7 +13,7 @@
 //
 // Original Author:  Alex Mott
 //         Created:  Wed Sep  5 16:25:41 CEST 2012
-// $Id: DataScoutingAnalyzer.cc,v 1.3 2012/09/28 09:34:13 amott Exp $
+// $Id: DataScoutingAnalyzer.cc,v 1.4 2012/10/04 11:56:22 amott Exp $
 //
 //
 
@@ -225,10 +225,12 @@ DataScoutingAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     float bestdEoE = 9999;
     int bestIndex=-1;
     for( int iRECOJet=0; iRECOJet < nRECOJets; iRECOJet++){
+      //std::cout << "DeltaR: " << reco::deltaR(i_dsJet->eta(),i_dsJet->phi(),recoJetEta[iRECOJet],recoJetPhi[iRECOJet]) << std::endl;
       if( reco::deltaR(i_dsJet->eta(),i_dsJet->phi(),recoJetEta[iRECOJet],recoJetPhi[iRECOJet])> 0.5) continue; //require DR match
       
-      float dEoE = (i_dsJet->energy() - recoJetE[iRECOJet])/recoJetE[iRECOJet];
-      if(dEoE < 4 && dEoE > 0.25 && dEoE < bestdEoE){
+      float dEoE = fabs(i_dsJet->energy() - recoJetE[iRECOJet])/recoJetE[iRECOJet];
+      //std::cout << "dEoE: " << dEoE << std::endl;
+      if(dEoE < 0.5 && dEoE < bestdEoE){
 	bestdEoE = dEoE;
 	bestIndex = iRECOJet;
       }
