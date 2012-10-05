@@ -150,7 +150,8 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)CandleCalib.o \
 	$(OUTLIB)LQ3Helper.o \
 	$(OUTLIB)VBTFLeptEff.o \
-	$(OUTLIB)SUSYNLO.o 	
+	$(OUTLIB)SUSYNLO.o 	\
+	$(OUTLIB)LQ3Analysis.o 
 #	$(OUTLIB)VecbosMuMuSelection.o \
 #	$(OUTLIB)LFJetControlSample.o \
 #	$(OUTLIB)CandleCalib_ee.o 
@@ -171,7 +172,6 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 #	$(OUTLIB)TopControlSample.o \
 #	$(OUTLIB)VecbosPFEESelection.o \
 #	$(OUTLIB)CreateWJetDataset.o \
-#	$(OUTLIB)LQ3Analysis.o \
 
 # analysis functions
 $(OUTLIB)EventShapeAnalysis.o: $(SRCDIR)EventShapeAnalysis.cc $(OUTLIB)Vecbos.o
