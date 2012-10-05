@@ -50,6 +50,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH2F.h>
 #include <TProfile.h>
 #include <TVector.h>
 #include <TLorentzVector.h>
@@ -219,6 +220,15 @@ protected:
   
   /// Creates a set of TLorentzVector close to another TLorentzVector by deltaR
   vector<TLorentzVector> CloseInEtaPhi(const vector<TLorentzVector>& set, const TLorentzVector& v, double maxDistance);
+
+  /// Compute the weight from tag&probe
+  float getOfflineEff(float pT, float eta, TString flavor);
+  /// Load the tag&probe histograms
+  void LoadTagAndProbe();
+  // tag&probe histograms
+  TH2F* histoSFmuons52;
+  TH2F* histoSFele52;
+
 
 #ifdef USECALOTOWERS
   // Internal functions for jet reclustering in the Vecbos code.

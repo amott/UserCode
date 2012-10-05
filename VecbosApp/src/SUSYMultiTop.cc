@@ -21,7 +21,7 @@ using namespace std;
 #include "CommonTools/include/Utils.hh"
 #include "CommonTools/include/LeptonIdBits.h"
 #include "CommonTools/include/TriggerMask.hh"
-#include "CommonTools/include/LumiReWeighting.h"
+#include "CommonTools/include/LumiReWeightingStandAlone.h"
 #include "SUSYMultiTop.hh"
 
 // to get PWD
@@ -30,7 +30,7 @@ using namespace std;
 SUSYMultiTop::SUSYMultiTop(TTree *tree, double weight) : Vecbos(tree) {
 
   char tmpSTRING[516];
-  getcwd(tmpSTRING);
+  getcwd(tmpSTRING,sizeof(tmpSTRING));
   std::string pwd(tmpSTRING);
   std::string fileWeight=pwd+"/BTagging/Weights.txt";
 
@@ -172,6 +172,9 @@ SUSYMultiTop::SUSYMultiTop(TTree *tree, bool goodRunLS, bool isData) : Vecbos(tr
     setJsonGoodRunList(goodRunGiasoneFile);
     fillRunLSMap();
   }
+
+  // load tag&probe histograms
+  //  if(!_isData()) LoadTagAndProbe(); 
 
 }
 
@@ -1255,6 +1258,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   double PFMT;
   double phiMETLept;
   double etaMETLept;
+  double wLep;
   double run;
   double evNum;
   double bx;
@@ -1402,6 +1406,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   outTree->Branch("MET", &MET, "MET/D");
   outTree->Branch("phiMETLept", &phiMETLept, "phiMETLept/D");
   outTree->Branch("etaMETLept", &etaMETLept, "etaMETLept/D");
+  outTree->Branch("wLep", &wLep, "wLep/D");
   outTree->Branch("ST", &ST, "ST/D");
   outTree->Branch("SLT", &SLT, "SLT/D");
   outTree->Branch("HT", &HT, "HT/D");
@@ -1496,13 +1501,9 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
   //Build PU reweighting class
   //2012
-  LumiReWeighting LumiWeights( "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/s7pileup60.root",
-					 "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/puRun2012AB.root",
-					 "pileup","pileup");
-  //2011
-  //  reweight::LumiReWeighting LumiWeights( "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/s6MCPileUp.root",
-  //                               "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/PUTarget.Full2011.160404-180252.root",
-  //			       "pileup","pileup");
+  reweight::LumiReWeighting LumiWeights( "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/s7pileup200.root",
+					 "/afs/cern.ch/user/e/emanuele/workspace/public/pileup/puRun2012_5100ipb_71.root",
+					 "hNPU","pileup");
 
   for (Long64_t jentry=start;  jentry<stop;jentry++) {
     Long64_t ientry = LoadTree(jentry);
@@ -1532,7 +1533,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
     if(_isData)reloadTriggerMask(runNumber);
     
     //PU reweighting                                                                                                                                 
-    if(!_isData)puW = LumiWeights.weightOOT(nPU[1]);
+    if(!_isData)puW = LumiWeights.weight(nPU[1]);
     else puW=1;
 
     Npassed_In += weightII;
@@ -1624,6 +1625,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	phiLept=phiMuon[j];
 	ptLept=muonPt;
 	tightMuonCounter++;
+	//wLep = getOfflineEff(muonPt, etaLept, "Muon");
       }
     }
 
@@ -1653,6 +1655,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	  phiLept=phiEle[k];
 	  ptLept=ElePt;
 	  Ele80Counter++;
+	  //wLep = getOfflineEff(ElePt, etaLept, "Electron");
 	}
      }
 
@@ -1823,7 +1826,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	   if(nGoodJets<20)JetTag[nGoodJets]=0;
 	 }
 	 //	 if(combinedSecondaryVertexMVABJetTagsAK5PFNoPUJet[n] > 0.679){
-	 if(pfJetPassCSVM(combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n]) {
+	 if(pfJetPassCSVM(combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n])) {
            nBTagJetsCSV++;
            if(nGoodJets<20)JetTagCSV[nGoodJets]=1;
          }else{

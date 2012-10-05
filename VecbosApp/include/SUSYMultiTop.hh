@@ -15,7 +15,7 @@
 #include "CommonTools/include/Utils.hh"
 #include "CommonTools/include/LeptonIdBits.h"
 #include "CommonTools/include/TriggerMask.hh"
-#include "CommonTools/include/LumiReWeighting.h"
+#include "CommonTools/include/LumiReWeightingStandAlone.h"
 
 using namespace std;
 

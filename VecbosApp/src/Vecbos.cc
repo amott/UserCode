@@ -3013,3 +3013,46 @@ int Vecbos::passPV(){
   }
   return i_sum_pt_max;
 }
+
+// load the tag&probe histograms
+void Vecbos::LoadTagAndProbe() {
+  TFile fileSFmuons52("/afs/cern.ch/work/e/emanuele/public/effsf/muon_scale_factors_52X.root");
+  histoSFmuons52 = (TH2F*)fileSFmuons52.Get("muonDATAMCratio")->Clone("effSFmuons52");
+  fileSFmuons52.Close();
+  TFile fileSFEle52("/afs/cern.ch/work/e/emanuele/public/effsf/electron_scale_factors_52X.root");
+  histoSFele52 = (TH2F*)fileSFEle52.Get("newhwwWP_ratio")->Clone("effSFele52");
+  fileSFEle52.Close();
+}
+
+// Correct mc efficiency by tag&probe data/mc comparison
+float Vecbos::getOfflineEff(float pT, float eta, TString flavor) {
+  TH2F* myH = histoSFele52;
+  if(flavor == "Muon") myH = histoSFmuons52;
+  else if(flavor != "Electron") {
+    cout << flavor << " is not a supported flavor. Choose between Electron and Muon." << endl;
+    cout << "Vecbos::getOfflineEff is returning weight = 1" << endl;
+    return 1.;
+  }
+
+  float theEff=-1.;
+
+  int   xBins = myH->GetXaxis()->GetNbins();
+  float xMin  = myH->GetXaxis()->GetBinLowEdge(1);
+  float xMax  = myH->GetXaxis()->GetBinUpEdge(xBins);
+  int   yBins = myH->GetYaxis()->GetNbins();
+  float yMin  = myH->GetYaxis()->GetBinLowEdge(1);
+  float yMax  = myH->GetYaxis()->GetBinUpEdge(yBins);
+  //  int theBin = myH->FindBin(pT, fabs(eta));  // 42X Clara's maps are pt(x);eta(y)
+  int theBin = myH->FindBin(fabs(eta), pT);
+  //  if (pT>xMin && pT<xMax && fabs(eta)>yMin && fabs(eta)<yMax) {
+  if (pT>yMin && pT<yMax && fabs(eta)>xMin && fabs(eta)<xMax) { 
+    theEff = myH->GetBinContent(theBin);
+  } else {
+    theEff = 1.;
+    //    cout << "pT = " << pT << ", eta = " << eta << ": pT or eta out of histo bounds. Put SF = 1" << endl;
+  }
+
+  // cout << "pT = " << pT << ", eta = " << eta << ", eff = " << theEff << endl;
+
+  return theEff;
+}
