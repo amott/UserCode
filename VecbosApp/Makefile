@@ -102,7 +102,7 @@ VecbosApp:  $(SRCDIR)VecbosApp.C \
 	$(OUTLIB)LQ3Helper.o \
 	$(OUTLIB)VBTFLeptEff.o \
 	$(OUTLIB)LQ3Analysis.o \
-	$(OUTLIB)SUSYMultiTop.o
+	$(OUTLIB)SUSYMultiTop.o \
 	$(OUTLIB)SUSYNLO.o 	
 	$(CXX) $(CXXFLAGS) -o VecbosApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<
 # fix for 2012 data format
@@ -151,7 +151,7 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)LQ3Helper.o \
 	$(OUTLIB)VBTFLeptEff.o \
 	$(OUTLIB)SUSYNLO.o 	\
-	$(OUTLIB)LQ3Analysis.o 
+	$(OUTLIB)LQ3Analysis.o \
 	$(OUTLIB)SUSYMultiTop.o
 #	$(OUTLIB)VecbosMuMuSelection.o \
 #	$(OUTLIB)LFJetControlSample.o \
