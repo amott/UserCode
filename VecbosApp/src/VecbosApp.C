@@ -123,6 +123,9 @@
 #if Application == 30
 #include <include/RazorDiMuB.hh>
 #endif
+#if Application == 31
+#include <include/RazorDMAnalysis.hh>
+#endif
 
 using namespace std;
 
@@ -444,8 +447,25 @@ int main(int argc, char* argv[]) {
     if(AnalysisSelector == 1 || AnalysisSelector == 2){
       // MU TRIGGERS 2012
       //      mask.push_back("160404-163869:HLT_IsoMu17_v");
+      
+      
+      //From Previos Version of Vecbos(Copied From Sagar's Copy)  
+      //Iso Mu
+      mask.push_back("1-163261:HLT_Mu15_v2");
+      mask.push_back("163262-167043:HLT_IsoMu17_v");
+      mask.push_back("167044-167913:HLT_IsoMu17_eta2p1_v");
+      mask.push_back("170053-172949:HLT_IsoMu20_v");
     }else if(AnalysisSelector == 3 || AnalysisSelector == 4){
       // ELE TRIGGERS 2012
+      
+      //From Previos Version of Vecbos(Copied From Sagar's Copy)
+      mask.push_back("HLT_Ele10_LW_L1R");                                                                                   
+      mask.push_back("HLT_Ele15_SW_L1R");
+      mask.push_back("HLT_Ele15_SW_CaloEleId_L1R");
+      mask.push_back("HLT_Ele17_SW_CaloEleId_L1R");
+      mask.push_back("HLT_Ele17_SW_TightEleId_L1R");
+      mask.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v2");                                                               
+      mask.push_back("HLT_Ele17_SW_TighterEleIdIsol_L1R_v3");
     }
     SUSYMultiTop vecbos(theChain, true, true);
     vecbos.setRequiredTriggers(mask);
@@ -714,9 +734,15 @@ int main(int argc, char* argv[]) {
   vecbos.SetWeight(double(weight));
   vecbos.Loop(string(outFileName), start, stop);
 #endif
+  
+#if Application == 31
+  RazorDMAnalysis vecbos(theChain, json, isData, isData);
+  vecbos.SetWeight(double(weight));
+  vecbos.Loop(string(outFileName), start, stop);
+#endif
 
   system("rm thisiswhyitcrashed*");
-
+  
   return 0;
 
 }
