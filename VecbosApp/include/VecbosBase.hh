@@ -1037,6 +1037,7 @@ public :
    Double_t        sumETriangleHBHENoise;
    Int_t           nHFPMT;
    Double_t        sumEHFPMT;
+   Int_t           METFlags;
 
    // List of branches
    TBranch        *b_nl1Technical;   //!
@@ -2051,6 +2052,7 @@ public :
    TBranch        *b_sumETriangleHBHENoise;   //!
    TBranch        *b_nHFPMT;   //!
    TBranch        *b_sumEHFPMT;   //!
+   TBranch        *b_METFlags;   //!
 
    VecbosBase(TTree *tree=0);
    virtual ~VecbosBase();
@@ -3137,6 +3139,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("sumETriangleHBHENoise", &sumETriangleHBHENoise, &b_sumETriangleHBHENoise);
    fChain->SetBranchAddress("nHFPMT", &nHFPMT, &b_nHFPMT);
    fChain->SetBranchAddress("sumEHFPMT", &sumEHFPMT, &b_sumEHFPMT);
+   fChain->SetBranchAddress("METFlags", &METFlags, &b_METFlags);
    Notify();
 }
 
