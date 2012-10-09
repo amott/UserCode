@@ -745,6 +745,9 @@ public :
    Float_t         thehpsTauDiscrByLooseIsolationPFTau[200];   //[nPFTau]
    Float_t         thehpsTauDiscrByMediumIsolationPFTau[200];   //[nPFTau]
    Float_t         thehpsTauDiscrByTightIsolationPFTau[200];   //[nPFTau]
+   Float_t         thehpsTauDiscrByLooseCombinedIsolationDBSumPtCorrPFTau[200];   //[nPFTau]
+   Float_t         thehpsTauDiscrByMediumCombinedIsolationDBSumPtCorrPFTau[200];   //[nPFTau]
+   Float_t         thehpsTauDiscrByTightCombinedIsolationDBSumPtCorrPFTau[200];   //[nPFTau]
    Float_t         thehpsTancTausDiscrByLeadingTrackFindingPFTau[200];   //[nPFTau]
    Float_t         thehpsTancTausDiscrByLeadingTrackPtCutPFTau[200];   //[nPFTau]
    Float_t         thehpsTancTausDiscrByLeadingPionPtCutPFTau[200];   //[nPFTau]
@@ -1760,6 +1763,9 @@ public :
    TBranch        *b_thehpsTauDiscrByLooseIsolationPFTau;   //!
    TBranch        *b_thehpsTauDiscrByMediumIsolationPFTau;   //!
    TBranch        *b_thehpsTauDiscrByTightIsolationPFTau;   //!
+   TBranch        *b_thehpsTauDiscrByLooseCombinedIsolationDBSumPtCorrPFTau;   //!
+   TBranch        *b_thehpsTauDiscrByMediumCombinedIsolationDBSumPtCorrPFTau;   //!
+   TBranch        *b_thehpsTauDiscrByTightCombinedIsolationDBSumPtCorrPFTau;   //!
    TBranch        *b_thehpsTancTausDiscrByLeadingTrackFindingPFTau;   //!
    TBranch        *b_thehpsTancTausDiscrByLeadingTrackPtCutPFTau;   //!
    TBranch        *b_thehpsTancTausDiscrByLeadingPionPtCutPFTau;   //!
@@ -2847,6 +2853,9 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("thehpsTauDiscrByLooseIsolationPFTau", thehpsTauDiscrByLooseIsolationPFTau, &b_thehpsTauDiscrByLooseIsolationPFTau);
    fChain->SetBranchAddress("thehpsTauDiscrByMediumIsolationPFTau", thehpsTauDiscrByMediumIsolationPFTau, &b_thehpsTauDiscrByMediumIsolationPFTau);
    fChain->SetBranchAddress("thehpsTauDiscrByTightIsolationPFTau", thehpsTauDiscrByTightIsolationPFTau, &b_thehpsTauDiscrByTightIsolationPFTau);
+   fChain->SetBranchAddress("thehpsTauDiscrByLooseCombinedIsolationDBSumPtCorrPFTau", thehpsTauDiscrByLooseCombinedIsolationDBSumPtCorrPFTau, &b_thehpsTauDiscrByLooseCombinedIsolationDBSumPtCorrPFTau);
+   fChain->SetBranchAddress("thehpsTauDiscrByMediumCombinedIsolationDBSumPtCorrPFTau", thehpsTauDiscrByMediumCombinedIsolationDBSumPtCorrPFTau, &b_thehpsTauDiscrByMediumCombinedIsolationDBSumPtCorrPFTau);
+   fChain->SetBranchAddress("thehpsTauDiscrByTightCombinedIsolationDBSumPtCorrPFTau", thehpsTauDiscrByTightCombinedIsolationDBSumPtCorrPFTau, &b_thehpsTauDiscrByTightCombinedIsolationDBSumPtCorrPFTau);
    fChain->SetBranchAddress("thehpsTancTausDiscrByLeadingTrackFindingPFTau", thehpsTancTausDiscrByLeadingTrackFindingPFTau, &b_thehpsTancTausDiscrByLeadingTrackFindingPFTau);
    fChain->SetBranchAddress("thehpsTancTausDiscrByLeadingTrackPtCutPFTau", thehpsTancTausDiscrByLeadingTrackPtCutPFTau, &b_thehpsTancTausDiscrByLeadingTrackPtCutPFTau);
    fChain->SetBranchAddress("thehpsTancTausDiscrByLeadingPionPtCutPFTau", thehpsTancTausDiscrByLeadingPionPtCutPFTau, &b_thehpsTancTausDiscrByLeadingPionPtCutPFTau);
