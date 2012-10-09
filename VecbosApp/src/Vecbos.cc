@@ -2958,7 +2958,7 @@ bool Vecbos::isPFIsolatedMuon(int muonIndex, bool CorrectingIsoforMuons) {
 
 
 
-/*
+
 bool Vecbos::isLooseTau(int iTau){
   if(abs(thehpsTauDiscrByTightElectronRejectionPFTau[iTau]-1.) < 0.0001 && 
      abs(thehpsTauDiscrByTightMuonRejectionPFTau[iTau]-1.) < 0.0001 &&
@@ -2994,7 +2994,7 @@ bool Vecbos::isTightTau(int iTau){
 
   return false;
 }
-*/
+
 //2012 good PV selection (returns highest-pV good vtx
 int Vecbos::passPV(){
   int i_sum_pt_max = -1;
