@@ -5,6 +5,7 @@ eval `scramv1 runtime -csh`
 cvs co -d VecbosApp UserCode/amott/VecbosApp
 cvs co -d VecbosApp/CommonTools UserCode/emanuele/CommonTools
 cvs co -d VecbosApp/EgammaAnalysisTools UserCode/emanuele/EgammaAnalysisTools
+cvs co -d VecbosApp/VecbosSamples UserCode/CITCommon/VecbosSamples
 cd VecbosApp
 source setup_fastjet_x64.sh
 cd EgammaAnalysisTools
