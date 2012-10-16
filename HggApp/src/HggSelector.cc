@@ -458,6 +458,15 @@ void HggSelector::Loop(){
     evtNumberOut = evtNumber;
     evtWeight = pileupWeight;
 
+    eeBadScFilterFlagOut         = eeBadScFilterFlag;
+    hcalLaserEventFilterFlagOut  = hcalLaserEventFilterFlag;
+    HBHENoiseFilterResultFlagOut = HBHENoiseFilterResultFlag;
+    isNotDeadEcalClusterOut      = isNotDeadEcalCluster;
+    trackerFailureFilterFlagOut  = trackerFailureFilterFlag;
+    CSCHaloFilterFlagOut         = CSCHaloFilterFlag;
+    drDeadOut                    = drDead; 
+    drBoundaryOut                = drBoundary;
+    ECALTPFilterFlagOut          = ECALTPFilterFlag;
 
     outTree->Fill();
   }//while(fChain...
@@ -780,6 +789,15 @@ void HggSelector::setBranchAddresses(){
   fChain->SetBranchAddress("evtNumber",&evtNumber);
   //fChain->SetBranchAddress("isRealData",&_isData);
   
+  fChain->SetBranchAddress("eeBadScFilterFlag",&eeBadScFilterFlag);
+  fChain->SetBranchAddress("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlag);
+  fChain->SetBranchAddress("HBHENoiseFilterResultFlag",&HBHENoiseFilterResultFlag);
+  fChain->SetBranchAddress("isNotDeadEcalCluster",&isNotDeadEcalCluster);
+  fChain->SetBranchAddress("trackerFailureFilterFlag",&trackerFailureFilterFlag);
+  fChain->SetBranchAddress("CSCHaloFilterFlag",&CSCHaloFilterFlag);
+  fChain->SetBranchAddress("drDead",&drDead);
+  fChain->SetBranchAddress("drBoundary",&drBoundary);
+  fChain->SetBranchAddress("ECALTPFilterFlag",&ECALTPFilterFlag);
 
  ///information for the vertex
   fChain->SetBranchAddress("nVtx",&nVtx);
@@ -866,6 +884,16 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("ptJet2PFCiC",&ptJet2PFCiC_,"ptJet2PFCiC");
   outTree->Branch("cosThetaLeadPFCiC",&cosThetaLeadPFCiC,"cosThetaLeadPFCiC/F");
   outTree->Branch("catPFCiC",&catPFCiC_,"catPFCiC/I");
+
+  outTree->Branch("eeBadScFilterFlag",&eeBadScFilterFlagOut);
+  outTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlagOut);
+  outTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlagOut);
+  outTree->Branch("isNotDeadEcalCluster",&isNotDeadEcalClusterOut);
+  outTree->Branch("trackerFailureFilterFlag",&trackerFailureFilterFlagOut);
+  outTree->Branch("CSCHaloFilterFlag",&CSCHaloFilterFlagOut);
+  outTree->Branch("drDead",&drDeadOut);
+  outTree->Branch("drBoundary",&drBoundaryOut);
+  outTree->Branch("ECALTPFilterFlag",&ECALTPFilterFlagOut);
 
   outTree->Branch("mPairCiC",&mPairCiC_,"mPairCiC/F");
   outTree->Branch("mPairNoCorrCiC",&mPairNoCorrCiC_,"mPairNoCorrCiC/F");

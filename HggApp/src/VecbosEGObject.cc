@@ -451,17 +451,19 @@ void VecbosPho::doGenMatch(VecbosBase* o){
   float dEoEBest = 9999;
   int indexGen = -1;
   for(int i=0;i<o->nMc;i++){  
-    if(!o->statusMc[i]==1) continue; //require status 1 particles
-    if(!o->idMc[i] == phoID) continue; //gen photon
+    if(!(o->statusMc[i]==1)) continue; //require status 1 particles
+    if(!(o->idMc[i] == phoID)) continue; //gen photon
     if(o->energyMc[i] < 1.) continue;
     if(DeltaR(SC.eta,o->etaMc[i],SC.phi,o->phiMc[i]) > maxDR) continue;
     float dEoE = fabs(finalEnergy-o->energyMc[i])/o->energyMc[i];
     if(dEoE > 1.) continue;
+
     if(dEoE < dEoEBest){
       dEoEBest = dEoE;
       indexGen = i;
     }
   }
+  
   genMatch.Init(o,indexGen);
 }
 
@@ -711,9 +713,23 @@ void VecbosGen::Init(VecbosBase* o, int i){
   status = o->statusMc[i];
   id     = o->idMc[i];
   indexMother = o->mothMc[i];
+  
   if(indexMother >=0 && indexMother < o->nMc){
     statusMother = o->statusMc[indexMother];
     idMother     = o->idMc[indexMother];
+    
+    if( id == idMother ){ //mother is the same particle: probably documentation line.
+      int indexMo_tmp = indexMother;
+      
+      for(int i=0;i<indexMother;i++) // find the true mother
+  	{
+	  indexMother = o->mothMc[indexMo_tmp];
+  	  idMother = o->idMc[indexMother];
+	  indexMo_tmp = indexMother;
+
+  	  if ( idMother != id ) break;
+  	}
+    }
   }else{
     statusMother = -1;
     idMother     =  0;

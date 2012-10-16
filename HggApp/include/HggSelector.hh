@@ -302,4 +302,24 @@ private:
   float pfMetPhi;
 
   float inPU;
+
+  bool eeBadScFilterFlagOut;
+  bool hcalLaserEventFilterFlagOut;
+  bool HBHENoiseFilterResultFlagOut;
+  bool isNotDeadEcalClusterOut;
+  bool trackerFailureFilterFlagOut;
+  bool CSCHaloFilterFlagOut;
+  bool drDeadOut; 
+  bool drBoundaryOut;
+  bool ECALTPFilterFlagOut;
+
+  bool eeBadScFilterFlag;
+  bool hcalLaserEventFilterFlag;
+  bool HBHENoiseFilterResultFlag;
+  bool isNotDeadEcalCluster;
+  bool trackerFailureFilterFlag;
+  bool CSCHaloFilterFlag;
+  bool drDead; 
+  bool drBoundary;
+  bool ECALTPFilterFlag;
 };

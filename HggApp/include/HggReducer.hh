@@ -215,6 +215,16 @@ private:
 
   float tcMet;
   float tcMetPhi;
+
+  bool eeBadScFilterFlag;
+  bool hcalLaserEventFilterFlag;
+  bool HBHENoiseFilterResultFlag;
+  bool isNotDeadEcalCluster;
+  bool trackerFailureFilterFlag;
+  bool CSCHaloFilterFlag;
+  bool drDead; 
+  bool drBoundary;
+  bool ECALTPFilterFlag;
 };
 #endif
 

@@ -156,6 +156,16 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
       std::cout << "[GoodRunLS]::Run " << lastRun << " LS " << lastLumi << " is OK" << std::endl;
     }    
 
+    eeBadScFilterFlag         = METFlags & (1 << 8);
+    hcalLaserEventFilterFlag  = METFlags & (1 << 7);
+    HBHENoiseFilterResultFlag = METFlags & (1 << 6);
+    isNotDeadEcalCluster      = METFlags & (1 << 5);
+    trackerFailureFilterFlag  = METFlags & (1 << 4);
+    CSCHaloFilterFlag         = METFlags & (1 << 3);
+    drDead                    = METFlags & (1 << 2); 
+    drBoundary                = METFlags & (1 << 1);
+    ECALTPFilterFlag          = METFlags & (1 << 0);
+    
     this->clearAll();
     this->fillVertexInfo();
 
@@ -714,6 +724,16 @@ outTree->Branch("evtNumber",&evtNumberO,"evtNumber/I");
  outTree->Branch("evtTime",&evtTime,"evtTime/I");
  outTree->Branch("isRealData",&_isData,"isRealData/I");
 
+ // MET Flags
+ outTree->Branch("eeBadScFilterFlag",&eeBadScFilterFlag,"eeBadScFilterFlag/B");
+ outTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlag,"hcalLaserEventFilterFlag/B");
+ outTree->Branch("HBHENoiseFilterResultFlag",&HBHENoiseFilterResultFlag,"HBHENoiseFilterResultFlag/B");
+ outTree->Branch("isNotDeadEcalCluster",&isNotDeadEcalCluster,"isNotDeadEcalCluster/B");
+ outTree->Branch("trackerFailureFilterFlag",&trackerFailureFilterFlag,"trackerFailureFilterFlag/B");
+ outTree->Branch("CSCHaloFilterFlag",&CSCHaloFilterFlag,"CSCHaloFilterFlag/B");
+ outTree->Branch("drDead",&drDead,"drDead/B");
+ outTree->Branch("drBoundary",&drBoundary,"drBoundary/B");
+ outTree->Branch("ECALTPFilterFlag",&ECALTPFilterFlag,"ECALTPFilterFlag/B");
 
  ///information for the vertex
  outTree->Branch("nVtx",&nVtx,"nVtx/I");

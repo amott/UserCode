@@ -1017,6 +1017,7 @@ public :
    Double_t        genWeight;
    Double_t        genAlphaQCD;
    Double_t        genAlphaQED;
+   Int_t           METFlags;
    Bool_t          failHPDHits;
    Bool_t          failHPDNoOtherHits;
    Bool_t          failMaxZeros;
@@ -2030,6 +2031,7 @@ public :
    TBranch        *b_genWeight;   //!
    TBranch        *b_genAlphaQCD;   //!
    TBranch        *b_genAlphaQED;   //!
+   TBranch        *b_METFlags;   //!
    TBranch        *b_failHPDHits;   //!
    TBranch        *b_failHPDNoOtherHits;   //!
    TBranch        *b_failMaxZeros;   //!
@@ -3114,6 +3116,7 @@ void VecbosBase::Init(TTree *tree)
    fChain->SetBranchAddress("genWeight", &genWeight, &b_genWeight);
    fChain->SetBranchAddress("genAlphaQCD", &genAlphaQCD, &b_genAlphaQCD);
    fChain->SetBranchAddress("genAlphaQED", &genAlphaQED, &b_genAlphaQED);
+   fChain->SetBranchAddress("METFlags", &METFlags, &b_METFlags);
    fChain->SetBranchAddress("failHPDHits", &failHPDHits, &b_failHPDHits);
    fChain->SetBranchAddress("failHPDNoOtherHits", &failHPDNoOtherHits, &b_failHPDNoOtherHits);
    fChain->SetBranchAddress("failMaxZeros", &failMaxZeros, &b_failMaxZeros);
