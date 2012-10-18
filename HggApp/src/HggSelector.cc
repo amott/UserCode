@@ -887,7 +887,7 @@ void HggSelector::setupOutputTree(){
 
   outTree->Branch("eeBadScFilterFlag",&eeBadScFilterFlagOut);
   outTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlagOut);
-  outTree->Branch("hcalLaserEventFilterFlag",&hcalLaserEventFilterFlagOut);
+  outTree->Branch("HBHENoiseFilterResultFlag",&HBHENoiseFilterResultFlagOut);
   outTree->Branch("isNotDeadEcalCluster",&isNotDeadEcalClusterOut);
   outTree->Branch("trackerFailureFilterFlag",&trackerFailureFilterFlagOut);
   outTree->Branch("CSCHaloFilterFlag",&CSCHaloFilterFlagOut);
