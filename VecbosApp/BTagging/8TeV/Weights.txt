@@ -1,0 +1,11 @@
+
+tS 2.82 1
+tT 46.06 1
+tWDR 11.1773 1
+tbarS 1.57 1
+tbarT 24.5 1
+tbarWDR 11.1773 1
+DYJets10 860.5013 1
+DYJets50 3532.8149 1
+WJets 37509 1
+TTbarJets 225.1967 1
