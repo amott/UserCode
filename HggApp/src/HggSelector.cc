@@ -194,14 +194,14 @@ void HggSelector::Loop(){
     if(debugSelector) cout << "Starting Photon Loop:  " << nPho_ << endl;
     for(int iPho=0; iPho<nPho_;iPho++){ //redo the scaling and smearing if needed
       VecbosPho *pho = &(Photons_->at(iPho));
-      if(doScale){
+      if(doScale && isData_){
 	std::pair<float,float> dE = scale->getDEoE(*pho,runNumber);
 	pho->dEoE    = dE.first;
         pho->dEoEErr = 0;
         pho->scaledEnergy = pho->correctedEnergy*(pho->dEoE);
         pho->scaledEnergyError = pho->correctedEnergyError*((pho->dEoE+pho->dEoEErr));
       }
-      if(doSmear){
+      if(doSmear && !isData_){
 	pho->scaledEnergy = pho->correctedEnergy;
         pho->scaledEnergyError = pho->correctedEnergyError;
 	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
@@ -519,8 +519,6 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
   //int bestCat=-1;
   //float bestMass=-99;
   float highestPtSum=0; // is this the best way to select the pairs?
-  TRandom3 rng(0);
-
     for(int iPho1=0; iPho1<nPho_;iPho1++){
       if(photonMatchedElectron[iPho1] && doElectronVeto) continue;
       for(int iPho2=iPho1; iPho2<nPho_;iPho2++){
@@ -539,18 +537,8 @@ std::pair<int,int> HggSelector::getBestPairCiC(int smearShift,int scaleShift,boo
 	  pho1->finalEnergy = pho1->scaledEnergy + scaleShift*pho1->scaledEnergyError;
 	  pho2->finalEnergy = pho2->scaledEnergy + scaleShift*pho2->scaledEnergyError;
 
-	  float smear = pho1->dEoE + smearShift*pho1->dEoEErr;
-	  if(smear < 0) smear = 0;
-	  if(smearShift<-100) smear = 0;
-	  float rand=0;
-	  if(smear > 0) rand = rng.Gaus(0,smear);
-	  if(rand < -1) rand=-1;
-	  if(rand > 1E3) rand = 1E3;
-	  pho1->finalEnergy = pho1->finalEnergy*(1+rand);
-	  if(smear > 0) rand = rng.Gaus(0,smear);
-	  if(rand < -1) rand = -1;
-	  if(rand > 1E3) rand = 1E3;
-	  pho2->finalEnergy = pho2->finalEnergy*(1+rand);
+	  smearPhoton(pho1,smearShift);
+	  smearPhoton(pho2,smearShift);
 	}
 	bool CiC1,CiC2;
 	if(usePF){
@@ -577,7 +565,6 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
   std::pair<int,int> indices(-1,-1);
   float diPhoMVAMax=-99;
   float maxSumPt=-1;
-  TRandom3 rng(0);
   *mvaOut = -999.;
   for(int iPho1=0; iPho1<nPho_;iPho1++){
     if(photonMatchedElectron[iPho1] && doElectronVeto) continue;
@@ -597,19 +584,8 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
 	//apply scale shift	  
 	pho1->finalEnergy = pho1->scaledEnergy + scaleShift*pho1->scaledEnergyError;
 	pho2->finalEnergy = pho2->scaledEnergy + scaleShift*pho2->scaledEnergyError;
-	
-	float smear = pho1->dEoE + smearShift*pho1->dEoEErr;
-	if(smear < 0) smear = 0;
-	if(smearShift<-100) smear = 0;
-	float rand=0;
-	if(smear > 0) rand = rng.Gaus(0,smear);
-	if(rand < -1) rand=-1;
-	if(rand > 1E3) rand = 1E3;
-	pho1->finalEnergy = pho1->finalEnergy*(1+rand);
-	if(smear > 0) rand = rng.Gaus(0,smear);
-	if(rand < -1) rand = -1;
-	if(rand > 1E3) rand = 1E3;
-	pho2->finalEnergy = pho2->finalEnergy*(1+rand);
+	smearPhoton(pho1,smearShift);
+	smearPhoton(pho2,smearShift);
       }
       if(debugSelector) cout << "Getting Photon ID:" << endl;
       float mva1 = PhotonID->getIdMVA(pho1,nVtx,rho,selVtxI);
@@ -632,6 +608,18 @@ std::pair<int,int> HggSelector::getBestPair(float* mvaOut, int smearShift,int sc
   }// for(iPho1...
   
     return indices;
+}
+
+void HggSelector::smearPhoton(VecbosPho* pho,int smearShift){
+  TRandom3 rng(0);
+  float smear = pho->dEoE + smearShift*pho->dEoEErr;
+  if(smear < 0) smear = 0;
+  if(smearShift<-100) smear = 0;
+  float rand=0;
+  if(smear > 0) rand = rng.Gaus(0,smear);
+  if(rand < -1) rand=-1;
+  if(rand > 1E3) rand = 1E3;
+  pho->finalEnergy = pho->finalEnergy*(1+rand);
 }
 
 void HggSelector::setDefaults(){
@@ -1212,8 +1200,8 @@ float HggSelector::getDiPhoMVA(int indexPho1, int indexPho2, float mva1, float m
   if(debugSelector) cout << "selected Vertex: " << selectedVertex <<endl;  
 
   if(debugSelector){
-    std::cout << "pho1: " << pho1.finalEnergy << "  " << pho1.eta << "  " << std::endl;
-    std::cout << "pho2: " << pho2.finalEnergy << "  " << pho2.eta << "  " << std::endl;
+    std::cout << "pho1: " << pho1.finalEnergy << "  " << pho1.scaledEnergy << "  " << pho1.dEoE << "  " << pho1.eta << "  " << std::endl;
+    std::cout << "pho2: " << pho2.finalEnergy << "  " << pho2.scaledEnergy << "  " << pho2.dEoE << "  " << pho2.eta << "  " << std::endl;
   }
   TVector3 vtxPos(vtxX[selectedVertex],vtxY[selectedVertex],vtxZ[selectedVertex]);
 

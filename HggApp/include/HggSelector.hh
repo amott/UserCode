@@ -70,6 +70,8 @@ private:
   int applyScaleSmear;
   HggEnergyScale* smear;
 
+  void smearPhoton(VecbosPho*,int);
+
   //selection
   float leadPhoEtMin;
   float subleadPhoEtMin;
