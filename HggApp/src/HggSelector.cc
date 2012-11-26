@@ -79,8 +79,10 @@ int HggSelector::init(){
   this->setBranchAddresses();
   this->setupOutputTree();
   ReadConfig cfg;
-  if(cfg.read(configFile)!=0){
-    cout << "Error reading configuration file!";
+  int retcode = cfg.read(configFile);
+  if(retcode != 0){
+    cout << "Error reading configuration file!" <<std::endl
+	 << "Error Code: " << retcode << std::endl;
     valid = false;
     return -1;
   }
@@ -167,7 +169,10 @@ int HggSelector::init(){
 void HggSelector::Loop(){
   if(!valid) return;
 
-  this->init();
+  if(this->init()!=0){
+    std::cout << "ERROR INITIALIZING ... ABORTING!" <<std::endl;
+    return;
+  }
   this->setDefaults();
   cout << "Getting Entries ... "  << endl;
   Long64_t nEntries = fChain->GetEntries();
@@ -182,14 +187,13 @@ void HggSelector::Loop(){
     nVtxOut = nVtx;
     this->clear();
     if(!isData_) this->fillGenInfo();
-    if(doMuMuGamma) this->fillMuMuGamma();
-    
+    if(debugSelector) cout << "Setting Photon ID Vertices " << endl;
+    PhotonID->setVertices(nVtx,vtxX,vtxY,vtxZ);
+
     if(debugSelector) cout << "requiring triggers ... " << endl;
     trigger_ = this->requireTrigger();
 
     // give the photon ID maker the vertex collection for this event
-    if(debugSelector) cout << "Setting Photon ID Vertices " << endl;
-    PhotonID->setVertices(nVtx,vtxX,vtxY,vtxZ);
 
     if(debugSelector) cout << "Starting Photon Loop:  " << nPho_ << endl;
     for(int iPho=0; iPho<nPho_;iPho++){ //redo the scaling and smearing if needed
@@ -201,32 +205,19 @@ void HggSelector::Loop(){
         pho->scaledEnergy = pho->correctedEnergy*(pho->dEoE);
         pho->scaledEnergyError = pho->correctedEnergyError*((pho->dEoE+pho->dEoEErr));
       }
-      if(doSmear && !isData_){
+      if(!isData_){
 	pho->scaledEnergy = pho->correctedEnergy;
         pho->scaledEnergyError = pho->correctedEnergyError;
-	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
-        pho->dEoE    = dE.first;
-        pho->dEoEErr = dE.second;
+	if(doSmear){
+	  std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
+	  pho->dEoE    = dE.first;
+	  pho->dEoEErr = dE.second;
+	}
+	smearPhoton(pho,0);	
       }
-      /*
-      if(doSigmaESmear){
-	std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
-	//if(iPho==0)
-	  //std::cout << pho->scaledEnergyError << "   " <<pho->scaledEnergy << "  " << dE.first << std::endl;
-	pho->scaledEnergyError = TMath::Sqrt( pho->scaledEnergyError * pho->scaledEnergyError
-					     + dE.first*dE.first*pho->scaledEnergy*pho->scaledEnergy);
-	//if(iPho==0) std::cout << pho->scaledEnergyError << "   " <<pho->scaledEnergy << std::endl;
-      }
-      */
-	pho->finalEnergy = pho->scaledEnergy;
-	pho->finalEnergyError = pho->scaledEnergyError;
     }
-    //    if(!trigger_){
-    //  outTree->Fill();
-    //  continue; // don't bother doing the MVA 
-    //}
-
-    //std::cout << Photons_->at(0).scaledEnergyError << "   " <<Photons_->at(0).scaledEnergy << "  " << Photons_->at(0).scaledEnergyError/Photons_->at(0).scaledEnergy << std::endl << std::endl;
+    if(doMuMuGamma) this->fillMuMuGamma();
+    
 
     if(debugSelector) cout << "done" << endl;
     if(debugSelector) cout << "# Photons: " << nPho_ << endl;
@@ -471,7 +462,7 @@ void HggSelector::Loop(){
     outTree->Fill();
   }//while(fChain...
 
-  TFile *f = new TFile(outputFile.c_str(),"RECREATE");
+TFile *f = new TFile(outputFile.c_str(),"RECREATE");
   outTree->Write();
   if(doMuMuGamma) outTreeMuMuG->Write();
   std::map<std::string,TH1F*>::iterator it;
@@ -619,7 +610,8 @@ void HggSelector::smearPhoton(VecbosPho* pho,int smearShift){
   if(smear > 0) rand = rng.Gaus(0,smear);
   if(rand < -1) rand=-1;
   if(rand > 1E3) rand = 1E3;
-  pho->finalEnergy = pho->finalEnergy*(1+rand);
+  pho->finalEnergy = pho->scaledEnergy*(1+rand);
+  pho->finalEnergyError = pho->scaledEnergyError*(1+rand);
 }
 
 void HggSelector::setDefaults(){
