@@ -89,6 +89,19 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   double mst, mchi;
   int    BOX_NUM;
   Double_t Mu_Px_[2], Mu_Py_[2], Mu_Pz_[2], Mu_E_[2];
+
+  //Cristian MC information
+
+  //Int_t           nMC;
+  //Float_t         pMC[2001];   //[nMC]
+  //Float_t         thetaMC[2001];   //[nMC]
+  //Float_t         etaMC[2001];   //[nMC]
+  //Float_t         phiMC[2001];   //[nMC]
+  //Float_t         energyMC[2001];   //[nMC]
+  //Int_t           idMC[2001];   //[nMC]
+  //Int_t           mothMC[2001];   //[nMC]
+  //Int_t           statusMC[2001];   //[nMC]
+
   //int    ss;
   int    nPV;
   int Jet_Multiplicity;
@@ -148,7 +161,28 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   outTree->Branch("Mu_E",&Mu_E_,"Mu_E_[2]/D");
 
   outTree->Branch("iTopDecay", &iTopDecay, "iTopDecay/I");
+  
 
+  
+  //MC GEN LEVEL INFO
+  
+  if( _isData == 0 ){
+    
+    outTree->Branch("nMC", &nMc, "nMC/I");
+    outTree->Branch("pMC", &pMc, "pMC[101]/F");
+    outTree->Branch("thetaMC", &thetaMc, "thetaMC[101]/F");
+    outTree->Branch("etaMC", &etaMc, "etaMC[101]/F");
+    outTree->Branch("phiMC", &phiMc, "phiMC[101]/F");
+    outTree->Branch("energyMC", &energyMc, "energyMC[101]/F");
+    outTree->Branch("vxMC", &vxMc, "vxMC[101]/F");
+    outTree->Branch("vyMC", &vyMc, "vyMC[101]/F");
+    outTree->Branch("vzMC", &vzMc, "vzMC[101]/F");
+    outTree->Branch("idMC", &idMc, "idMC[101]/I");
+    outTree->Branch("mothMC", &mothMc, "mothMC[101]/I");
+    outTree->Branch("statusMC", &statusMc, "statusMC[101]/I");
+    
+  }
+  
   double Npassed_In = 0;
   double Npassed_PV = 0;
   //Jets
@@ -255,8 +289,8 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     //HLT and Data Filter
     int passedHLT = HLT_Razor + HLT_Razor_prescaled;
 
-    if (_isData==true) {
-      if (passedHLT==0) continue;
+    if ( _isData == true ) {
+      if ( passedHLT == 0 ) continue;
       if ((ECALTPFilterFlag==0) || (drBoundary==0) || (drDead==0) || (CSCHaloFilterFlag==0) || (trackerFailureFilterFlag==0) || (BEECALFlag==0)) continue;
     }
     
@@ -497,6 +531,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
      bx = eventNumber;
      ls = lumiBlock;
      orbit = orbitNumber;
+     std::cout << "=========================nMc: " << nMc << "=======================" << std::endl;
      outTree->Fill();
   }
   
