@@ -27,19 +27,6 @@
 
 using namespace std;
 
-struct PreSelCuts{
-  float scet1;
-  float scet2;
-  float maxeta;
-  float ecaliso[2]; //eb,ee
-  float trkiso[2]; //eb,ee
-  float hcaliso[2]; //eb,ee 
-  float sieie[2]; //eb,ee
-  float hoe;
-};
-
-enum EnergyRegressionMethod{JoshV1, JoshV2,Yong};
-
 class HggReducer : public Vecbos{
 public:
   HggReducer(TTree *tree=0); /// Class Constructor
@@ -50,7 +37,6 @@ public:
   void addTrigger(string s){triggerNames.push_back(s);}
   void setConfig(string s){config = s;}
   void setCorrectionType(int s){correctionType = s;}
-  void setPreselectionSet(int s){preSelSet = s;}
   void setScaleSmear(int s){applyScaleSmear = s;}
   void SetVtxConfigFile(string s){vertexCFG = s;}
   void SetScaleConfigFile(string s){energyScaleCFG = s;}
@@ -74,8 +60,6 @@ private:
   void clearAll();
   void setOutputBranches();
   
-  bool passPreselection(VecbosPho *);
-
   float computeTrackIso(int iPho, int iVtx,
 			float ptMinTrkIso,
 			float outerConeTrkIso,
@@ -85,12 +69,9 @@ private:
 			float dyMaxTrkIso);
 
   //photon preselection variables
-  void setupPreSelection();
   void fillMuons();
   void fillElectrons();
   void fillJets();
-  vector<PreSelCuts> preselections;
-  int preSelSet;
 
   HggVertexing *vertexer;
   //energy correction variables
@@ -134,16 +115,7 @@ private:
   const static int maxPho=100;
   int nPho_;
   vector<VecbosPho>  Photons_;
-  //  int nSC_;
-  /*
-  SCCollection   SuperClusters_; // this contains every SC matched to a photon
-  int nPFSC_
-  PFSCCollection   PFSuperClusters_; // this contains every PFSC matched to a photon
-  int nBC_;
-  BCCollection   BasicClusters_; // this contains up to 4 BCs for each above SC
-  int nConv_;
-  ConvCollection Conversions_;   // this contains all conversions match to a photon
-  */  
+
   void matchPhotonsElectrons();
   bool photonMatchedElectron[maxPho];
 

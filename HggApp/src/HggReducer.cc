@@ -33,7 +33,6 @@ HggReducer::HggReducer(TTree *tree) : Vecbos(tree) {
   _goodRunLS = false;
   _isData = false;
   _weight = 1.;
-  preSelSet = 1; // default
   vertexCFG = "";
   energyScaleCFG = "";
   energySmearCFG = "";
@@ -55,7 +54,6 @@ HggReducer::HggReducer(TTree *tree, string json, bool goodRunLS, bool isData,int
     setJsonGoodRunList(json);
     fillRunLSMap();
   }
-  preSelSet = 1;
   minPhoSel = 2;
 }
 
@@ -88,11 +86,6 @@ void HggReducer::Loop(string outFileName, int start, int stop) {
   
   TRandom3 rng(0);
 
-  if(preSelSet < 0 || preSelSet >= preselections.size()){
-    cout << "ERROR: invalid preselection set " << preSelSet << endl;
-    return;
-  }
- 
   //  double _weight = 1.;
   unsigned int lastLumi=0;
   unsigned int lastRun=0;
@@ -425,7 +418,6 @@ void HggReducer::init(string outputFileName){
  pileupNInteraction = new std::vector<short>; pileupNInteraction->clear();
 
  this->setOutputBranches(); // initialize the branches of the output tree
- this->setupPreSelection(); // define the photon preselection cuts
 
  ReadConfig cfg;
  int errorCode = cfg.read(config);
@@ -439,13 +431,11 @@ void HggReducer::init(string outputFileName){
  string EnergyScaleCFG  = cfg.getParameter("EnergyScaleCFG");
  string EnergySmearCFG  = cfg.getParameter("EnergySmearCFG");
  string MCScalingCFG    = cfg.getParameter("ScalingFile");
- string sPreselection   = cfg.getParameter("Preselection");
  string sScaleSmear     = cfg.getParameter("ScaleSmear");
  string sMinPhoSel      = cfg.getParameter("MinPreselPhotons");
  string puWeight        = cfg.getParameter("pileupReweight");
  triggerNames  = cfg.getTokens("Triggers",",");
 
- preSelSet = atoi(sPreselection.c_str());
  applyScaleSmear = atoi(sScaleSmear.c_str());
  if(sMinPhoSel.compare("")!=0) minPhoSel = atoi(sMinPhoSel.c_str());
 
@@ -462,7 +452,6 @@ void HggReducer::init(string outputFileName){
       << "EnergyScale: " << EnergyScaleCFG << endl
       << "EnergySmear: " << EnergySmearCFG << endl
       << "MC Scaling:  " << MCScalingCFG << endl
-      << "Preselection Set: " << sPreselection << endl
       << "ApplyScaleSmear: "  << sScaleSmear << endl
       << "Requiring " << minPhoSel << " Photons" <<endl
       << "Doing Jet Corrections: " << correctJets << endl;
@@ -483,22 +472,6 @@ void HggReducer::init(string outputFileName){
  scaler = new HggScaling(MCScalingCFG);
 }
 
-bool HggReducer::passPreselection(VecbosPho *pho){
-  if(pho->index == -1 || pho->SC.index == -1) return false;
-  PreSelCuts cuts = preselections.at(preSelSet-1);
-  if(debugReducer) cout << pho->SC.energy << "  " << pho->SC.eta << "  " << pho->SC.energy/cosh(pho->SC.eta) << endl;
-  //if( pho->SC.energy/cosh(pho->SC.eta) < cuts.scet2 || 
-  //    (cuts.maxeta>0 && pho->SC.eta > cuts.maxeta) ) return false;  //baseline kinematics
-  //if(cuts.ecaliso[!pho->isBarrel()]>0 && pho->dr03EcalRecHitSumEtCone >= cuts.ecaliso[!pho->isBarrel()]) return false;
-  //if(cuts.hcaliso[!pho->isBarrel()]>0 && pho->dr03HcalTowerSumEtCone >= cuts.hcaliso[!pho->isBarrel()]) return false;
-  //if(cuts.sieie[!pho->isBarrel()]>0 && pho->SC.sigmaIEtaIEta >= cuts.sieie[!pho->isBarrel()]) return false;
-  //if(cuts.hoe>0 && pho->SC.HoverE >= cuts.hoe) return false;
-
-  if(pho->SC.energy/cosh(pho->SC.eta) < 20.) return false;
-
-  return true;
-
-}
 
 void HggReducer::fillMuons(){
   nMu_=0;
@@ -565,90 +538,6 @@ void HggReducer::fillJets(){
     */
   }
 }
-void HggReducer::setupPreSelection(){
-  //used to define the sets of prescale cuts we can use
-  //maybe this should be totally configurable, but for now hard-code
-  PreSelCuts set1;
-  set1.scet1 = 35;                                                                                                                              
-  set1.scet2 = 25;                                                         
-  set1.maxeta = 2.5;                                                       
-  set1.ecaliso[0]  = 10;                                                   
-  set1.ecaliso[1] = 10;                                                    
-  set1.hcaliso[0] = -1;                                                    
-  set1.hcaliso[1] = -1;                                                    
-  set1.sieie[0] = 0.013;                                                   
-  set1.sieie[1] = 0.03;                                                    
-  set1.hoe = 0.15;
-
-  PreSelCuts set2;
-  set2.scet1 = 20;                                                         
-  set2.scet2 = 20;                                                         
-  set2.maxeta = 2.5;                                                       
-  set2.ecaliso[0]  = -1;                                                   
-  set2.ecaliso[1] = -1;                                                    
-  set2.hcaliso[0] = -1;                                                    
-  set2.hcaliso[1] = -1;                                                    
-  set2.sieie[0] = 0.013;                                                   
-  set2.sieie[1] = 0.03;                                                    
-  set2.hoe = 0.15; 
-
-  PreSelCuts set3;
-  set3.scet1 = 20;                                                       
-  set3.scet2 = 20;                                                       
-  set3.maxeta = -1;                                                      
-  set3.ecaliso[0]  = -1;                                                 
-  set3.ecaliso[1] = -1;                                                  
-  set3.hcaliso[0] = -1;                                                  
-  set3.hcaliso[1] = -1;                                                  
-  set3.sieie[0] = -1;                                                    
-  set3.sieie[1] = -1;                                                    
-  set3.hoe = -1;       
-
-  PreSelCuts set4;
-  set4.scet1 = 28;                                                       
-  set4.scet2 = 28;                                                       
-  set4.maxeta = -1;                                                      
-  set4.ecaliso[0]  = -1;                                                 
-  set4.ecaliso[1] = -1;                                                  
-  set4.hcaliso[0] = -1;                                                  
-  set4.hcaliso[1] = -1;                                                  
-  set4.sieie[0] = -1;                                                    
-  set4.sieie[1] = -1;                                                    
-  set4.hoe = -1;        
-
-  PreSelCuts set5;
-  set5.scet1 = 25;                                                       
-  set5.scet2 = 25;                                                       
-  set5.maxeta = -1;                                                      
-  set5.ecaliso[0]  = -1;                                                 
-  set5.ecaliso[1] = -1;                                                  
-  set5.hcaliso[0] = -1;                                                  
-  set5.hcaliso[1] = -1;                                                  
-  set5.sieie[0] = -1;                                                    
-  set5.sieie[1] = -1;                                                    
-  set5.hoe = -1;    
-
-  PreSelCuts set6;
-  set6.scet1 = 0;                                                       
-  set6.scet2 = 0;                                                       
-  set6.maxeta = -1;                                                      
-  set6.ecaliso[0]  = -1;                                                 
-  set6.ecaliso[1] = -1;                                                  
-  set6.hcaliso[0] = -1;                                                  
-  set6.hcaliso[1] = -1;                                                  
-  set6.sieie[0] = -1;                                                    
-  set6.sieie[1] = -1;                                                    
-  set6.hoe = -1;    
-
-  preselections.push_back(set1);
-  preselections.push_back(set2);
-  preselections.push_back(set3);
-  preselections.push_back(set4);
-  preselections.push_back(set5);
-  preselections.push_back(set6);
-
-}
-
 void HggReducer::fillVertexInfo(){
   nVtx = nPV;
   for(int i=0;i<nPV;i++){
