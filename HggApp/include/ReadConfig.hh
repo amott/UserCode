@@ -6,6 +6,9 @@
 #include<vector>
 #include<map>
 #include<cstring>
+#include <sstream>
+#include <exception>
+#include <stdexcept>
 
 #include <iostream>
 using namespace std;
@@ -43,14 +46,18 @@ ReadConfig::ReadConfig(string s):
 int ReadConfig::read(string s){
   ifstream file(s.c_str());
   string line;
-  if(!file.is_open()) return -1;
+  if(!file.is_open()) throw runtime_error(string("cannot open file:  ")+s);
   
   int lineNo = 0;
   int ret = 0;
   while(file.good()){
     getline (file,line);
-    ret = parseLine(line);
-    if(ret) break;  // if parseLine returns non-zero, error parsing line; raise error flag and don't set isInit
+    try{
+      ret = parseLine(line);
+    }catch(const runtime_error &e){
+      throw runtime_error(string("ERROR in config file:  ") + s + string("\nLine Number: ") + 
+			  static_cast<ostringstream*>( &(ostringstream() << lineNo) )->str() + string("\n") +string(e.what()));
+    }
     lineNo++;
   }
   isInit = !ret; // isInit only true if return value is 0
@@ -59,30 +66,18 @@ int ReadConfig::read(string s){
 }
 
 int ReadConfig::parseLine(string s){
-  /*
-    return codes: [errorcode]
-    0 -- no errors
-    1 -- no variable 
-    2 -- no value
-  */
-
-  //cout << s <<endl;
   string sc = stripComments(s);
-  //cout << "sc: " << sc <<endl << "   " << sc.find_first_not_of(' ') << endl;
   if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
 
   int eqPos = sc.find_first_of('='); // location of the assignment
   //cout << eqPos << endl;
-  if(eqPos == sc.find_first_not_of(' ')) return 1; // can't start the line with =
-  if(eqPos == string::npos) return 2; // and it must exist
+  if(eqPos == sc.find_first_not_of(' ')) throw runtime_error(string("non l-value assignment:  ")+s);; // can't start the line with =
+  if(eqPos == string::npos) throw runtime_error(string("non l-value assignment:  ")+s);; // and it must exist
 
   string var = stripSpaces(sc.substr(0,eqPos)); //variable
   string val = stripSpaces(sc.substr(eqPos+1));  //value
-  //cout << var <<endl;
-  //cout << val <<endl;
 
-  if(var == "") return 1;
-  if(val == "") return 2;
+  if(var == "" || val == "") throw runtime_error(string("error parsing line:  ")+s);
 
   parameters_[var] = val;
   return 0;
