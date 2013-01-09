@@ -5,6 +5,7 @@
 #include <TFile.h>
 #include <TH2F.h>
 #include <TCanvas.h>
+#include <TMath.h>
 
 #include <RooWorkspace.h>
 #include <RooRealVar.h>
@@ -23,6 +24,7 @@
 #include "RooBernstein.h"
 #include "RooLinkedListIter.h"
 #include "RooCBShape.h"
+#include "RooSimultaneous.h"
 
 #include <HggOutputReader2.h>
 
@@ -47,6 +49,8 @@ public:
 
   void MakeBackgroundFit(TString mcName,TString catTag,float initMass,float range,bool gausPen,TString inputTag="");
 
+  void MakeCombinedBackgroundFit(TString mcName,float initMass, float range,TString inputTag="");
+
   void MakeBackgroundFitCosTBin(TString mcName,TString catTag,float minCosT,float maxCosT);
 
   void MakeBackgroundOnlyFit(TString mcName,TString catTag);
@@ -59,7 +63,7 @@ public:
 
   void save();
 
-  bool setUseR9(bool b){useR9 = b;}
+  void setUseR9(bool b);
 
   const int nCat;
 private:
@@ -67,6 +71,8 @@ private:
 
   std::vector<TString> mcLabel;
   
+  std::vector<TString> catLabels;
+
   bool addSWeight;
 			 
   TFile *inputFile;

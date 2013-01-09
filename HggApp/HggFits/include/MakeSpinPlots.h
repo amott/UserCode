@@ -43,7 +43,7 @@ public:
 
   RooDataHist* getSimpleBkgSubtraction(TString tag,TString mcName);
   void DrawBlindFit(TString tag,TString mcName);
-  void DrawFit(TString tag,TString mcName);
+  void DrawFit(TString tag,TString mcName,bool useCombined=false);
   //void DrawSpinBackground(TString tag,bool signal);
   void PlotSignalFits(TString tag,TString mcName);
 

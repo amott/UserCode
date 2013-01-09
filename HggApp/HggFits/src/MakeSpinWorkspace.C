@@ -149,12 +149,16 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   if(useR9){
     for(int j=0;j<nCat;j++){
+      cat->defineType( Form("EB_%d",j),2*j );
+      cat->defineType( Form("EE_%d",j),2*j+nCat );
       dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set,"evtWeight");
       dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set,"evtWeight");
     }
   }else{
     for(int i=0;i<nCat;i++){
       for(int j=0;j<nCat;j++){
+	cat->defineType( Form("EB_%d_%d",i,j),4*i+2*j );
+	cat->defineType( Form("EE_%d_%d",i,j), 4*i+2*j+nCat*nCat );
 	dataMapEB[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
 	dataMapEE[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
       }
@@ -232,9 +236,30 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   totEB->setVal(nEB);
   totEE->setVal(nEE);
 
+  RooArgSet setCat(set);
+  setCat.add(*cat);
+  RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat );
+  
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
-  for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++) ws->import(*(dIt->second));
-  for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++) ws->import(*(dIt->second));
+  for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
+    TString cattag;
+    if(useR9) cattag = Form("EB_%d", (dIt->first).first );
+    else cattag = Form("EB_%d_%d", (dIt->first).first, (dIt->first).second );
+    std::cout << cattag <<std::endl;
+    RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
+    dataComb->append(*tmp);
+    ws->import(*(dIt->second));
+  }
+  for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
+    TString cattag;
+    if(useR9) cattag = Form("EE_%d", (dIt->first).first );
+    else cattag = Form("EE_%d_%d", (dIt->first).first, (dIt->first).second );
+    std::cout << cattag <<std::endl;
+    RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
+    dataComb->append(*tmp);    
+    ws->import(*(dIt->second));
+  }
+  ws->import(*dataComb);
   ws->import(*totEB);
   ws->import(*totEE);
   cout << "Done" <<endl;
