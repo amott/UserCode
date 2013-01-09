@@ -64,6 +64,7 @@ public:
   void save();
 
   void setUseR9(bool b);
+  void setUseCombinedFit(bool b){useCombinedFit = b;}
 
   const int nCat;
 private:
@@ -79,7 +80,7 @@ private:
   TFile *outputFile;
 
   bool useR9;
-
+  bool useCombinedFit;
   float mean0,meanE0;
 
   void AddSWeight(TString mcName, TString catTag,TString inputTag);

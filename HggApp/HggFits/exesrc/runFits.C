@@ -10,6 +10,7 @@ int main(int argc, char** argv){
   a.addArgument("InputWorkspace",ArgParser::required,"input workspace");
   a.addArgument("OutputWorkspace",ArgParser::required,"output workspace");
   a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
+  a.addLongOption("CombinedFit",ArgParser::noArg,"use a combined fit to the categories (default: off)");
 
   string ret;
   if(a.process(ret) != 0){
@@ -20,6 +21,7 @@ int main(int argc, char** argv){
   string inputWS = a.getArgument("InputWorkspace");
   string outputWS = a.getArgument("OutputWorkspace");
   bool useR9 = a.longFlagPres("useR9");
+  bool useCombFit = a.longFlagPres("CombinedFit");
 
   MakeSpinFits msf(inputWS,outputWS);
 
@@ -27,6 +29,7 @@ int main(int argc, char** argv){
   msf.addMCLabel("Hgg125");
   msf.addMCLabel("RSG125");
   msf.setUseR9(useR9);
+  msf.setUseCombinedFit(useCombFit);
   msf.run();
   msf.save();
 

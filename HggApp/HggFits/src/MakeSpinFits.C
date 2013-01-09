@@ -14,6 +14,7 @@ MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
   }
 
   setUseR9(false);
+  setUseCombinedFit(false);
 }
 
 MakeSpinFits::~MakeSpinFits(){
@@ -152,17 +153,17 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
   cout << "1" <<endl;
 
-  std::vector<TString>::const_iterator catIt = catLabels.begin();
 
   RooArgSet allConstraints;
 
   //common variables
-  RooRealVar mean(Form("Data_%s_COMBFIT_mean",mcName.Data()),"mean",initMass,initMass-range,initMass+range);
-  RooRealVar Nsig(Form("Data_%s_COMBFIT_Nsig",mcName.Data()),"N signal Events",100,0,100000);
+  RooRealVar mean(Form("Data_%s_FIT_mean",mcName.Data()),"mean",initMass,initMass-range,initMass+range);
+  RooRealVar Nsig(Form("Data_%s_FIT_Nsig",mcName.Data()),"N signal Events",100,0,100000);
 
-  RooSimultaneous combinedFit(Form("Data_%s_COMBFIT",mcName.Data()),"",*cat);
+  RooSimultaneous combinedFit(Form("Data_%s_FIT",mcName.Data()),"",*cat);
   cout << "2" <<endl;
   
+  std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
     if(inputTag=="") inputTag=*catIt;
@@ -176,9 +177,9 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
     RooRealVar *sig2Width = new RooRealVar("sig2Wdith","",sig2Base.getError()/8);
     RooRealVar *fWidth    = new RooRealVar("fWdith","",fBase.getError()/8);
     
-    RooRealVar *sig1 = new RooRealVar(Form("Data_%s_COMBFIT_%s_sigma1",mcName.Data(), catIt->Data()),"sig1",sig1Base.getVal(),sig1Base.getVal()-4*sig1Base.getError(),sig1Base.getVal()+4*sig1Base.getError());
-    RooRealVar *sig2 = new RooRealVar(Form("Data_%s_COMBFIT_%s_sigma2",mcName.Data(), catIt->Data()),"sig2",sig2Base.getVal(),sig2Base.getVal()-4*sig2Base.getError(),sig2Base.getVal()+4*sig2Base.getError());
-    RooRealVar *f    = new RooRealVar(Form("Data_%s_COMBFIT_%s_f",mcName.Data(), catIt->Data()),"f",fBase.getVal(),fBase.getVal()-4*fBase.getError(),fBase.getVal()+4*fBase.getError());
+    RooRealVar *sig1 = new RooRealVar(Form("Data_%s_FIT_%s_sigma1",mcName.Data(), catIt->Data()),"sig1",sig1Base.getVal(),sig1Base.getVal()-4*sig1Base.getError(),sig1Base.getVal()+4*sig1Base.getError());
+    RooRealVar *sig2 = new RooRealVar(Form("Data_%s_FIT_%s_sigma2",mcName.Data(), catIt->Data()),"sig2",sig2Base.getVal(),sig2Base.getVal()-4*sig2Base.getError(),sig2Base.getVal()+4*sig2Base.getError());
+    RooRealVar *f    = new RooRealVar(Form("Data_%s_FIT_%s_f",mcName.Data(), catIt->Data()),"f",fBase.getVal(),fBase.getVal()-4*fBase.getError(),fBase.getVal()+4*fBase.getError());
   
     RooGaussian *sig1Const = new RooGaussian(Form("sig1Constraint_%s",catIt->Data()),"",*sig1,sig1Base,*sig1Width);
     RooGaussian *sig2Const = new RooGaussian(Form("sig2Constraint_%s",catIt->Data()),"",*sig2,sig2Base,*sig2Width);
@@ -193,33 +194,33 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
     //f.setConstant(kTRUE);
 
     //build the signal model
-    RooGaussian *g1 = new RooGaussian(Form("Data_%s_COMBFIT_%s_g1",mcName.Data(),catIt->Data()),"g1",mass,mean,*sig1);
-    RooGaussian *g2 = new RooGaussian(Form("Data_%s_COMBFIT_%s_g2",mcName.Data(),catIt->Data()),"g2",mass,mean,*sig2);
-    RooAddPdf *SignalModel = new RooAddPdf(Form("Data_%s_COMBFIT_%s_signalModel",mcName.Data(),catIt->Data()),
+    RooGaussian *g1 = new RooGaussian(Form("Data_%s_FIT_%s_g1",mcName.Data(),catIt->Data()),"g1",mass,mean,*sig1);
+    RooGaussian *g2 = new RooGaussian(Form("Data_%s_FIT_%s_g2",mcName.Data(),catIt->Data()),"g2",mass,mean,*sig2);
+    RooAddPdf *SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s_signalModel",mcName.Data(),catIt->Data()),
 					   "Signal Model",RooArgList(*g1,*g2),*f);
     cout << "\tD" <<endl;
     //build the background model
-    RooRealVar *alpha1 = new RooRealVar(Form("Data_%s_COMBFIT_%s_alpha1",mcName.Data(),catIt->Data()),"alpha1",-0.1,-1.,0.);
-    RooRealVar *alpha2 = new RooRealVar(Form("Data_%s_COMBFIT_%s_alpha2",mcName.Data(),catIt->Data()),"alpha2",-0.1,-1.,0.);
-    RooRealVar *f_bkg  = new RooRealVar( Form("Data_%s_COMBFIT_%s_fbkg",mcName.Data(),catIt->Data()),"f_bkg",0.1,0,1);
-    RooExponential *exp1 = new RooExponential(Form("Data_%s_COMBFIT_%s_exp1",mcName.Data(),catIt->Data()),"exp1",mass,*alpha1);
-    RooExponential *exp2 = new RooExponential(Form("Data_%s_COMBFIT_%s_exp2",mcName.Data(),catIt->Data()),"exp2",mass,*alpha2);
+    RooRealVar *alpha1 = new RooRealVar(Form("Data_%s_FIT_%s_alpha1",mcName.Data(),catIt->Data()),"alpha1",-0.1,-1.,0.);
+    RooRealVar *alpha2 = new RooRealVar(Form("Data_%s_FIT_%s_alpha2",mcName.Data(),catIt->Data()),"alpha2",-0.1,-1.,0.);
+    RooRealVar *f_bkg  = new RooRealVar( Form("Data_%s_FIT_%s_fbkg",mcName.Data(),catIt->Data()),"f_bkg",0.1,0,1);
+    RooExponential *exp1 = new RooExponential(Form("Data_%s_FIT_%s_exp1",mcName.Data(),catIt->Data()),"exp1",mass,*alpha1);
+    RooExponential *exp2 = new RooExponential(Form("Data_%s_FIT_%s_exp2",mcName.Data(),catIt->Data()),"exp2",mass,*alpha2);
     
-    RooAddPdf *BkgModel = new RooAddPdf(Form("Data_%s_COMBFIT_%s_bkgModel",mcName.Data(),catIt->Data()),"Background Model",
+    RooAddPdf *BkgModel = new RooAddPdf(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),catIt->Data()),"Background Model",
 					RooArgList(*exp1,*exp2),*f_bkg);
     cout << "\tE" <<endl;
-    RooRealVar *Nbkg = new RooRealVar(Form("Data_%s_COMBFIT_%s_Nbkg",mcName.Data(),catIt->Data()),"N background Events",100,0,1e+09);
+    RooRealVar *Nbkg = new RooRealVar(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),catIt->Data()),"N background Events",100,0,1e+09);
     //fraction of the signal in this category
     double totalEvents  = ws->var("Hgg125_EB_totalEvents")->getVal() + ws->var("Hgg125_EE_totalEvents")->getVal();
     double thisCat =  ws->data(Form("Hgg125_%s",catIt->Data()))->sumEntries();
     double thisFrac = thisCat/totalEvents;
     double thisFracE = thisFrac * TMath::Sqrt(1/thisCat+1/totalEvents);
-    RooRealVar *fSig = new RooRealVar(Form("Data_%s_COMBFIT_%s_fSig",mcName.Data(),catIt->Data()),"",thisFrac,thisFrac-2*thisFracE,thisFrac+2*thisFracE);
+    RooRealVar *fSig = new RooRealVar(Form("Data_%s_FIT_%s_fSig",mcName.Data(),catIt->Data()),"",thisFrac,thisFrac-2*thisFracE,thisFrac+2*thisFracE);
     cout << "\tF" <<endl;
-    RooFormulaVar *NsigThisCat = new RooFormulaVar(Form("Data_%s_COMBFIT_%s_Nsig",mcName.Data(),catIt->Data()),"","@0*@1",RooArgSet(*fSig,Nsig) );
+    RooFormulaVar *NsigThisCat = new RooFormulaVar(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),catIt->Data()),"","@0*@1",RooArgSet(*fSig,Nsig) );
 
     //fit model
-    RooAddPdf *FitModel = new RooAddPdf(Form("Data_%s_COMBFIT_%s_fitModel",mcName.Data(),catIt->Data()),"Fit Model",
+    RooAddPdf *FitModel = new RooAddPdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),catIt->Data()),"Fit Model",
 					RooArgList(*SignalModel,*BkgModel),RooArgList(*NsigThisCat,*Nbkg));
 
     combinedFit.addPdf(*FitModel,*catIt);
@@ -231,10 +232,17 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
   combinedFit.fitTo(*data,RooFit::ExternalConstraints(allConstraints),RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   //combinedFit.fitTo(*data);
   RooFitResult *res=combinedFit.fitTo(*data,RooFit::ExternalConstraints(allConstraints),RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  res->SetName(Form("Data_%s_COMBFIT_fitResult",mcName.Data()) );
+  res->SetName(Form("Data_%s_FIT_fitResult",mcName.Data()) );
 
   ws->import(*res);
   ws->import(combinedFit);
+  catIt = catLabels.begin();
+  for(; catIt != catLabels.end(); catIt++){
+    RooFormulaVar* fv = ((RooFormulaVar*)ws->obj(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),catIt->Data())));
+    RooRealVar * NsigTmp = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),catIt->Data()),"", fv->getVal());
+    NsigTmp->setError( fv->getPropagatedError( *res ) ); // get the error with correlations from the fit results
+    ws->import(*NsigTmp);
+  }
 }
 
 void MakeSpinFits::MakeBackgroundFit(TString mcName, TString catTag,float initMass,float range,bool gausPen,TString inputTag){
@@ -416,14 +424,16 @@ void MakeSpinFits::run(){
     for(; catIt != catLabels.end(); catIt++){
       MakeSignalFit(*catIt,*mcIt);
 
-      if(catIt == catLabels.begin()){
-	MakeBackgroundFit(*mcIt,*catIt,124.5,2,false); // do the initial fit
-	mean0  = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getVal();
-	meanE0 = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getError();    
+      if(!useCombinedFit){
+	if(catIt == catLabels.begin()){
+	  MakeBackgroundFit(*mcIt,*catIt,124.5,2,false); // do the initial fit
+	  mean0  = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getVal();
+	  meanE0 = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getError();    
+	}
+	MakeAllBackgroundFits(*catIt,*mcIt);
       }
-      MakeAllBackgroundFits(*catIt,*mcIt);
     }
-    MakeCombinedBackgroundFit(*mcIt,125,2);
+    if(useCombinedFit) MakeCombinedBackgroundFit(*mcIt,125,2);
   }
 
 }

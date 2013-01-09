@@ -11,6 +11,9 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag): nCat(MakeSp
   outputTag=outTag;
 
   setStyle();
+
+  if(ws->pdf("Data_Hgg125_FIT")==0) combinedFit=false;
+  else combinedFit=true;
 }
 
 MakeSpinPlots::~MakeSpinPlots(){
@@ -44,14 +47,14 @@ void MakeSpinPlots::runAll(TString mcName){
 
 void MakeSpinPlots::runAll(TString tag, TString mcName){
   getFitValues(tag,mcName);
-  DrawBlindFit(tag,mcName);
+  if(!combinedFit) DrawBlindFit(tag,mcName);
   DrawFit(tag,mcName);
-  DrawFit(tag,mcName,true);
-  PlotSignalFits(tag,mcName);
+  if(!combinedFit) PlotSignalFits(tag,mcName);
 }
 
 void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   std::cout << tag << std::endl;
+
   double sig  = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getVal();
   double sige = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getError();
   double bkg  = ws->var(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),tag.Data()))->getVal();
@@ -63,9 +66,14 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   double s1e  = ws->var(Form("Data_%s_FIT_%s_sigma1",mcName.Data(),tag.Data()))->getError();
   double s2e  = ws->var(Form("Data_%s_FIT_%s_sigma2",mcName.Data(),tag.Data()))->getError();
   
-  double mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
-  double meane= ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getError();
-  
+  double mean,meane;
+  if(combinedFit){
+    mean = ws->var(Form("Data_%s_FIT_mean",mcName.Data(),tag.Data()))->getVal();
+    meane= ws->var(Form("Data_%s_FIT_mean",mcName.Data(),tag.Data()))->getError();
+  }else{
+    mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
+    meane= ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getError();
+  }
   double sigEff = s1*f + s2*(1-f); // s2 + f*(s1-s2)
   double s1ms2e = TMath::Sqrt(s1e*s1e+s2e*s2e);
   double e2 = f*(s1-s2)*TMath::Sqrt(fe*fe/f/f+s1ms2e*s1ms2e/(s1-s2)/(s1-s2));
@@ -167,30 +175,33 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
   frame->addObject(sig);
   frame->addObject(expBkg);
   frame->Draw();
-  cv->SaveAs( basePath+Form("mgg-%s-%s_BLIND.png",mcName.Data(),tag.Data()) );
-  cv->SaveAs( basePath+Form("mgg-%s-%s_BLIND.pdf",mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/mgg-%s-%s_BLIND.png",mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/mgg-%s-%s_BLIND.pdf",mcName.Data(),tag.Data()) );
   delete cv;
 }
 
-void MakeSpinPlots::DrawFit(TString tag, TString mcName,bool useCombined){
+void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
   
   RooRealVar* mass = ws->var("mass");
   RooPlot* frame  = mass->frame(110,170,40);
 
-  const char * fitTag = (useCombined ? "COMBFIT" : "FIT");
-  double Ns = ws->var(Form("Data_%s_%s_%s_Nsig",mcName.Data(),fitTag,tag.Data()))->getVal();
-  double Nb = ws->var(Form("Data_%s_%s_%s_Nbkg",mcName.Data(),fitTag,tag.Data()))->getVal();
 
-  RooFitResult *fitres = (RooFitResult*)ws->obj(Form("Data_%s_FIT_%s_fitResult",mcName.Data(),tag.Data()));
-  
+
+  double Ns = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getVal();
+  double Nb = ws->var(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),tag.Data()))->getVal();
+
+  RooFitResult *fitres;
+  if(combinedFit) fitres = (RooFitResult*)ws->obj(Form("Data_%s_FIT_fitResult",mcName.Data())); 
+  else fitres = (RooFitResult*)ws->obj(Form("Data_%s_FIT_%s_fitResult",mcName.Data(),tag.Data())); 
+
   ws->data(Form("Data_%s",tag.Data()))->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
 
-  ws->pdf(Form("Data_%s_%s_%s_fitModel",mcName.Data(),fitTag,tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
-  ws->pdf(Form("Data_%s_%s_%s_fitModel",mcName.Data(),fitTag,tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
-  ws->pdf(Form("Data_%s_%s_%s_fitModel",mcName.Data(),fitTag,tag.Data()))->plotOn(frame, RooFit::LineColor(kRed));
+  ws->pdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
+  ws->pdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
+  ws->pdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::LineColor(kRed));
   std::cout << "1" << std::endl;
-  ws->pdf(Form("Data_%s_%s_%s_bkgModel",mcName.Data(),fitTag,tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Ns+Nb)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
+  ws->pdf(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Ns+Nb)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
 
   ws->data(Form("Data_%s",tag.Data()))->plotOn(frame);
   frame->Draw();
@@ -232,8 +243,8 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName,bool useCombined){
   frame->addObject(sig);
   frame->addObject(Nsig);
   frame->Draw();
-  cv->SaveAs( basePath+Form("mgg-%s-%s-%s-%s.png",outputTag.Data(),fitTag,mcName.Data(),tag.Data()) );
-  cv->SaveAs( basePath+Form("mgg-%s-%s-%s-%s.pdf",outputTag.Data(),fitTag,mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.png",outputTag.Data(),mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
 /*

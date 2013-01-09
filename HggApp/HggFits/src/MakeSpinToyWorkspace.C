@@ -148,11 +148,15 @@ float MakeSpinToyWorkspace::getExpEventsCosT(float lumi, TString MC, TString cat
 double MakeSpinToyWorkspace::prob(float *exp, float *obs, float *err,int N){
   double chi2=0;
   int ndof=0;
-  for(int i=0;i<N;i++){
-    if(err[i]){
-      chi2 += TMath::Power( (exp[i]-obs[i])/err[i], 2);
+  for(int i=0;i<N-1;i++){
+    double expRatio = exp[i+1]/exp[i];
+    double obsRatio = obs[i+1]/obs[i];
+    double obsRatioE = obsRatio*TMath::Sqrt( err[i+1]*err[i+1]/obs[i+1]/obs[i+1]+err[i]*err[i]/obs[i]/obs[i]);
+    if(obsRatioE){
+      chi2 += TMath::Power( (expRatio-obsRatio)/obsRatioE, 2);
       ndof++;
     }
   }
+
   return TMath::Prob(chi2,ndof);
 }
