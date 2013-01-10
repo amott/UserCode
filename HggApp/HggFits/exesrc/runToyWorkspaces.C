@@ -1,5 +1,5 @@
 #include "ArgParser.hh"
-#include "MakeSpinToyWorkspace.h"
+#include "MakeSpinToy.h"
 #include "ReadConfig.hh"
 
 #include <iostream>
@@ -11,9 +11,11 @@ int main(int argc, char** argv){
   a.addArgument("outputFile",ArgParser::required,"path to the output file");
 
   a.addArgument("N",ArgParser::required,"Number of Toys");
-  a.addArgument("tag",ArgParser::required,"");
-  a.addArgument("lumi",ArgParser::required,"effective luminosity");
-  //a.addLongOption("SaveWorkspaces",Arg);
+  a.addArgument("TargetLumi",ArgParser::required,"target luminosity");
+  a.addArgument("InputLumi",ArgParser::required,"input luminosity");
+
+  a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
+
 
   string ret;
   if(a.process(ret) !=0){
@@ -26,16 +28,18 @@ int main(int argc, char** argv){
   string outFile = a.getArgument("outputFile");
 
   int N = atoi(a.getArgument("N").c_str());
-  string tag = a.getArgument("tag");
-  float lumi = atof(a.getArgument("lumi").c_str());
+  float tlumi = atof(a.getArgument("TargetLumi").c_str());
+  float nlumi = atof(a.getArgument("InputLumi").c_str());
   
+  bool useR9 = a.longFlagPres("useR9");
+  MakeSpinToy mst(wsFile);
 
-  MakeSpinToyWorkspace mstw(wsFile);
+  mst.setTargetLumi(tlumi);
+  mst.setNominalLumi(nlumi);
 
-  mstw.setup(tag,lumi);
-
-  mstw.generateN(N);
-  mstw.save(outFile);
+  mst.setUseR9(useR9);
+  mst.runN(N);
+  mst.save(outFile);
 
 
 

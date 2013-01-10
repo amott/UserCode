@@ -48,10 +48,10 @@ public:
   void MakeSignalFit(TString tag,TString mcName);
 
   void MakeBackgroundFit(TString mcName,TString catTag,float initMass,float range,bool gausPen,TString inputTag="");
-
   void MakeCombinedBackgroundFit(TString mcName,float initMass, float range,TString inputTag="");
 
   void MakeBackgroundFitCosTBin(TString mcName,TString catTag,float minCosT,float maxCosT);
+  void MakeCombinedBackgroundFitCosTBin(TString mcName,float minCosT,float maxCosT);
 
   void MakeBackgroundOnlyFit(TString mcName,TString catTag);
 

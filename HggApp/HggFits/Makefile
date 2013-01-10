@@ -78,6 +78,7 @@ runPlots:		$(EXESRCDIR)runPlots.C \
 
 runToyWorkspaces:		$(EXESRCDIR)runToyWorkspaces.C \
 				$(OUTLIB)MakeSpinToyWorkspace.o \
+				$(OUTLIB)MakeSpinToy.o\
 				$(OUTLIB)ArgParser.o \
 				$(HGGAPPINC)ReadConfig.hh
 	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o runToyWorkspaces $(OUTLIB)/*.o  $(GLIBS) $ $<	
@@ -109,3 +110,7 @@ $(OUTLIB)MakeSpinToyWorkspace.o:	$(SRCDIR)MakeSpinToyWorkspace.C \
 					$(OUTLIB)MakeSpinSeparationTest.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinToyWorkspace.o $<
 
+
+$(OUTLIB)MakeSpinToy.o:		$(SRCDIR)MakeSpinToy.C \
+				$(OUTLIB)MakeSpinFits.o
+		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinToy.o $<
