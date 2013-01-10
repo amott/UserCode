@@ -50,6 +50,8 @@ void MakeSpinPlots::runAll(TString tag, TString mcName){
   if(!combinedFit) DrawBlindFit(tag,mcName);
   DrawFit(tag,mcName);
   if(!combinedFit) PlotSignalFits(tag,mcName);
+  DrawSpinBackground(tag,mcName,false);
+  DrawSpinBackground(tag,mcName,true);
 }
 
 void MakeSpinPlots::getFitValues(TString tag,TString mcName){
@@ -68,8 +70,8 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   
   double mean,meane;
   if(combinedFit){
-    mean = ws->var(Form("Data_%s_FIT_mean",mcName.Data(),tag.Data()))->getVal();
-    meane= ws->var(Form("Data_%s_FIT_mean",mcName.Data(),tag.Data()))->getError();
+    mean = ws->var(Form("Data_%s_FIT_mean",mcName.Data()))->getVal();
+    meane= ws->var(Form("Data_%s_FIT_mean",mcName.Data()))->getError();
   }else{
     mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
     meane= ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getError();
@@ -305,42 +307,47 @@ void printYields(TString wsFile,TString mcName){
 
 }
 */
-/*
-void MakeSpinPlots::DrawSpinBackground(TString tag, bool signal){
+
+void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   double totEB  = ws->var("Hgg125_EB_totalEvents")->getVal();
   double totEE  = ws->var("Hgg125_EE_totalEvents")->getVal();
 
   TCanvas cv;
-  double thisN  = ws->data(Form("Hgg125_%s",tag.Data()))->sumEntries();
+  double thisN  = ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->sumEntries();
   float norm = 607*lumi/12.*thisN/(totEB+totEE);
-  if(signal) norm = ws->var(Form("Data_Hgg125_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(-1,1,5);
+  if(signal) norm = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getVal();
+  RooPlot *frame = ws->var("cosT")->frame(-1,1,3);
+
+  RooDataSet* bkgWeight = (RooDataSet*)ws->data(Form("%s_bkgWeight_%s",mcName.Data(),tag.Data()));
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
+
   ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   ws->pdf(Form("RSG125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
-  
+
+  bkgWeight->plotOn(frame,RooFit::Rescale(norm/bkgWeight->sumEntries()),RooFit::MarkerColor(kBlue) );  
   if(signal){
     ws->data(Form("%s_sigWeight_%s",mcName.Data(),tag.Data()))->plotOn(frame,RooFit::MarkerStyle(4));
   }
   
-  frame->SetMaximum(frame->GetMaximum()*1.2*norm/tmp->sumEntries());
+  frame->SetMaximum(frame->GetMaximum()*(signal?0.8:0.4)*norm/tmp->sumEntries());
   frame->SetMinimum(-1*frame->GetMaximum());
   TLegend l(0.6,0.2,0.95,0.45);
   l.SetFillColor(0);
   l.SetBorderSize(0);
-  l.SetHeader(Form("%sEBEB %s/%s",(r==0?"":"!"), (i==0?"pass":"fail"), (j==0?"pass":"fail")) );
+  l.SetHeader(tag);
   l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
   l.AddEntry(frame->getObject(1),"SM Higgs","l");
   l.AddEntry(frame->getObject(2),"RS Graviton","l");
-  if(signal) l.AddEntry(frame->getObject(3),"signal weighted Data","p");
+  l.AddEntry(frame->getObject(3),"background weighted Data","p");
+  if(signal) l.AddEntry(frame->getObject(4),"signal weighted Data","p");
   
   frame->Draw();
   l.Draw("SAME");
-  cv.SaveAs( basePath+Form("cosThetaPlots/CosThetaDist_%s_%s.png",outputTag.Data(),tag.Data()) );
-  cv.SaveAs( basePath+Form("cosThetaPlots/CosThetaDist_%s_%s.pdf",outputTag.Data(),tag.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_%s%s_%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_%s%s_%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
 }
-*/
+
 
 void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
   TCanvas cv;

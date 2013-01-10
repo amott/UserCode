@@ -44,7 +44,7 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 
   RooRealVar mass = *(ws->var("mass"));
   RooRealVar cosT = *(ws->var("cosT"));
-  cosT.setBins(10);
+  cosT.setBins(3);
 
   RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,100,180);
   RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.2,10);
@@ -93,12 +93,17 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 void MakeSpinFits::AddSWeight(TString mcName,TString catTag,TString inputTag){
   if(ws==0) return;
   if(inputTag=="") inputTag=catTag;
-  RooRealVar mean = *(ws->var(Form("%s_FIT_%s_mean",mcName.Data(),inputTag.Data())));
-  mean.setConstant(kTRUE);
+  RooRealVar *mean;
+  if(useCombinedFit) mean = ws->var(Form("Data_%s_FIT_mean",mcName.Data()) );
+  else mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(),inputTag.Data()));
+  mean->setConstant(kTRUE);
+
 
   RooDataSet *ds  = (RooDataSet*)ws->data(Form("Data_%s",inputTag.Data()));
   RooAbsPdf  *pdf = ws->pdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),inputTag.Data()));
-  RooRealVar *Ns = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),inputTag.Data()));
+  RooAbsReal *Ns;
+  //if(useCombinedFit) Ns = (RooAbsReal*)ws->obj(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),inputTag.Data()));
+  Ns = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),inputTag.Data()));
   RooRealVar *Nb = ws->var(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),inputTag.Data()));
 
   RooStats::SPlot* sData = new RooStats::SPlot(Form("%s_sData_%s",mcName.Data(),catTag.Data()),"",
@@ -221,6 +226,8 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
 					   "Signal Model",RooArgList(*g1,*g2),*f);
     cout << "\tD" <<endl;
     //build the background model
+
+    /*
     RooRealVar *alpha1 = new RooRealVar(Form("Data_%s_FIT_%s_alpha1",mcName.Data(),outputTag.Data()),"alpha1",-0.1,-1.,0.);
     RooRealVar *alpha2 = new RooRealVar(Form("Data_%s_FIT_%s_alpha2",mcName.Data(),outputTag.Data()),"alpha2",-0.1,-1.,0.);
     RooRealVar *f_bkg  = new RooRealVar( Form("Data_%s_FIT_%s_fbkg",mcName.Data(),outputTag.Data()),"f_bkg",0.1,0,1);
@@ -229,6 +236,28 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
     
     RooAddPdf *BkgModel = new RooAddPdf(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),outputTag.Data()),"Background Model",
 					RooArgList(*exp1,*exp2),*f_bkg);
+    */
+
+    RooRealVar *pC = new RooRealVar(Form("Data_%s_FIT_%s_pC",mcName.Data(),catIt->Data()),"pC",1,1,1);
+    RooRealVar *p0 = new RooRealVar(Form("Data_%s_FIT_%s_p0",mcName.Data(),catIt->Data()),"p0",0,-1e6,1e6);
+    RooRealVar *p1 = new RooRealVar(Form("Data_%s_FIT_%s_p1",mcName.Data(),catIt->Data()),"p1",0,-1e6,1e6);
+    RooRealVar *p2 = new RooRealVar(Form("Data_%s_FIT_%s_p2",mcName.Data(),catIt->Data()),"p2",0,-1e6,1e6);
+    RooRealVar *p3 = new RooRealVar(Form("Data_%s_FIT_%s_p3",mcName.Data(),catIt->Data()),"p3",0,-1e6,1e6);
+    RooRealVar *p4 = new RooRealVar(Form("Data_%s_FIT_%s_p4",mcName.Data(),catIt->Data()),"p4",0,-1e6,1e6);
+    
+    RooFormulaVar *pCmod = new RooFormulaVar(Form("Data_%s_FIT_%s_pCmod",mcName.Data(),catIt->Data()),"","@0*@0",*pC);
+    RooFormulaVar *p0mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p0mod",mcName.Data(),catIt->Data()),"","@0*@0",*p0);
+    RooFormulaVar *p1mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p1mod",mcName.Data(),catIt->Data()),"","@0*@0",*p1);
+    RooFormulaVar *p2mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p2mod",mcName.Data(),catIt->Data()),"","@0*@0",*p2);
+    RooFormulaVar *p3mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p3mod",mcName.Data(),catIt->Data()),"","@0*@0",*p3);
+    RooFormulaVar *p4mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p4mod",mcName.Data(),catIt->Data()),"","@0*@0",*p4);  
+
+    RooArgList *args;
+
+    args = new RooArgList(*pCmod,*p0mod,*p1mod,*p2mod,*p3mod,*p4mod);
+    
+    RooBernstein *BkgModel = new RooBernstein(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),catIt->Data()),"Background Model",mass,*args);
+
     cout << "\tE" <<endl;
     RooRealVar *Nbkg = new RooRealVar(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),outputTag.Data()),"N background Events",100,0,1e+09);
     //fraction of the signal in this category
@@ -238,8 +267,8 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
     double thisFracE = thisFrac * TMath::Sqrt(1/thisCat+1/totalEvents);
     RooRealVar *fSig = new RooRealVar(Form("Data_%s_FIT_%s_fSig",mcName.Data(),outputTag.Data()),"",thisFrac,thisFrac-2*thisFracE,thisFrac+2*thisFracE);
     cout << "\tF" <<endl;
-    RooFormulaVar *NsigThisCat = new RooFormulaVar(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),outputTag.Data()),"","@0*@1",RooArgSet(*fSig,Nsig) );
-
+    //RooFormulaVar *NsigThisCat = new RooFormulaVar(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),outputTag.Data()),"","@0*@1",RooArgSet(*fSig,Nsig) )
+    RooRealVar *NsigThisCat = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),outputTag.Data()),"",0,0,1e6);
     //fit model
     RooAddPdf *FitModel = new RooAddPdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),outputTag.Data()),"Fit Model",
 					RooArgList(*SignalModel,*BkgModel),RooArgList(*NsigThisCat,*Nbkg));
@@ -259,10 +288,12 @@ void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float
   ws->import(combinedFit);
   catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
-    RooFormulaVar* fv = ((RooFormulaVar*)ws->obj(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),catIt->Data())));
-    RooRealVar * NsigTmp = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),catIt->Data()),"", fv->getVal());
-    NsigTmp->setError( fv->getPropagatedError( *res ) ); // get the error with correlations from the fit results
-    ws->import(*NsigTmp);
+    //RooFormulaVar* fv = ((RooFormulaVar*)ws->obj(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),catIt->Data())));
+    //RooRealVar * NsigTmp = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),catIt->Data()),"", fv->getVal());
+    //NsigTmp->setError( fv->getPropagatedError( *res ) ); // get the error with correlations from the fit results
+
+    AddSWeight(mcName,*catIt,inputTag);
+    //ws->import(*NsigTmp);
   }
 }
 
