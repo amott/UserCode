@@ -149,16 +149,16 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   if(useR9){
     for(int j=0;j<nCat;j++){
-      cat->defineType( Form("EB_%d",j),j );
-      cat->defineType( Form("EE_%d",j),j+nCat );
+      cat->defineType( Form("EB_%d",j),2*j );
+      cat->defineType( Form("EE_%d",j),2*j+1 );
       dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set,"evtWeight");
       dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set,"evtWeight");
     }
   }else{
     for(int i=0;i<nCat;i++){
       for(int j=0;j<nCat;j++){
-	cat->defineType( Form("EB_%d_%d",i,j),2*i+j );
-	cat->defineType( Form("EE_%d_%d",i,j), 2*i+j+nCat*nCat );
+	cat->defineType( Form("EB_%d_%d",i,j),4*i+2*j );
+	cat->defineType( Form("EE_%d_%d",i,j), 4*i+2*j+1 );
 	dataMapEB[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
 	dataMapEE[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
       }
