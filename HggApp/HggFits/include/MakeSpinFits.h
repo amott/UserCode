@@ -25,6 +25,7 @@
 #include "RooLinkedListIter.h"
 #include "RooCBShape.h"
 #include "RooSimultaneous.h"
+#include "RooExtendPdf.h"
 
 #include <HggOutputReader2.h>
 
@@ -53,7 +54,10 @@ public:
   void MakeBackgroundFitCosTBin(TString mcName,TString catTag,float minCosT,float maxCosT);
   void MakeCombinedBackgroundFitCosTBin(TString mcName,float minCosT,float maxCosT);
 
-  void MakeBackgroundOnlyFit(TString mcName,TString catTag);
+  void MakeBackgroundOnlyFit(TString catTag);
+  void MakeCombinedBackgroundOnlyFit();
+
+  void MakeCombinedSignalTest(TString mcName);
 
   void MakeAllBackgroundFits(TString cat, TString mcTag);
 
@@ -67,6 +71,9 @@ public:
   void setUseCombinedFit(bool b){useCombinedFit = b;}
 
   const int nCat;
+
+  void AddSWeight(TString mcName, TString catTag,TString inputTag);
+  void AddCombinedBkgOnlySWeight(TString mcName);
 private:
   RooWorkspace *ws;
 
@@ -83,7 +90,6 @@ private:
   bool useCombinedFit;
   float mean0,meanE0;
 
-  void AddSWeight(TString mcName, TString catTag,TString inputTag);
 
 };
 
