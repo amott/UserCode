@@ -1,4 +1,5 @@
 #include "MakeSpinFits.h"
+#include "subtract.cc"
 using namespace std;
 MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
   nCat(MakeSpinWorkspace::nCat),
@@ -44,7 +45,7 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 
   RooRealVar mass = *(ws->var("mass"));
   RooRealVar cosT = *(ws->var("cosT"));
-  cosT.setBins(20);
+  cosT.setBins(10);
 
   RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,100,180);
   RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.2,10);
@@ -666,11 +667,53 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   RooFitResult *res=BkgModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Range("fitlow,fithigh"),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_BKGFIT_%s_fitResult",catTag.Data()) );
 
+  pC->setConstant(kTRUE);
+  p0->setConstant(kTRUE);
+  p1->setConstant(kTRUE);
+  p2->setConstant(kTRUE);
+  p3->setConstant(kTRUE);
+  p4->setConstant(kTRUE);
+
   ws->import(*BkgModel);
   ws->import(*Nbkg);
   ws->import(*res);
 
 }
+
+void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
+  RooDataSet *data = (RooDataSet*)ws->data( Form("Data_%s",tag.Data()) );
+  RooRealVar *mass = ws->var("mass");
+  RooRealVar *cosT = ws->var("cosT");
+
+  cosT->setBins(10);
+
+  //cosT->setBins(10);
+
+  double se  = 2;
+  double m   = 125;
+
+
+  RooAbsPdf *bkgPdf = ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()));
+  double nBkgTot = ((RooRealVar*)ws->obj(Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),tag.Data())))->getVal();
+  RooRealVar range("range","",m-se,m+se);
+  RooRealVar all("all","",100,170);
+  double nBkg  = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*nBkgTot;
+
+  RooDataSet *bkg = (RooDataSet*)data->reduce( Form("mass < %f || mass > %f",m-3*se,m+3*se) );
+  RooDataHist bkgCos("bkgCos","",RooArgSet(*cosT),*bkg);
+  RooHistPdf  bkgCosPdf("bkgCosPdf","",RooArgSet(*cosT),bkgCos);
+
+  RooDataSet *sig = (RooDataSet*)data->reduce( Form("mass < %f && mass > %f",m+se,m-se) );
+  RooDataHist sigHist("sigCos","",RooArgSet(*cosT),*sig);
+
+  std::cout << m << "    " << se << "   " << nBkg << "   " << sig->sumEntries()<< std::endl;
+  
+  RooDataHist *sigBkgSub = subtract(*cosT,sigHist,bkgCosPdf,nBkg);
+  sigBkgSub->SetName(Form("Data_%s_%s_bkgSub_cosT",mcName.Data(),tag.Data()));
+
+  ws->import(*sigBkgSub);
+}
+
 
 void MakeSpinFits::MakeAllBackgroundFits(TString cat, TString mcName){
   if(ws==0) return;
@@ -695,22 +738,16 @@ void MakeSpinFits::run(){
     std::vector<TString>::const_iterator catIt = catLabels.begin();
     for(; catIt != catLabels.end(); catIt++){
       MakeSignalFit(*catIt,*mcIt);
-
       if(mcIt == mcLabel.begin()) MakeBackgroundOnlyFit(*catIt);
-
-      if(!useCombinedFit){
-	if(catIt == catLabels.begin()){
-	  MakeBackgroundFit(*mcIt,*catIt,124.5,2,false); // do the initial fit
-	  mean0  = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getVal();
-	  meanE0 = ws->var(Form("Data_%s_FIT_EB_0_mean",mcIt->Data()))->getError();    
-	}
-	MakeAllBackgroundFits(*catIt,*mcIt);
-      }
     }
     if(useCombinedFit){
       MakeCombinedSignalTest(*mcIt);
       //AddCombinedBkgOnlySWeight(*mcIt);
       //MakeCombinedBackgroundFit(*mcIt,125,2);
+    }
+    catIt = catLabels.begin();
+    for(; catIt != catLabels.end(); catIt++){
+      getSimpleBkgSubtraction(*mcIt,*catIt);
     }
   }
     

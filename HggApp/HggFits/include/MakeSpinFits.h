@@ -61,6 +61,8 @@ public:
 
   void MakeAllBackgroundFits(TString cat, TString mcTag);
 
+  void getSimpleBkgSubtraction(TString mcName,TString tag);
+
   void setAddSWeight(bool b){addSWeight=b;}
 
   void run();

@@ -15,6 +15,7 @@ int main(int argc, char** argv){
   a.addArgument("InputLumi",ArgParser::required,"input luminosity");
 
   a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
+  a.addLongOption("SaveToyWorkspaces",ArgParser::noArg,"save the generated toy workspaces (for debugging!) (default: off)");
 
 
   string ret;
@@ -32,12 +33,14 @@ int main(int argc, char** argv){
   float nlumi = atof(a.getArgument("InputLumi").c_str());
   
   bool useR9 = a.longFlagPres("useR9");
+  bool saveWS = a.longFlagPres("SaveToyWorkspaces");
   MakeSpinToy mst(wsFile);
 
   mst.setTargetLumi(tlumi);
   mst.setNominalLumi(nlumi);
 
   mst.setUseR9(useR9);
+  mst.setSaveWorkspaces(saveWS);
   mst.runN(N);
   mst.save(outFile);
 

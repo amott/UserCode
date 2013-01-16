@@ -41,10 +41,11 @@ public:
   
   void addMCType(TString s);
 
-  RooDataHist* getSimpleBkgSubtraction(TString tag,TString mcName);
+  //RooDataHist* getSimpleBkgSubtraction(TString tag,TString mcName);
   void DrawBlindFit(TString tag,TString mcName);
   void DrawFit(TString tag,TString mcName);
   void DrawSpinBackground(TString tag,TString mcName,bool signal);
+  void DrawSpinSubBackground(TString tag,TString mcName,bool signal);
   void PlotSignalFits(TString tag,TString mcName);
 
 
