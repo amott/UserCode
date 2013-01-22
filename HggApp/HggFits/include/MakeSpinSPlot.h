@@ -32,6 +32,8 @@ public:
   void calculate();
 
   RooDataSet* getSWeightDataSet(){ return __sWeightDataSet; }
+
+  RooArgSet* getSWeightVars(){return __sWeightVars;}
 protected:
   void computeCovMatrix();
 
@@ -39,6 +41,7 @@ protected:
 
   void computeSWeight();
   RooDataSet* __sWeightDataSet;
+  RooArgSet* __sWeightVars;
 
   int __nSpec;
   std::vector<RooAbsPdf*> __pdfs;
@@ -46,7 +49,8 @@ protected:
   std::vector<TString> __speciesNames;
 
   RooAbsData *__dataSet;
-
+  
+  
   TMatrixD *__covMatrix;
 };
 

@@ -42,7 +42,8 @@ void MakeSpinPlots::runAll(TString mcName){
 	}
       }
   }
-
+  DrawSpinSubTotBackground(mcName,false);
+  DrawSpinSubTotBackground(mcName,true);
 }
 
 void MakeSpinPlots::runAll(TString tag, TString mcName){
@@ -369,6 +370,46 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   l.Draw("SAME");
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
+}
+
+void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
+  double totEB  = ws->var("Hgg125_EB_totalEvents")->getVal();
+  double totEE  = ws->var("Hgg125_EE_totalEvents")->getVal();
+
+  TCanvas cv;
+  double thisN  = ws->data(Form("%s_Combined",mcName.Data()))->sumEntries();
+  float norm = 607*lumi/12.*thisN/(totEB+totEE);
+
+
+  if(signal) norm = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getVal();
+  RooPlot *frame = ws->var("cosT")->frame(-1,1,10);
+
+  RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_Combined"))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
+  tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
+
+  ws->pdf(Form("Hgg125_FIT_cosTpdf"))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
+  ws->pdf(Form("RSG125_FIT_cosTpdf"))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
+  if(signal){
+    RooDataHist *h = (RooDataHist*)ws->data( Form("Data_%s_Combined_bkgSub_cosT",mcName.Data()) );
+    h->plotOn(frame,RooFit::MarkerStyle(4));
+    std::cout << "Nsig: " << h->sumEntries() << std::endl;
+  }
+  
+  frame->SetMaximum(frame->GetMaximum()*(signal?2.:1.2)*norm/tmp->sumEntries());
+  frame->SetMinimum(-1*frame->GetMaximum());
+  TLegend l(0.6,0.2,0.95,0.45);
+  l.SetFillColor(0);
+  l.SetBorderSize(0);
+  l.SetHeader("Combined");
+  l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
+  l.AddEntry(frame->getObject(1),"SM Higgs","l");
+  l.AddEntry(frame->getObject(2),"RS Graviton","l");
+  if(signal) l.AddEntry(frame->getObject(3),"bkg-subtracted Data","p");
+  
+  frame->Draw();
+  l.Draw("SAME");
+  cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data()) );
 }
 
 

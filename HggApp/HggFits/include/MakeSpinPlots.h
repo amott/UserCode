@@ -46,6 +46,7 @@ public:
   void DrawFit(TString tag,TString mcName);
   void DrawSpinBackground(TString tag,TString mcName,bool signal);
   void DrawSpinSubBackground(TString tag,TString mcName,bool signal);
+  void DrawSpinSubTotBackground(TString mcName,bool signal);
   void PlotSignalFits(TString tag,TString mcName);
 
 

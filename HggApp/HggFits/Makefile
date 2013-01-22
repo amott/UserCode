@@ -95,7 +95,8 @@ $(OUTLIB)MakeSpinWorkspace.o:	$(SRCDIR)MakeSpinWorkspace.C \
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinWorkspace.o $<
 
 $(OUTLIB)MakeSpinFits.o:	$(SRCDIR)MakeSpinFits.C \
-				$(OUTLIB)HggOutputReader2.o
+				$(OUTLIB)HggOutputReader2.o \
+				$(OUTLIB)MakeSpinSPlot.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinFits.o $<
 
 $(OUTLIB)MakeSpinPlots.o:	$(SRCDIR)MakeSpinPlots.C
@@ -114,3 +115,6 @@ $(OUTLIB)MakeSpinToyWorkspace.o:	$(SRCDIR)MakeSpinToyWorkspace.C \
 $(OUTLIB)MakeSpinToy.o:		$(SRCDIR)MakeSpinToy.C \
 				$(OUTLIB)MakeSpinFits.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinToy.o $<
+
+$(OUTLIB)MakeSpinSPlot.o:	$(SRCDIR)MakeSpinSPlot.C
+		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinSPlot.o $<

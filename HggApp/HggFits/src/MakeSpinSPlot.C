@@ -5,6 +5,7 @@ MakeSpinSPlot::MakeSpinSPlot(RooAbsData *data){
   __dataSet = data;
   __nSpec=0;
   __covMatrix=0;
+
 }
 
 void MakeSpinSPlot::addSpecies(TString name, RooAbsPdf* pdf, double expYield){
@@ -48,13 +49,13 @@ double MakeSpinSPlot::computeDenom(){ //compute the denominator for the covarian
 
 void MakeSpinSPlot::computeSWeight(){
 
-  RooArgSet swVars;
+  __sWeightVars = new RooArgSet();
   std::vector<TString>::const_iterator specIt = __speciesNames.begin();
   for(; specIt != __speciesNames.end(); specIt++){
-    swVars.add( *(new RooRealVar( Form("%s_sw",specIt->Data()),"",-1e+6,1e+6)) );
+    __sWeightVars->add( *(new RooRealVar( Form("%s_sw",specIt->Data()),"",-1e+6,1e+6)) );
   }
   
-  __sWeightDataSet = new RooDataSet("SWeightDataSet","",swVars);
+  __sWeightDataSet = new RooDataSet("SWeightDataSet","",*__sWeightVars);
   
   Long64_t iEntry=-1;
 
@@ -73,10 +74,10 @@ void MakeSpinSPlot::computeSWeight(){
       }
 
       double denom = computeDenom();
-      ((RooRealVar*)swVars.find( Form( "%s_sw", specIt->Data()) ))->setVal(num/denom);
+      ((RooRealVar*)__sWeightVars->find( Form( "%s_sw", specIt->Data()) ))->setVal(num/denom);
     }//end loop over species
 
-    __sWeightDataSet->add(swVars);
+    __sWeightDataSet->add(*__sWeightVars);
   }  //end while loop
 
 }
@@ -86,3 +87,4 @@ void MakeSpinSPlot::calculate(){
   computeCovMatrix();
   computeSWeight();
 }
+

@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "MakeSpinWorkspace.h"
+#include "MakeSpinSPlot.h"
 
 class MakeSpinFits{
 public:
@@ -47,6 +48,9 @@ public:
   void addMCLabel(TString l){mcLabel.push_back(l);}
 
   void MakeSignalFit(TString tag,TString mcName);
+  void MakeSignalFitForFit(TString tag, TString mcName);
+
+  void MakeCombinedSignalSpin(TString mcName);
 
   void MakeBackgroundFit(TString mcName,TString catTag,float initMass,float range,bool gausPen,TString inputTag="");
   void MakeCombinedBackgroundFit(TString mcName,float initMass, float range,TString inputTag="");
@@ -62,6 +66,7 @@ public:
   void MakeAllBackgroundFits(TString cat, TString mcTag);
 
   void getSimpleBkgSubtraction(TString mcName,TString tag);
+  void getSimpleTotalBkgSubtraction(TString mcName);
 
   void setAddSWeight(bool b){addSWeight=b;}
 
