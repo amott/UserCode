@@ -77,7 +77,6 @@ runPlots:		$(EXESRCDIR)runPlots.C \
 	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o runPlots $(OUTLIB)/*.o  $(GLIBS) $ $<	
 
 runToyWorkspaces:		$(EXESRCDIR)runToyWorkspaces.C \
-				$(OUTLIB)MakeSpinToyWorkspace.o \
 				$(OUTLIB)MakeSpinToy.o\
 				$(OUTLIB)ArgParser.o \
 				$(HGGAPPINC)ReadConfig.hh

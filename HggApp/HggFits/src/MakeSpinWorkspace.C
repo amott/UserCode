@@ -228,8 +228,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     else evtW->setVal(1);
     if( !(iEntry%10000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
 
-    int cat = (p1==0 && p2==0 ? 0 : 1);
-    (*datamap)[std::pair<int,int>(cat,0)]->add(set);
+    if(useR9){
+      int cat = (p1==0 && p2==0 ? 0 : 1);
+      (*datamap)[std::pair<int,int>(cat,0)]->add(set);
+    }else{
+      (*datamap)[std::pair<int,int>(p1,p2)]->add(set);
+    }
   }
   cout << "Processed " << iEntry << " Entries" <<endl;
 

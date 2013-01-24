@@ -1,5 +1,5 @@
 #include "MakeSpinSPlot.h"
-
+#include <iostream>
 
 MakeSpinSPlot::MakeSpinSPlot(RooAbsData *data){
   __dataSet = data;
@@ -20,6 +20,8 @@ void MakeSpinSPlot::computeCovMatrix(){
 
   __covMatrix = new TMatrixD(__nSpec,__nSpec);
 
+  std::cout << "Entries: "<< __dataSet->sumEntries() <<std::endl;
+  std::cout << "Covariance Matrix:" << std::endl;
   Long64_t iEntry=-1;
   while( __dataSet->get(++iEntry) ){
     
@@ -31,7 +33,12 @@ void MakeSpinSPlot::computeCovMatrix(){
       }
     }
   }//while
-
+    for(int iRow = 0; iRow<__nSpec;iRow++){
+      for(int iCol = 0; iCol<__nSpec;iCol++){
+	std::cout << (*__covMatrix)[iRow][iCol] << " ";
+      }
+      std::cout << std::endl;
+    }
   __covMatrix->Invert();
 }
 

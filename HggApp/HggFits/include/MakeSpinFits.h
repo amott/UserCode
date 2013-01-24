@@ -79,6 +79,8 @@ public:
 
   const int nCat;
 
+  static float computeFWHM(RooAbsPdf* pdf, float mean, RooRealVar* var);
+
   void AddSWeight(TString mcName, TString catTag,TString inputTag);
   void AddCombinedBkgOnlySWeight(TString mcName);
 private:
