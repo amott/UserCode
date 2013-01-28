@@ -27,51 +27,55 @@ using namespace std;
 // to get PWD
 #include <unistd.h>
 
-SUSYMultiTop::SUSYMultiTop(TTree *tree, double weight) : Vecbos(tree) {
+SUSYMultiTop::SUSYMultiTop(TTree *tree, double weight, int tWfile) : Vecbos(tree) {
 
   char tmpSTRING[516];
   getcwd(tmpSTRING,sizeof(tmpSTRING));
   std::string pwd(tmpSTRING);
-  std::string fileWeight=pwd+"/BTagging/Weights.txt";
+
+  std::string fileWeight;
+  if(AnalysisSelector==1 || AnalysisSelector==6){
+    fileWeight=pwd+"/BTagging/8TeVNew/WeightsMu.txt";
+    if(tWfile==1)fileWeight=pwd+"/BTagging/8TeVNew/WeightstWMu.txt";
+    if(tWfile==-1)fileWeight=pwd+"/BTagging/8TeVNew/WeightstbarWMu.txt";
+  }
+  if(AnalysisSelector==3){
+    fileWeight=pwd+"/BTagging/8TeVNew/WeightsEle.txt";
+    if(tWfile==1)fileWeight=pwd+"/BTagging/8TeVNew/WeightstWEle.txt";
+    if(tWfile==-1)fileWeight=pwd+"/BTagging/8TeVNew/WeightstbarWEle.txt";
+  }
 
   _goodRunLS = false;
   _isData = false;
-  if(!isSMS)_weight=FindWeight(fileWeight, weight);  
-  else _weight=1.0;
+  _weight=FindWeight(fileWeight, weight);  
 
-  std::string sample;
-  if(!isSMS)sample=FindSample(fileWeight, weight);
-  else sample="";
+  _sample=FindSample(fileWeight, weight);
 
   //Read SF and b-tagging eff
   bool isVerbose=false;
 
-  std::string filepTB=pwd+"/BTagging/pTBinsBNew.txt";
-  std::string filepTL=pwd+"/BTagging/pTBinsLNew.txt";
-  std::string fileEtaB=pwd+"/BTagging/EtaBinsBNew.txt";
-  std::string fileEtaL=pwd+"/BTagging/EtaBinsL.txt";
-  std::string fileSFB=pwd+"/BTagging/BEff_SF_TCHEM.txt";
-  std::string fileSFL=pwd+"/BTagging/Mistag_SF_TCHEM.txt";
+  std::string filepTB=pwd+"/BTagging/8TeVNew/pTBinsBNew.txt";
+  std::string filepTL=pwd+"/BTagging/8TeVNew/pTBinsLNew.txt";
+  std::string fileEtaB=pwd+"/BTagging/8TeVNew/EtaBinsBNew.txt";
+  std::string fileEtaL=pwd+"/BTagging/8TeVNew/EtaBinsL.txt";
+  std::string fileSFB=pwd+"/BTagging/8TeVNew/BEff_SF_CSVM.txt";
+  std::string fileSFL=pwd+"/BTagging/8TeVNew/Mistag_SF_CSVM.txt";
 
-  std::string fileEffL=pwd+"/BTagging/"+sample+"_EffL.txt";
-  std::string fileEffB=pwd+"/BTagging/"+sample+"_EffB.txt";
-  std::string fileEffC=pwd+"/BTagging/"+sample+"_EffC.txt";
+  std::string fileEffL=pwd+"/BTagging/8TeVNew/"+_sample+"_EffL.txt";
+  std::string fileEffB=pwd+"/BTagging/8TeVNew/"+_sample+"_EffB.txt";
+  std::string fileEffC=pwd+"/BTagging/8TeVNew/"+_sample+"_EffC.txt";
 
-  std::string fileEffLSMS=pwd+"/BTagging/EffLSMS.txt";
-  std::string fileEffBSMS=pwd+"/BTagging/EffBSMS.txt";
-  std::string fileEffCSMS=pwd+"/BTagging/EffCSMS.txt";
-  std::string fileEffLFast=pwd+"/BTagging/EffLFast.txt";
-  std::string fileEffBFast=pwd+"/BTagging/EffBFast.txt";
-  std::string fileEffCFast=pwd+"/BTagging/EffCFast.txt";
+  std::string fileEffLFast=pwd+"/BTagging/8TeVNew/"+_sample+"_EffLFast.txt";
+  std::string fileEffBFast=pwd+"/BTagging/8TeVNew/"+_sample+"_EffBFast.txt";
+  std::string fileEffCFast=pwd+"/BTagging/8TeVNew/"+_sample+"_EffCFast.txt";
 
-  std::string fileEtaBFast=pwd+"/BTagging/EtaBinsBFastSim.txt";
-  std::string filepTBFast=pwd+"/BTagging/pTBinsBFastSim.txt";
-  std::string filepTLFast=pwd+"/BTagging/pTBinsLFastSim.txt";
-  std::string fileEtaLFast=pwd+"/BTagging/EtaBinsLFastSim.txt";
-  std::string fileSFBFast=pwd+"/BTagging/BEff_SF_FastSim.txt";
-  std::string fileSFCFast=pwd+"/BTagging/CEff_SF_FastSim.txt";
-  std::string fileSFLFast=pwd+"/BTagging/Mistag_SF_FastSim.txt";
-
+  std::string fileEtaBFast=pwd+"/BTagging/8TeVNew/EtaBinsBFastSim.txt";
+  std::string filepTBFast=pwd+"/BTagging/8TeVNew/pTBinsBFastSim.txt";
+  std::string filepTLFast=pwd+"/BTagging/8TeVNew/pTBinsLFastSim.txt";
+  std::string fileEtaLFast=pwd+"/BTagging/8TeVNew/EtaBinsLFastSim.txt";
+  std::string fileSFBFast=pwd+"/BTagging/8TeVNew/BEff_SF_FastSim.txt";
+  std::string fileSFCFast=pwd+"/BTagging/8TeVNew/CEff_SF_FastSim.txt";
+  std::string fileSFLFast=pwd+"/BTagging/8TeVNew/Mistag_SF_FastSim.txt";
 
   //pT and Eta bins
   pTB=ReadBins(filepTB, isVerbose);
@@ -97,7 +101,7 @@ SUSYMultiTop::SUSYMultiTop(TTree *tree, double weight) : Vecbos(tree) {
   if(isSMS){
     SFBvFast=GetSF(fileSFBFast, 0, false);
     SFBvUpFast=GetSF(fileSFBFast, 1, false);
-    SFBvDownFast=GetSF(fileSFBFast, -1, false);;
+    SFBvDownFast=GetSF(fileSFBFast, -1, false);
     SFCvFast=GetSF(fileSFCFast, 1, true);
     SFCvUpFast=GetSF(fileSFCFast, 1, true);
     SFCvDownFast=GetSF(fileSFCFast, -1, true); 
@@ -107,18 +111,21 @@ SUSYMultiTop::SUSYMultiTop(TTree *tree, double weight) : Vecbos(tree) {
   }
 
   //Eff
-  if(!isSMS){
+  if(!isSMS && !isEffOnly){
     EffL=GetEff(fileEffL);
     EffB=GetEff(fileEffB);
     EffC=GetEff(fileEffC);
-  }else{
-    EffL=GetEff(fileEffLSMS);
-    EffB=GetEff(fileEffBSMS);
-    EffC=GetEff(fileEffCSMS);
+  }else if(!isEffOnly){
+    EffL=GetEff(fileEffL);
+    EffB=GetEff(fileEffB);
+    EffC=GetEff(fileEffC);
     EffLFast=GetEff(fileEffLFast);
     EffBFast=GetEff(fileEffBFast);
     EffCFast=GetEff(fileEffCFast);
   }
+
+  // load tag&probe histograms
+  if(!_isData) LoadTagAndProbe();
 
 }
 
@@ -134,7 +141,7 @@ double SUSYMultiTop::FindWeight(string fileWeight, double weight){
     while (!scan.eof()) {
       scan.getline(content,512);
       scan >> label >> xs >> tmp;
-      if((xs+1.0 > weight) && (xs-1.0 < weight))EvWeight=tmp;
+      if((xs+0.00005 > weight) && (xs-0.00005 < weight))EvWeight=tmp;
     }
   }
   return EvWeight;
@@ -152,7 +159,7 @@ std::string SUSYMultiTop::FindSample(string fileWeight, double weight){
     while (!scan.eof()) {
       scan.getline(content,512);
       scan >> tmp >> xs >> EvWeight;
-      if((xs+1.0 > weight) && (xs-1.0 < weight))label=tmp;
+      if((xs+0.00005 > weight) && (xs-0.00005 < weight))label=tmp;
     }
   }
   return label;
@@ -166,15 +173,11 @@ SUSYMultiTop::SUSYMultiTop(TTree *tree, bool goodRunLS, bool isData) : Vecbos(tr
   _weight=1.0;
 
   //To read good run list!
-  if (goodRunLS && isData && !is8TeV) {
-    //    std::string goodRunGiasoneFile = "config/vecbos/json/52X/Cert_190456-191276_8TeV_PromptReco_Collisions12_JSON.txt";
-    std::string goodRunGiasoneFile = "config/vecbos/json/myGolden2011.txt";
+  if (goodRunLS && isData) {
+    std::string goodRunGiasoneFile = "json/Cert_190456-208686_8TeV_PromptReco_Collisions12_JSON.txt";
     setJsonGoodRunList(goodRunGiasoneFile);
     fillRunLSMap();
   }
-
-  // load tag&probe histograms
-  //  if(!_isData()) LoadTagAndProbe(); 
 
 }
 
@@ -202,220 +205,256 @@ int SUSYMultiTop::HighestPtJet(vector<TLorentzVector> Jet, int firstJet) {
   return index;
 }
 
-bool SUSYMultiTop::isLooseMuon(int iMu){
+bool SUSYMultiTop::isLooseJetMva(float pt, float eta, float id) {
 
-  bool ret = false;
-  Utils anaUtils;
-  bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
+  bool isOk = true;
 
-  if(isMuGlobal){
-
-    int iTrack = trackIndexMuon[iMu];
-    if(numberOfValidStripTIBHitsTrack[iTrack]+
-       numberOfValidStripTIDHitsTrack[iTrack]+
-       numberOfValidStripTOBHitsTrack[iTrack]+
-       numberOfValidStripTECHitsTrack[iTrack] > 10){
-
-      ret = true;
-
-    }
+  if (pt<10) {
+    if (fabs(eta)<=2.5 && id<0.0)                   isOk = false;
+    if (fabs(eta)>2.5 && fabs(eta)<=2.75 && id<0.0) isOk = false;
+    if (fabs(eta)>2.75 && fabs(eta)<=3.0 && id<0.0) isOk = false;
+    if (fabs(eta)>3.0 && fabs(eta)<=5.0 && id<0.2)  isOk = false;
   }
-  return ret;
+
+  if (pt<20 && pt>=10) {
+    if (fabs(eta)<=2.5 && id<-0.4)                   isOk = false;
+    if (fabs(eta)>2.5 && fabs(eta)<=2.75 && id<-0.4) isOk = false;
+    if (fabs(eta)>2.75 && fabs(eta)<=3.0 && id<-0.4) isOk = false;
+    if (fabs(eta)>3.0 && fabs(eta)<=5.0 && id<0.4)   isOk = false;
+  }
+
+  if (pt<30 && pt>=20) {
+    if (fabs(eta)<=2.5 && id<0.0)                   isOk = false;
+    if (fabs(eta)>2.5 && fabs(eta)<=2.75 && id<0.0) isOk = false;
+    if (fabs(eta)>2.75 && fabs(eta)<=3.0 && id<0.2) isOk = false;
+    if (fabs(eta)>3.0 && fabs(eta)<=5.0 && id<0.6)  isOk = false;
+  }
+
+  if (pt<50 && pt>=30) {
+    if (fabs(eta)<=2.5 && id<0.0)                   isOk = false;
+    if (fabs(eta)>2.5 && fabs(eta)<=2.75 && id<0.0) isOk = false;
+    if (fabs(eta)>2.75 && fabs(eta)<=3.0 && id<0.6) isOk = false;
+    if (fabs(eta)>3.0 && fabs(eta)<=5.0 && id<0.2)  isOk = false;
+  }
+
+  return isOk;
 }
 
-bool SUSYMultiTop::isGlobalMuon(int iMu){
-  bool ret = false;
-  Utils anaUtils;
-  bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
-  bool isMuGlobalPrompt = anaUtils.muonIdVal(muonIdMuon[iMu], bits::GlobalMuonPromptTight);
-  bool isMuTracker = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllTrackerMuons);
 
-  if(isMuGlobal && isMuGlobalPrompt && isMuTracker)ret=true;
+// bool SUSYMultiTop::isLooseMuon(int iMu){
 
-  return ret;
-}
+//   bool ret = false;
+//   Utils anaUtils;
+//   bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
+
+//   if(isMuGlobal){
+
+//     int iTrack = trackIndexMuon[iMu];
+//     if(numberOfValidStripTIBHitsTrack[iTrack]+
+//        numberOfValidStripTIDHitsTrack[iTrack]+
+//        numberOfValidStripTOBHitsTrack[iTrack]+
+//        numberOfValidStripTECHitsTrack[iTrack] > 10){
+
+//       ret = true;
+
+//     }
+//   }
+//   return ret;
+// }
+
+// bool SUSYMultiTop::isGlobalMuon(int iMu){
+//   bool ret = false;
+//   Utils anaUtils;
+//   bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
+//   bool isMuGlobalPrompt = anaUtils.muonIdVal(muonIdMuon[iMu], bits::GlobalMuonPromptTight);
+//   bool isMuTracker = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllTrackerMuons);
+
+//   if(isMuGlobal && isMuGlobalPrompt && isMuTracker)ret=true;
+
+//   return ret;
+// }
 
 
-bool SUSYMultiTop::isTightMuon(int iMu){
+// bool SUSYMultiTop::isTightMuon(int iMu){
   
-  bool ret = false;
-  Utils anaUtils;
-  bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
-  bool isMuGlobalPrompt = anaUtils.muonIdVal(muonIdMuon[iMu], bits::GlobalMuonPromptTight);
-  bool isMuTracker = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllTrackerMuons);
+//   bool ret = false;
+//   Utils anaUtils;
+//   bool isMuGlobal = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllGlobalMuons);
+//   bool isMuGlobalPrompt = anaUtils.muonIdVal(muonIdMuon[iMu], bits::GlobalMuonPromptTight);
+//   bool isMuTracker = anaUtils.muonIdVal(muonIdMuon[iMu], bits::AllTrackerMuons);
   
-  if(isMuGlobal && isMuGlobalPrompt && isMuTracker){
+//   if(isMuGlobal && isMuGlobalPrompt && isMuTracker){
 
-    double pt = sqrt(pxMuon[iMu]*pxMuon[iMu]+pyMuon[iMu]*pyMuon[iMu]);
+//     double pt = sqrt(pxMuon[iMu]*pxMuon[iMu]+pyMuon[iMu]*pyMuon[iMu]);
     
-    int iTrack = trackIndexMuon[iMu];
-    if(numberOfValidStripTIBHitsTrack[iTrack]+
-       numberOfValidStripTIDHitsTrack[iTrack]+
-       numberOfValidStripTOBHitsTrack[iTrack]+
-       numberOfValidStripTECHitsTrack[iTrack] > 10){
+//     int iTrack = trackIndexMuon[iMu];
+//     if(numberOfValidStripTIBHitsTrack[iTrack]+
+//        numberOfValidStripTIDHitsTrack[iTrack]+
+//        numberOfValidStripTOBHitsTrack[iTrack]+
+//        numberOfValidStripTECHitsTrack[iTrack] > 10){
       
-      if(numberOfValidPixelBarrelHitsTrack[iTrack] > 0 ||
-	 numberOfValidPixelEndcapHitsTrack[iTrack] > 0){
-	if(fabs(transvImpactParTrack[iTrack]) < 0.2){
-	  //if(trackNormalizedChi2GlobalMuonTrack[iTrack] < 10){                                                                                           
+//       if(numberOfValidPixelBarrelHitsTrack[iTrack] > 0 ||
+// 	 numberOfValidPixelEndcapHitsTrack[iTrack] > 0){
+// 	if(fabs(transvImpactParTrack[iTrack]) < 0.2){
+// 	  //if(trackNormalizedChi2GlobalMuonTrack[iTrack] < 10){                                                                                           
 
-	  double IECAL = emEt03Muon[iMu];
-	  double IHCAL = hadEt03Muon[iMu];
-	  double ITRK  = sumPt03Muon[iMu];
+// 	  double IECAL = emEt03Muon[iMu];
+// 	  double IHCAL = hadEt03Muon[iMu];
+// 	  double ITRK  = sumPt03Muon[iMu];
 
-	  double CombinedIso= (IECAL+IHCAL+ITRK) - rhoFastjet * TMath::Pi() * 0.3 * 0.3;
+// 	  double CombinedIso= (IECAL+IHCAL+ITRK) - rhoFastjet * TMath::Pi() * 0.3 * 0.3;
 
-	  if(CombinedIso/pt < 0.3){
-	    ret = true;
-	  }
-	}
-      }
-    }
-  }
+// 	  if(CombinedIso/pt < 0.3){
+// 	    ret = true;
+// 	  }
+// 	}
+//       }
+//     }
+//   }
 
-  return ret;
-}
-
-
-bool SUSYMultiTop::is80Electron(int iEle){
-
-  Utils anaUtils;
-
-  //is an ECAL driven electron                                                                                                                               
-  bool isECALdriven = anaUtils.electronRecoType(recoFlagsEle[iEle], bits::isEcalDriven);
-
-  if(isECALdriven == false) return false;
-
-  bool isBarrel = true;
-  bool isEndcap = true;
-  int iSC = superClusterIndexEle[iEle];
-  double ETA = etaSC[iSC];
-  double ET = energySC[iSC]/cosh(etaSC[iSC]);
-
-  if(ET <= 20.0) return false;
-
-  //is the electron in the ECAL fiducial region?                                                                                                             
-  if(fabs(ETA) > 1.4442) isBarrel = false;
-  if(fabs(ETA) > 2.5 || fabs(ETA) < 1.566) isEndcap = false;
-
-  if(isBarrel == false && isEndcap == false) return false;
-
-  double trackISO = dr03TkSumPtEle[iEle];
-  double ECALISO = dr03EcalRecHitSumEtEle[iEle];
-  double HCALISO = dr03HcalTowerSumEtEle[iEle];
-
-  double pt = sqrt(pxEle[iEle]*pxEle[iEle]+pyEle[iEle]*pyEle[iEle]);
-
-  double sigietaieta = covIEtaIEtaSC[iSC];
-  double dphi = deltaPhiAtVtxEle[iEle];
-  double deta = deltaEtaAtVtxEle[iEle];
-  double HoE = hOverEEle[iEle];
-  double convDist = convDistEle[iEle];
-  double convDcot = convDcotEle[iEle];
-
-  if(fabs(convDist) <= 0.02 && fabs(convDcot) <= 0.02) return false;
-
-  int iTrack = gsfTrackIndexEle[iEle];
-
-  if(expInnerLayersGsfTrack[iTrack] > 0) return false;
-
-  trackISO /= ET;
-  ECALISO /= ET;
-  HCALISO /= ET;
-
-  if(isBarrel){
-    //ISO WP80                                                                                                                                               
-    if(trackISO > 0.09) return false;
-    if(ECALISO > 0.07) return false;
-    if(HCALISO > 0.10) return false;
-
-    //ID WP80                                                                                                                                                
-    if(fabs(dphi) > 0.06) return false;
-    if(fabs(deta) > 0.004) return false;
-    if(HoE > 0.04) return false;
-    if(sigietaieta > 0.01) return false;
-  } else {
-    //ISO WP80                                                                                                                                               
-    if(trackISO > 0.04) return false;
-    if(ECALISO > 0.05) return false;
-    if(HCALISO > 0.025) return false;
-
-    //ID WP80                                                                                                                                                
-    if(fabs(dphi) > 0.03) return false;
-    //if(fabs(deta) > 0.007) return false;                                                                                                                   
-    if(HoE > 0.025) return false;
-    if(sigietaieta > 0.03) return false;
-  }
-
-  return true;
-}
+//   return ret;
+// }
 
 
-bool SUSYMultiTop::is95Electron(int iEle){
+// bool SUSYMultiTop::is80Electron(int iEle){
 
-  Utils anaUtils;
+//   Utils anaUtils;
 
-  //is an ECAL driven electron                                                                                                                               
-  bool isECALdriven = anaUtils.electronRecoType(recoFlagsEle[iEle], bits::isEcalDriven);
-  if(isECALdriven == false) return false;
+//   //is an ECAL driven electron
+//   bool isECALdriven = anaUtils.electronRecoType(recoFlagsEle[iEle], bits::isEcalDriven);
 
-  bool isBarrel = true;
-  bool isEndcap = true;
-  int iSC = superClusterIndexEle[iEle];
-  double ETA = etaSC[iSC];
-  double ET = energySC[iSC]/cosh(etaSC[iSC]);
+//   if(isECALdriven == false) return false;
 
-  if(ET <= 20.0) return false;
+//   bool isBarrel = true;
+//   bool isEndcap = true;
+//   int iSC = superClusterIndexEle[iEle];
+//   double ETA = etaSC[iSC];
+//   double ET = energySC[iSC]/cosh(etaSC[iSC]);
 
-  //is the electron in the ECAL fiducial region?                                                                                                             
-  if(fabs(ETA) > 1.4442) isBarrel = false;
-  if(fabs(ETA) > 2.5 || fabs(ETA) < 1.566) isEndcap = false;
+//   if(ET <= 20.0) return false;
 
-  if(isBarrel == false && isEndcap == false) return false;
+//   //is the electron in the ECAL fiducial region?                                                                                                             
+//   if(fabs(ETA) > 1.4442) isBarrel = false;
+//   if(fabs(ETA) > 2.5 || fabs(ETA) < 1.566) isEndcap = false;
 
-  double trackISO = dr03TkSumPtEle[iEle];
-  double ECALISO = dr03EcalRecHitSumEtEle[iEle];
-  double HCALISO = dr03HcalTowerSumEtEle[iEle];
+//   if(isBarrel == false && isEndcap == false) return false;
 
-  double pt = sqrt(pxEle[iEle]*pxEle[iEle]+pyEle[iEle]*pyEle[iEle]);
+//   double trackISO = dr03TkSumPtEle[iEle];
+//   double ECALISO = dr03EcalRecHitSumEtEle[iEle];
+//   double HCALISO = dr03HcalTowerSumEtEle[iEle];
 
-  double sigietaieta = covIEtaIEtaSC[iSC];
-  double deta = deltaEtaAtVtxEle[iEle];
-  double HoE = hOverEEle[iEle];
-  int iTrack = gsfTrackIndexEle[iEle];
+//   double pt = sqrt(pxEle[iEle]*pxEle[iEle]+pyEle[iEle]*pyEle[iEle]);
 
-  if(expInnerLayersGsfTrack[iTrack] > 1) return false;
+//   double sigietaieta = covIEtaIEtaSC[iSC];
+//   double dphi = deltaPhiAtVtxEle[iEle];
+//   double deta = deltaEtaAtVtxEle[iEle];
+//   double HoE = hOverEEle[iEle];
+//   double convDist = convDistEle[iEle];
+//   double convDcot = convDcotEle[iEle];
 
-  trackISO /= ET;
-  ECALISO /= ET;
-  HCALISO /= ET;
+//   if(fabs(convDist) <= 0.02 && fabs(convDcot) <= 0.02) return false;
+
+//   int iTrack = gsfTrackIndexEle[iEle];
+
+//   if(expInnerLayersGsfTrack[iTrack] > 0) return false;
+
+//   trackISO /= ET;
+//   ECALISO /= ET;
+//   HCALISO /= ET;
+
+//   if(isBarrel){
+//     //ISO WP80                                                                                                                                               
+//     if(trackISO > 0.09) return false;
+//     if(ECALISO > 0.07) return false;
+//     if(HCALISO > 0.10) return false;
+
+//     //ID WP80                                                                                                                                                
+//     if(fabs(dphi) > 0.06) return false;
+//     if(fabs(deta) > 0.004) return false;
+//     if(HoE > 0.04) return false;
+//     if(sigietaieta > 0.01) return false;
+//   } else {
+//     //ISO WP80                                                                                                                                               
+//     if(trackISO > 0.04) return false;
+//     if(ECALISO > 0.05) return false;
+//     if(HCALISO > 0.025) return false;
+
+//     //ID WP80                                                                                                                                                
+//     if(fabs(dphi) > 0.03) return false;
+//     //if(fabs(deta) > 0.007) return false;                                                                                                                   
+//     if(HoE > 0.025) return false;
+//     if(sigietaieta > 0.03) return false;
+//   }
+
+//   return true;
+// }
 
 
-  if(isBarrel){
-    //ISO WP95                                                                                                                                               
-    if(trackISO > 0.15) return false;
-    if(ECALISO > 2.0) return false;
-    if(HCALISO > 0.12) return false;
+// bool SUSYMultiTop::is95Electron(int iEle){
 
-    //ID WP95                                                                                                                                                
+//   Utils anaUtils;
 
-    if(fabs(deta) > 0.007) return false;
-    if(HoE > 0.15) return false;
-    if(sigietaieta > 0.01) return false;
-  } else {
-    //ISO WP95                                                                                                                                               
-    if(trackISO > 0.08) return false;
-    if(ECALISO > 0.06) return false;
-    if(HCALISO > 0.05) return false;
+//   //is an ECAL driven electron                                                                                                                               
+//   bool isECALdriven = anaUtils.electronRecoType(recoFlagsEle[iEle], bits::isEcalDriven);
+//   if(isECALdriven == false) return false;
 
-    //ID WP95                                                                                                                                                
+//   bool isBarrel = true;
+//   bool isEndcap = true;
+//   int iSC = superClusterIndexEle[iEle];
+//   double ETA = etaSC[iSC];
+//   double ET = energySC[iSC]/cosh(etaSC[iSC]);
 
-    if(HoE > 0.07) return false;
-    if(sigietaieta > 0.03) return false;
-  }
+//   if(ET <= 20.0) return false;
 
-  return true;
-}
+//   //is the electron in the ECAL fiducial region?                                                                                                             
+//   if(fabs(ETA) > 1.4442) isBarrel = false;
+//   if(fabs(ETA) > 2.5 || fabs(ETA) < 1.566) isEndcap = false;
+
+//   if(isBarrel == false && isEndcap == false) return false;
+
+//   double trackISO = dr03TkSumPtEle[iEle];
+//   double ECALISO = dr03EcalRecHitSumEtEle[iEle];
+//   double HCALISO = dr03HcalTowerSumEtEle[iEle];
+
+//   double pt = sqrt(pxEle[iEle]*pxEle[iEle]+pyEle[iEle]*pyEle[iEle]);
+
+//   double sigietaieta = covIEtaIEtaSC[iSC];
+//   double deta = deltaEtaAtVtxEle[iEle];
+//   double HoE = hOverEEle[iEle];
+//   int iTrack = gsfTrackIndexEle[iEle];
+
+//   if(expInnerLayersGsfTrack[iTrack] > 1) return false;
+
+//   trackISO /= ET;
+//   ECALISO /= ET;
+//   HCALISO /= ET;
+
+
+//   if(isBarrel){
+//     //ISO WP95                                                                                                                                               
+//     if(trackISO > 0.15) return false;
+//     if(ECALISO > 2.0) return false;
+//     if(HCALISO > 0.12) return false;
+
+//     //ID WP95                                                                                                                                                
+
+//     if(fabs(deta) > 0.007) return false;
+//     if(HoE > 0.15) return false;
+//     if(sigietaieta > 0.01) return false;
+//   } else {
+//     //ISO WP95                                                                                                                                               
+//     if(trackISO > 0.08) return false;
+//     if(ECALISO > 0.06) return false;
+//     if(HCALISO > 0.05) return false;
+
+//     //ID WP95                                                                                                                                                
+
+//     if(HoE > 0.07) return false;
+//     if(sigietaieta > 0.03) return false;
+//   }
+
+//   return true;
+// }
 
 
 int SUSYMultiTop::JetFlavorFull(TLorentzVector myJet){
@@ -692,7 +731,7 @@ void SUSYMultiTop::SetTags(int JetFlavor, double JetpT, double JetEta, int JetTa
        
   int NpTL=pTL.size()-1;
   int NpTB=pTB.size()-1;
-     
+
   for(int r = 0; r<(pTL.size()-1)*(EtaL.size()-1); ++r){
     SFL[(r%NpTL)][int(r/NpTL)]=SFLv[r];
     SFLUp[(r%NpTL)][int(r/NpTL)]=SFLvUp[r];
@@ -1219,10 +1258,21 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   int JetMultiplicity;
   int EleFakeJetMultiplicity;
   int MuFakeJetMultiplicity;
+  int PUJetMultiplicity;
   int NLooseMuons, NTightMuons; 
   int N80Eles, N95Eles;
   int nEleJets;
   int nBTagJets, nB, nBTagJetsCSV, nBCSV, nBTagJetsLoose;
+  double PUmva[20];
+  double PUpTPull[20];
+  int PUindex[20];
+  int PUmatchedjets;
+  int PUunmatchedjets;
+  double DRmin[20];
+  double PUunpT[20];
+  double PUunEta[20];
+  double PUunmva[20];
+  int PUunIndex[20];
   double JetpT[20];
   double JetEta[20];
   int JetTag[20];
@@ -1259,21 +1309,21 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   double phiMETLept;
   double etaMETLept;
   double wLep;
+  double wLepMu, wLepEle;
   double run;
   double evNum;
   double bx;
   double ls;
   double orbit;
-  double CSV_TopFour;
-  double TCHE_TopFour;
-  double SSV_TopFour;
   double MuIso[2];
   double EleTrackIso[2], EleECALIso[2], EleHCALIso[2];
   int n_PV;
-  double weight=_weight;
+  double Weight=_weight;
   double mg, mst, mchi;
   double puW, puWFull;
   double EvW;
+  double EvWFull;
+  double wLepFull;
 
   //Prepare counters for efficiency
   double Npassed_In = 0;
@@ -1317,6 +1367,8 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   FullSMSTree->Branch("mg", &mg, "mg/D");
   FullSMSTree->Branch("mchi", &mchi, "mchi/D");
   FullSMSTree->Branch("puW", &puWFull, "puW/D");
+  FullSMSTree->Branch("wLep", &wLepFull, "wLep/D");
+  FullSMSTree->Branch("EventWeight", &EvWFull, "EventWeight/D");
 
   //prepare b-tag tree
   TTree* TagTree= new TTree("TagTree", "TagTree");
@@ -1330,6 +1382,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   TagTree->Branch("JetTagLDown", JetTagNewLDown, "JetTagLDown[JetMultiplicity]/I");
   TagTree->Branch("JetFlavor", JetFlavor, "JetFlavor[JetMultiplicity]/I");
   TagTree->Branch("puW", &puW, "puW/D");
+  TagTree->Branch("wLep", &wLep, "wLep/D");
   TagTree->Branch("EventWeight", &EvW, "EventWeight/D");
 
   //prepare b-tag tree (POG Algorithm)
@@ -1344,6 +1397,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   TagTreePOG->Branch("JetTagLDown", JetTagNewLDown, "JetTagLDown[JetMultiplicity]/I");
   TagTreePOG->Branch("JetFlavor", JetFlavor, "JetFlavor[JetMultiplicity]/I");
   TagTreePOG->Branch("puW", &puW, "puW/D");
+  TagTreePOG->Branch("wLep", &wLep, "wLep/D");
   TagTreePOG->Branch("EventWeight", &EvW, "EventWeight/D");
 
   //prepare b-tag tree SMS
@@ -1365,6 +1419,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   TagTreeSMS->Branch("JetTagLDownFast", JetTagNewLDownFast, "JetTagLDown[JetMultiplicity]/I");
   TagTreeSMS->Branch("JetFlavor", JetFlavor, "JetFlavor[JetMultiplicity]/I");
   TagTreeSMS->Branch("puW", &puW, "puW/D");
+  TagTreeSMS->Branch("wLep", &wLep, "wLep/D");
   TagTreeSMS->Branch("EventWeight", &EvW, "EventWeight/D");
   TagTreeSMS->Branch("mg", &mg, "mg/D");
   TagTreeSMS->Branch("mchi", &mchi, "mchi/D");
@@ -1388,6 +1443,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   TagTreeSMSPOG->Branch("JetTagLDownFast", JetTagNewLDownFast, "JetTagLDown[JetMultiplicity]/I");
   TagTreeSMSPOG->Branch("JetFlavor", JetFlavor, "JetFlavor[JetMultiplicity]/I");
   TagTreeSMSPOG->Branch("puW", &puW, "puW/D");
+  TagTreeSMSPOG->Branch("wLep", &wLep, "wLep/D");
   TagTreeSMSPOG->Branch("EventWeight", &EvW, "EventWeight/D");
   TagTreeSMSPOG->Branch("mg", &mg, "mg/D");
   TagTreeSMSPOG->Branch("mchi", &mchi, "mchi/D");
@@ -1404,8 +1460,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   //PF block
   outTree->Branch("puW", &puW, "puW/D");
   outTree->Branch("MET", &MET, "MET/D");
-  outTree->Branch("phiMETLept", &phiMETLept, "phiMETLept/D");
-  outTree->Branch("etaMETLept", &etaMETLept, "etaMETLept/D");
   outTree->Branch("wLep", &wLep, "wLep/D");
   outTree->Branch("ST", &ST, "ST/D");
   outTree->Branch("SLT", &SLT, "SLT/D");
@@ -1422,22 +1476,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   outTree->Branch("NTightMuons", &NTightMuons, "NTightMuons/I");
   outTree->Branch("EleFakeJetMultiplicity", &EleFakeJetMultiplicity, "EleFakeJetMultiplicity/I");
   outTree->Branch("MuFakeJetMultiplicity", &MuFakeJetMultiplicity, "MuFakeJetMultiplicity/I");
-  outTree->Branch("MRpT", &MRpT, "MRpT/D");
-  outTree->Branch("RpT", &RpT, "RpT/D");
-  outTree->Branch("PFR", &PFR, "PFR/D");
-  outTree->Branch("PFMR", &PFMR, "PFMR/D");
   outTree->Branch("PFMT", &PFMT, "PFMT/D");
-  outTree->Branch("pTPFHem1", &pTPFHem1, "pTPFHem1/D");
-  outTree->Branch("etaPFHem1", &etaPFHem1, "etaPFHem1/D");
-  outTree->Branch("phiPFHem1", &phiPFHem1, "phiPFHem1/D");
-  outTree->Branch("pTPFHem2", &pTPFHem2, "pTPFHem2/D");
-  outTree->Branch("etaPFHem2", &etaPFHem2, "etaPFHem2/D");
-  outTree->Branch("phiPFHem2", &phiPFHem2, "phiPFHem2/D");
-  outTree->Branch("massPFHem", &massPFHem, "massPFHem/D");
-  outTree->Branch("PFgoodR", &PFgoodR, "PFgoodR/I");
-  outTree->Branch("CSV_TopFour", &CSV_TopFour, "CSV_TopFour/D");
-  outTree->Branch("TCHE_TopFour", &TCHE_TopFour, "TCHE_TopFour/D");
-  outTree->Branch("SSV_TopFour", &SSV_TopFour, "SSV_TopFour/D");
   outTree->Branch("MuIso", MuIso, "MuIso[NLooseMuons]/D");
   outTree->Branch("EleTrackIso", EleTrackIso, "EleTrackIso[N95Eles]/D");
   outTree->Branch("EleECALIso", EleECALIso, "EleECALIso[N95Eles]/D");
@@ -1448,7 +1487,19 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   outTree->Branch("JetTagLoose", JetTagLoose, "JetTagLoose[JetMultiplicity]/I");
   outTree->Branch("JetTagCSV", JetTagCSV, "JetTagCSV[JetMultiplicity]/I");
   outTree->Branch("JetFlavor", JetFlavor, "JetFlavor[JetMultiplicity]/I");
-  outTree->Branch("weight", &weight, "weight/D");
+  outTree->Branch("weight", &Weight, "weight/D");
+  outTree->Branch("EventWeight", &EvW, "EventWeight/D");
+  outTree->Branch("PUmatchedjets", &PUmatchedjets, "PUmatchedjets/I");
+  outTree->Branch("PUunmatchedjets", &PUunmatchedjets, "PUunmatchedjets/I");
+  outTree->Branch("PUJetMultiplicity", &PUJetMultiplicity, "PUJetMultiplicity/I");
+  outTree->Branch("PUmva", PUmva, "PUmva[PUmatchedjets]/D");
+  outTree->Branch("PUunmva", PUunmva, "PUunmva[PUunmatchedjets]/D");
+  outTree->Branch("PUunpT", PUunpT, "PUunpT[PUunmatchedjets]/D");
+  outTree->Branch("PUunEta", PUunEta, "PUunEta[PUunmatchedjets]/D");
+  outTree->Branch("PUunIndex", PUunIndex, "PUunIndex[PUunmatchedjets]/I");
+  outTree->Branch("DRmin", DRmin, "DRmin[JetMultiplicity]/D");
+  outTree->Branch("PUindex", PUindex, "PUindex[PUmatchedjets]/I");
+  outTree->Branch("PUpTPull", PUpTPull, "PUpTPull[PUmatchedjets]/D");
   //SMS
   outTree->Branch("mg", &mg, "mg/D");
   outTree->Branch("mchi", &mchi, "mchi/D");
@@ -1482,8 +1533,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   effTree->Branch("Npassed_Ele",      &Npassed_Ele,      "Npassed_Ele/D");
   effTree->Branch("Npassed_TwoEle",      &Npassed_TwoEle,      "Npassed_TwoEle/D");
   effTree->Branch("Npassed_EleMu",      &Npassed_EleMu,      "Npassed_EleMu/D");
-  effTree->Branch("NpassedPF_beta",      &NpassedPF_beta,      "NpassedPF_beta/D");
-  effTree->Branch("NpassedPF_DeltaPhi",      &NpassedPF_DeltaPhi,      "NpassedPF_DeltaPhi/D");
   effTree->Branch("Npassed_MET",      &Npassed_MET,      "Npassed_MET/D");
   effTree->Branch("Npassed_Btag",      &Npassed_Btag,      "Npassed_Btag/D");
   effTree->Branch("Npassed_1b",      &Npassed_1b,      "Npassed_1b/D");
@@ -1495,7 +1544,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
   TTree * LumiTree = new TTree("LumiTree", "LumiTree");
   LumiTree->Branch("run", &run, "run/D");
   LumiTree->Branch("ls", &ls, "ls/D");
-
 
   cout << "Number of entries = " << stop << endl;
 
@@ -1511,7 +1559,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
     nb = fChain->GetEntry(jentry);   nbytes += nb;
     if (jentry%1000 == 0) cout << ">>> Processing event # " << jentry << endl;
     if (jentry%10000 == 0) cout << " Fraction of events analyzed "<< 100*(double(jentry)/double(stop))<<"%"<<endl;
-
     //IMPORTANT: FOR DATA RELOAD THE TRIGGER MASK PER FILE WHICH IS SUPPOSED TO CONTAIN UNIFORM CONDITIONS X FILE
 
     //Good Run selection
@@ -1536,13 +1583,96 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
     if(!_isData)puW = LumiWeights.weight(nPU[1]);
     else puW=1;
 
+    int iTightMuons[10], tightMuonCounter=0;
+    int iLooseMuons[10], looseMuonCounter=0;
+    int i95Eles[10], Ele95Counter=0;
+    int i80Eles[10], Ele80Counter=0;
+
+    //Muons
+    //N.B. We use the 8TeV Loose Muon definition to have a looser isolation (0.4)
+    SLT=0.;
+    for(int j=0; j<nMuon;j++){
+      double EtaMuon=etaMuon[j];
+      double muonPt=sqrt(pxMuon[j]*pxMuon[j]+pyMuon[j]*pyMuon[j]);      
+      if(Vecbos::isLooseMuon(j) && muonPt>35. && fabs(EtaMuon)< 2.1){
+	iTightMuons[tightMuonCounter]=j;
+	tightMuonCounter++;
+	if(!_isData)wLepMu = Vecbos::getOfflineEff(muonPt, etaMuon[j], "Muon");
+	else wLepMu=1.0;
+      }
+    }
+    
+    double IECAL; 
+    double IHCAL;
+    double ITRK;
+
+    for(int j=0; j<nMuon;j++){
+      double muonPt=sqrt(pxMuon[j]*pxMuon[j]+pyMuon[j]*pyMuon[j]);      
+      if(Vecbos::isLooseMuon(j) && muonPt>20.){
+	iLooseMuons[looseMuonCounter]=j;
+	IECAL = emEt03Muon[j];
+	IHCAL = hadEt03Muon[j];
+	ITRK  = sumPt03Muon[j];
+	MuIso[looseMuonCounter]=((IECAL+IHCAL+ITRK)/muonPt);
+	looseMuonCounter++;
+	SLT+=muonPt;
+      }
+    }
+    
+    //Electrons
+    for(int k=0; k< nEle; k++){
+      double ElePt=sqrt(pxEle[k]*pxEle[k]+pyEle[k]*pyEle[k]);
+      if(Vecbos::isTightElectron(k) && ElePt>35. && fabs(etaEle[k])<2.5){
+	i80Eles[Ele80Counter]=k;
+	Ele80Counter++;
+	if(!_isData)wLepEle = Vecbos::getOfflineEff(ElePt, etaEle[k], "Electron");
+	else wLepEle = 1.0;
+      }
+    }
+    
+    double ptLept;
+    if(AnalysisSelector==1 && tightMuonCounter > 0){
+      wLep=wLepMu;
+      ptLept=sqrt(pxMuon[iTightMuons[0]]*pxMuon[iTightMuons[0]]+pyMuon[iTightMuons[0]]*pyMuon[iTightMuons[0]]);
+    }else if(AnalysisSelector==3 && Ele80Counter > 0){
+      wLep=wLepEle;
+      ptLept=sqrt(pxEle[i80Eles[0]]*pxEle[i80Eles[0]]+pyEle[i80Eles[0]]*pyEle[i80Eles[0]]);
+    }else{
+      wLep=1;
+      ptLept=0;
+    }
+    
+    int iSC;
+    double ET;
+    double trackISO;
+    double ECALISO;
+    double HCALISO;
+    
+    for(int k=0; k< nEle; k++){
+      double ElePt=sqrt(pxEle[k]*pxEle[k]+pyEle[k]*pyEle[k]);
+      if(Vecbos::isLooseElectron(k) && ElePt>20.){
+	i95Eles[Ele95Counter]=k;
+	iSC=superClusterIndexEle[k];
+	ET=energySC[iSC]/cosh(etaSC[iSC]);
+	trackISO = (dr03TkSumPtEle[k])/ET;
+	ECALISO = (dr03EcalRecHitSumEtEle[k])/ET;
+	HCALISO = (dr03HcalTowerSumEtEle[k])/ET;
+	EleTrackIso[Ele95Counter]=trackISO;
+	EleECALIso[Ele95Counter]=ECALISO;
+	EleHCALIso[Ele95Counter]=HCALISO;
+	Ele95Counter++;
+	SLT+=ElePt;
+      }
+    }
+    
     Npassed_In += weightII;
     
-    Npassed_InPU += puW;
+    Npassed_InPU += puW*wLep;
+
 
     double m0=9999, m12=9999, mc=9999;
      
-    if(!_isData && isSMS){
+    if(!_isData && isSMS && isT1tttt){
 
       //find the simplified model parameters for T1tttt                                                                                              
       std::vector<std::string>::const_iterator c_begin = commentLHE->begin();
@@ -1574,6 +1704,9 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	  
 	}
       }
+    }else if(!isT1tttt && isSMS && !_isData){
+      string mass=_sample.substr(4, _sample.size());
+      m12=(double)atof(mass.c_str());
     }
 
     mg=m12;
@@ -1603,129 +1736,51 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
     Npassed_PV += weightII;
 
+    //Jets 
     vector<TLorentzVector> PFJet;
-
-    int iTightMuons[10], tightMuonCounter=0;
-    int iLooseMuons[10], looseMuonCounter=0;
-    int i95Eles[10], Ele95Counter=0;
-    int i80Eles[10], Ele80Counter=0;
-
-    double etaLept;
-    double phiLept;
-    double ptLept;
-
-    //Muons
-    SLT=0.;
-    for(int j=0; j<nMuon;j++){
-      double EtaMuon=etaMuon[j];
-      double muonPt=sqrt(pxMuon[j]*pxMuon[j]+pyMuon[j]*pyMuon[j]);      
-      if(isTightMuon(j) && muonPt>35. && fabs(EtaMuon)< 2.1){
-	iTightMuons[tightMuonCounter]=j;
-	etaLept=etaMuon[j];
-	phiLept=phiMuon[j];
-	ptLept=muonPt;
-	tightMuonCounter++;
-	//wLep = getOfflineEff(muonPt, etaLept, "Muon");
+    HT=0.;
+    double Pxtot=0., Pytot=0.;
+    vector <int> iPFJet;
+    for(int i=0; i< nAK5PFNoPUJet; i++) {
+      TLorentzVector myJet(pxAK5PFNoPUJet[i], pyAK5PFNoPUJet[i], pzAK5PFNoPUJet[i], energyAK5PFNoPUJet[i]);
+      TLorentzVector myJetCorr;
+      if(!isJESSystematic)myJetCorr=myJet;
+      if(isJESSystematic && JES==1) myJetCorr=GetJESCorrected(myJet, "Up");
+      else if(isJESSystematic && JES==-1) myJetCorr=GetJESCorrected(myJet, "Down");
+      if(myJetCorr.Pt()>30. && fabs(myJetCorr.Eta())< 2.4) {
+	HT+=myJetCorr.Pt();
+	Pxtot+=myJetCorr.Px();
+	Pytot+=myJetCorr.Py();
+	PFJet.push_back(myJetCorr);
+	iPFJet.push_back(i);
       }
     }
-
-    double IECAL; 
-    double IHCAL;
-    double ITRK;
-
-    for(int j=0; j<nMuon;j++){
-      double muonPt=sqrt(pxMuon[j]*pxMuon[j]+pyMuon[j]*pyMuon[j]);      
-      if(isLooseMuon(j) && muonPt>20.){
-	iLooseMuons[looseMuonCounter]=j;
-	IECAL = emEt03Muon[j];
-	IHCAL = hadEt03Muon[j];
-	ITRK  = sumPt03Muon[j];
-	MuIso[looseMuonCounter]=((IECAL+IHCAL+ITRK)/muonPt);
-	looseMuonCounter++;
-	SLT+=muonPt;
-      }
-    }
-
-    //Electrons
-     for(int k=0; k< nEle; k++){
-        double ElePt=sqrt(pxEle[k]*pxEle[k]+pyEle[k]*pyEle[k]);
-	if(is80Electron(k) && ElePt>35. && fabs(etaEle[k])<2.5){
-	  i80Eles[Ele80Counter]=k;
-	  etaLept=etaEle[k];
-	  phiLept=phiEle[k];
-	  ptLept=ElePt;
-	  Ele80Counter++;
-	  //wLep = getOfflineEff(ElePt, etaLept, "Electron");
-	}
-     }
-
-     int iSC;
-     double ET;
-     double trackISO;
-     double ECALISO;
-     double HCALISO;
-
-     for(int k=0; k< nEle; k++){
-        double ElePt=sqrt(pxEle[k]*pxEle[k]+pyEle[k]*pyEle[k]);
-	if(is95Electron(k) && ElePt>20.){
-	  i95Eles[Ele95Counter]=k;
-	  iSC=superClusterIndexEle[k];
-	  ET=energySC[iSC]/cosh(etaSC[iSC]);
-	  trackISO = (dr03TkSumPtEle[k])/ET;
-	  ECALISO = (dr03EcalRecHitSumEtEle[k])/ET;
-	  HCALISO = (dr03HcalTowerSumEtEle[k])/ET;
-	  EleTrackIso[Ele95Counter]=trackISO;
-	  EleECALIso[Ele95Counter]=ECALISO;
-	  EleHCALIso[Ele95Counter]=HCALISO;
-	  Ele95Counter++;
-	  SLT+=ElePt;
-	}
-     }
-
-     //Jets                                                                                                                             
-     HT=0.;
-     double Pxtot=0., Pytot=0.;
-     vector <int> iPFJet;
-     for(int i=0; i< nAK5PFNoPUJet; i++) {
-       TLorentzVector myJet(pxAK5PFNoPUJet[i], pyAK5PFNoPUJet[i], pzAK5PFNoPUJet[i], energyAK5PFNoPUJet[i]);
-       TLorentzVector myJetCorr;
-       if(!isJESSystematic)myJetCorr=myJet;
-       if(isJESSystematic && JES==1) myJetCorr=GetJESCorrected(myJet, "Up");
-       else if(isJESSystematic && JES==-1) myJetCorr=GetJESCorrected(myJet, "Down");
-       if(myJetCorr.Pt()>30. && fabs(myJetCorr.Eta())< 2.4) {
-	 HT+=myJetCorr.Pt();
-	 Pxtot+=myJetCorr.Px();
-	 Pytot+=myJetCorr.Py();
-	 PFJet.push_back(myJetCorr);
-	 iPFJet.push_back(i);
-       }
-     }
-
-     double DREleJet;
-     vector<int> BadPFEleJet;
-     int counter, double_check;
-     for(int l=0; l<Ele80Counter; l++){
-       for(int n=0; n < PFJet.size(); n++){
-	 TLorentzVector myJet = PFJet.at(n);
-	 DREleJet=sqrt((etaEle[i80Eles[l]]-myJet.Eta())*(etaEle[i80Eles[l]]-myJet.Eta())+(phiEle[i80Eles[l]]-myJet.Phi())*(phiEle[i80Eles[l]]-myJet.Phi()));
-	 double_check=0;
-	 counter=0;
-	 if(DREleJet < 0.5){
-	   if(BadPFEleJet.size()!=0){
-	     for(int f=0; f<BadPFEleJet.size(); f++){
+    
+    double DREleJet;
+    vector<int> BadPFEleJet;
+    int counter, double_check;
+    for(int l=0; l<Ele80Counter; l++){
+      for(int n=0; n < PFJet.size(); n++){
+	TLorentzVector myJet = PFJet.at(n);
+	DREleJet=sqrt((etaEle[i80Eles[l]]-myJet.Eta())*(etaEle[i80Eles[l]]-myJet.Eta())+(phiEle[i80Eles[l]]-myJet.Phi())*(phiEle[i80Eles[l]]-myJet.Phi()));
+	double_check=0;
+	counter=0;
+	if(DREleJet < 0.5){
+	  if(BadPFEleJet.size()!=0){
+	    for(int f=0; f<BadPFEleJet.size(); f++){
 	       if(iPFJet.at(n)!=BadPFEleJet.at(f))counter++;
-	     }
-	     if(counter == BadPFEleJet.size())double_check=1;
-	     if(double_check!=0)BadPFEleJet.push_back(iPFJet.at(n));
-	   }else{
-	     BadPFEleJet.push_back(iPFJet.at(n));
+	    }
+	    if(counter == BadPFEleJet.size())double_check=1;
+	    if(double_check!=0)BadPFEleJet.push_back(iPFJet.at(n));
+	  }else{
+	    BadPFEleJet.push_back(iPFJet.at(n));
 	   }
-	 }
-       }
-     }
-
-     double DRMuJet;
-     vector<int> BadPFMuJet;
+	}
+      }
+    }
+    
+    double DRMuJet;
+    vector<int> BadPFMuJet;
      int counterII, double_checkII, counter_Ele, double_checkEle;
      for(int l=0; l<looseMuonCounter; l++){
        for(int n=0; n < PFJet.size(); n++){
@@ -1753,6 +1808,85 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
        }
      }
 
+     //Use MVA to determine whether a jet comes from PU or not
+     bool goodJet;
+     vector<double> BadPUJet;
+     int igoodJet;
+     double pTNoPU;
+     int indexNoPU;
+     PUmatchedjets=0;
+     for(int j=0; j<nAK5PFPUcorrJet; j++){
+       TLorentzVector myJet(pxAK5PFPUcorrJet[j], pyAK5PFPUcorrJet[j], pzAK5PFPUcorrJet[j], energyAK5PFPUcorrJet[j]);
+       goodJet=false;
+       for(int b=0; b < iPFJet.size(); b++){
+         int n=iPFJet.at(b);
+         int b_counter=0;
+         for(int f=0; f<BadPFMuJet.size(); f++){
+           if(n!=BadPFMuJet.at(f))b_counter++;
+         }
+         for(int d=0; d<BadPFEleJet.size(); d++){
+           if(n!=BadPFEleJet.at(d))b_counter++;
+         }
+         if(b_counter==(BadPFEleJet.size()+BadPFMuJet.size())){
+           double phi=PFJet[b].Phi();
+           double eta=PFJet[b].Eta();
+           double etaPUcorr=myJet.Eta();
+           double phiPUcorr=myJet.Phi();
+           double DR=sqrt((eta-etaPUcorr)*(eta-etaPUcorr)+(phi-phiPUcorr)*(phi-phiPUcorr));
+	   if(DR<0.5){
+	     goodJet=true;
+	     igoodJet=b;
+	     pTNoPU=PFJet[b].Pt();
+	     indexNoPU=iPFJet.at(b);
+	   }
+         }
+       }
+       if(goodJet){
+	 PUmva[PUmatchedjets]=jetIdMvaPhilV1AK5PFPUcorrJet[j];
+	 double pull=(pTNoPU-myJet.Pt())/pTNoPU;
+	 PUpTPull[PUmatchedjets]=pull;
+	 PUindex[PUmatchedjets]=indexNoPU;
+	 PUmatchedjets++;
+       }
+       if(goodJet && !isLooseJetMva(myJet.Pt(), myJet.Eta(), jetIdMvaPhilV1AK5PFPUcorrJet[j]))BadPUJet.push_back(igoodJet);
+     }
+
+     PUunmatchedjets=0;
+     for(int j=0;j<iPFJet.size();j++){
+       int m=iPFJet.at(j);
+       TLorentzVector myJet(pxAK5PFNoPUJet[m], pyAK5PFNoPUJet[m], pzAK5PFNoPUJet[m], energyAK5PFNoPUJet[m]);
+       int b_counter=0;
+       for(int n=0; n< PUmatchedjets; n++){
+	 if(PUindex[n]==m)b_counter++;
+       }
+       for(int f=0; f<BadPFMuJet.size(); f++){
+	 if(m==BadPFMuJet.at(f))b_counter++;
+       }
+       for(int d=0; d<BadPFEleJet.size(); d++){
+	 if(m==BadPFEleJet.at(d))b_counter++;
+       }
+       if(b_counter==0){
+	 PUunmva[PUunmatchedjets]=jetIdMvaPhilV1AK5PFPUcorrJet[m];
+	 PUunpT[PUunmatchedjets]=myJet.Pt();
+	 PUunEta[PUunmatchedjets]=myJet.Eta();
+	 PUunIndex[PUunmatchedjets]=m;
+	 PUunmatchedjets++;
+       }
+     }
+
+     for(int j=0;j<iPFJet.size();j++){
+       for(int k=0; k<nAK5PFPUcorrJet; k++){
+	 TLorentzVector myJet(pxAK5PFPUcorrJet[k], pyAK5PFPUcorrJet[k], pzAK5PFPUcorrJet[k], energyAK5PFPUcorrJet[k]);
+	 double phi=PFJet[j].Phi();
+         double eta=PFJet[j].Eta();
+         double etaPUcorr=myJet.Eta();
+         double phiPUcorr=myJet.Phi();
+         double DR=sqrt((eta-etaPUcorr)*(eta-etaPUcorr)+(phi-phiPUcorr)*(phi-phiPUcorr));
+	 if(k==0)DRmin[j]=DR;
+	 else if(DR<DRmin[j])DRmin[j]=DR;
+       }
+     }
+
      //Subtract fake jets pT from HT and MRpT
      int c;
      for(int z=0; z< BadPFEleJet.size(); z++){
@@ -1777,6 +1911,18 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
        Pxtot-=myJetCorr.Px();
        Pytot-=myJetCorr.Py();
      }
+     for(int a=0; a < BadPUJet.size(); a++){
+       c=iPFJet.at(BadPUJet.at(a));
+       TLorentzVector myJet(pxAK5PFNoPUJet[c], pyAK5PFNoPUJet[c], pzAK5PFNoPUJet[c], energyAK5PFNoPUJet[c]);
+       TLorentzVector myJetCorr;
+       if(!isJESSystematic)myJetCorr=myJet;
+       if(isJESSystematic && JES==1) myJetCorr=GetJESCorrected(myJet, "Up");
+       else if(isJESSystematic && JES==-1) myJetCorr=GetJESCorrected(myJet, "Down");
+       HT-=myJetCorr.Pt();
+       Pxtot-=myJetCorr.Px();
+       Pytot-=myJetCorr.Py();
+     }
+
 
      //Add muon pT to compute MRpT and RpT
      for(int r=0; r<looseMuonCounter;r++){
@@ -1794,9 +1940,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
        JetpT[h]=-99;
      }
      int n;
-     vector <float> CSV;
-     vector <float> TCHE;
-     vector <float> SSV;
      nBTagJets=0;
      nBTagJetsLoose=0;
      nB=0;
@@ -1812,7 +1955,10 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
        for(int d=0; d<BadPFEleJet.size(); d++){
 	 if(n!=BadPFEleJet.at(d))b_counter++;
        }
-       if(b_counter==(BadPFEleJet.size()+BadPFMuJet.size())){
+       for(int d=0; d<BadPUJet.size(); d++){
+         if(b!=BadPUJet.at(d))b_counter++;
+       }
+       if(b_counter==(BadPFEleJet.size()+BadPFMuJet.size()+BadPUJet.size())){
 	 if(trackCountingHighEffBJetTagsAK5PFNoPUJet[n] > 1.7){
            nBTagJetsLoose++;
            if(nGoodJets<20)JetTagLoose[nGoodJets]=1;
@@ -1825,16 +1971,12 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	 }else{
 	   if(nGoodJets<20)JetTag[nGoodJets]=0;
 	 }
-	 //	 if(combinedSecondaryVertexMVABJetTagsAK5PFNoPUJet[n] > 0.679){
 	 if(pfJetPassCSVM(combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n])) {
            nBTagJetsCSV++;
            if(nGoodJets<20)JetTagCSV[nGoodJets]=1;
          }else{
            if(nGoodJets<20)JetTagCSV[nGoodJets]=0;
          }
-	 CSV.push_back(combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n]);
-	 TCHE.push_back(trackCountingHighEffBJetTagsAK5PFNoPUJet[n]);
-	 SSV.push_back(simpleSecondaryVertexHighEffBJetTagsAK5PFNoPUJet[n]);
 	 TLorentzVector myJet(pxAK5PFNoPUJet[n], pyAK5PFNoPUJet[n], pzAK5PFNoPUJet[n], energyAK5PFNoPUJet[n]);
 	 TLorentzVector myJetCorr;
 	 if(!isJESSystematic)myJetCorr=myJet;
@@ -1853,18 +1995,10 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
        }
      }
 
-     BubbleSort(CSV);
-     BubbleSort(TCHE);
-     BubbleSort(SSV);
-     //Put the sum of the four highest discr. values into the tree
-     CSV_TopFour=-9999;
-     TCHE_TopFour=-9999;
-     SSV_TopFour=-9999;
-     if(CSV.size() >= 4)CSV_TopFour=(CSV.at(0)+CSV.at(1)+CSV.at(2)+CSV.at(3));
-     if(TCHE.size()>= 4)TCHE_TopFour=(TCHE.at(0)+TCHE.at(1)+TCHE.at(2)+TCHE.at(3));
-     if(SSV.size() >= 4)SSV_TopFour=(SSV.at(0)+SSV.at(1)+SSV.at(2)+SSV.at(3));
 
      puWFull=puW;
+     wLepFull=wLep;
+     EvWFull=_weight*puW*wLep;
      if(isSMS)FullSMSTree->Fill();
 
      for(int x=0; x< nGoodJets; x++)if(JetTag[x]==1)nB++;
@@ -1875,9 +2009,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 #if AnalysisSelector == 1
      if(tightMuonCounter < 1)continue;
      if(Ele80Counter!=0)continue;
-     //To reproduce the elehad trigger
-     //     if(PFJet.size()<3)continue;
-     //     if((PFJet[0].Pt()< 40.0) || (PFJet[1].Pt()< 40.0) || (PFJet[2].Pt()< 40.0))continue;
      Npassed_TightMu+=weightII;
 #endif     
 
@@ -1892,8 +2023,8 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
      if(tightMuonCounter!=0)continue;
      if(Ele80Counter < 1)continue;
      //For an ele+3jets trigger
-     if(PFJet.size()<3)continue;
-     if((PFJet[0].Pt()< 40.0) || (PFJet[1].Pt()< 40.0) || (PFJet[2].Pt()< 40.0))continue;
+     //     if(PFJet.size()<3)continue;
+     //     if((PFJet[0].Pt()< 40.0) || (PFJet[1].Pt()< 40.0) || (PFJet[2].Pt()< 40.0))continue;
      Npassed_Ele+=weightII;
 #endif
 
@@ -1927,7 +2058,8 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
      EleFakeJetMultiplicity=BadPFEleJet.size();
      MuFakeJetMultiplicity=BadPFMuJet.size();
-     JetMultiplicity=PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size();
+     PUJetMultiplicity=BadPUJet.size();
+     JetMultiplicity=PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size();
 
      if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) == 1)NpassedPF_1Jet+=weightII;
      if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) == 2)NpassedPF_2Jet+=weightII;
@@ -1937,105 +2069,25 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
      if(PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size() < 4.) continue;
 #endif
 
-#if isBtagCut == true     
-     if(TCHE_TopFour < 10.)continue;
-#endif
-
-#if isThreeBCut == true
-     if(nBTagJets < 3)continue;
-#endif
-    
      Npassed_Btag+=weightII;
      
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) >= 4)NpassedPF_4Jet+= weightII;
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) == 5)NpassedPF_5Jet+=weightII;
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) >= 6)NpassedPF_6Jet+=weightII;
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) == 7)NpassedPF_7Jet+=weightII;
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) >= 4)NpassedPF_4Jet+= weightII;
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) == 5)NpassedPF_5Jet+=weightII;
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) >= 6)NpassedPF_6Jet+=weightII;
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) == 7)NpassedPF_7Jet+=weightII;
 
 #if isBaseline == false
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) < 6.) continue;
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) < 6.) continue;
 #endif
      
-     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()) >= 8.)NpassedPF_8Jet+=weightII;
-
-#if isNoMETScaling == false
-     if(sqrt(pxPFMet[0]*pxPFMet[0]+pyPFMet[0]*pyPFMet[0])<20.)continue;
-#endif
+     if((PFJet.size()-BadPFEleJet.size()-BadPFMuJet.size()-BadPUJet.size()) >= 8.)NpassedPF_8Jet+=weightII;
      
      if(sqrt(pxPFMet[0]*pxPFMet[0]+pyPFMet[0]*pyPFMet[0])>20.)Npassed_MET+=weightII;
-
-     // dummy values                                          
-     pTPFHem1 = -9999.;
-     etaPFHem1 = -9999.;
-     phiPFHem1 = -9999.;
-     pTPFHem2 = -9999.;
-     etaPFHem2 = -9999.;
-     phiPFHem2 = -9999.;
-     massPFHem = -99.;
-     PFgoodR = -1;
-     PFR = -99999.;
-     PFMR = -99999.;
-
-     // hemispheres
-//      vector<TLorentzVector> tmpJet = CombineJets(PFJet);
-//      TLorentzVector PFHem1 = tmpJet[0];
-//      TLorentzVector PFHem2 = tmpJet[1];
-//      TLorentzVector DiHem = PFHem1 + PFHem2;
-     
-//      // compute boost
-//      double num = PFHem1.P()-PFHem2.P();
-//      double den = PFHem1.Pz()-PFHem2.Pz();
-     
-//      double beta;
-//      if(fabs(num) < fabs(den)) {
-//        // R good, R' bad
-//        beta = num/den;
-//        PFgoodR = 1;
-//      } else if(fabs(num) > fabs(den)) {
-//        beta = den/num;
-//        PFgoodR = 0;
-//      }
-     
-//      if(fabs(beta)< 0.99){
-//        NpassedPF_beta += weightII;
-     
-//        if(fabs(PFHem1.DeltaPhi(PFHem2)) < 2.8){
-// 	 NpassedPF_DeltaPhi += weightII;
-
-// 	 TVector3 MET(pxMet[0], pyMet[0], 0.);
-// 	 double MT = CalcMTR(PFHem1, PFHem2, MET);
-// 	 double variable = -999999.;
-// 	 double Rvariable = -999999.;
-// 	 if(PFgoodR==1) {
-// 	   // variable is R
-// 	   variable = CalcMR(PFHem1, PFHem2);
-// 	   if(variable >0) Rvariable = MT/variable;
-// 	 } else if(PFgoodR==0) {
-// 	   // variable is R'
-// 	   variable = CalcMRP(PFHem1, PFHem2, MET);
-// 	   if(variable >0) Rvariable = MT/variable;
-// 	 }
-	 
-// 	 // fill the R and hem part of the output tree
-// 	 pTPFHem1 = PFHem1.Pt();
-// 	 etaPFHem1 = PFHem1.Eta();
-// 	 phiPFHem1 = PFHem1.Phi();
-// 	 pTPFHem2 = PFHem2.Pt();
-// 	 etaPFHem2 = PFHem2.Eta();
-// 	 phiPFHem2 = PFHem2.Phi();
-// 	 massPFHem = DiHem.M();
-// 	 PFR = Rvariable;
-// 	 PFMR = variable;
-//        }
-//      }
-
 
      //fill output tree
      n_PV=nPV;
 
      MET=sqrt(pxPFMet[0]*pxPFMet[0]+pyPFMet[0]*pyPFMet[0]);
-     etaMETLept=etaPFMet[0]-etaLept;
-     phiMETLept=phiPFMet[0]-phiLept;
      PFMT=sqrt(2*MET*ptLept*(1-cos(phiMETLept)));
      ST=MET+SLT+HT;
      nJets=nAK5PFNoPUJet;
@@ -2044,8 +2096,6 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
      N95Eles = Ele95Counter;
      NLooseMuons = looseMuonCounter;
      NTightMuons = tightMuonCounter;
-     MRpT=sqrt(Pxtot*Pxtot+Pytot*Pytot);
-     RpT=MET/MRpT;
 
      run = runNumber;
      evNum = eventNumber;
@@ -2097,13 +2147,12 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
      }
 
-     int Ne=NearestInt(_weight*puW);
-
+     int Ne=NearestInt(_weight*puW*wLep);
      if(Ne < 1){
        Ne=1;
-       EvW=_weight*puW;
+       EvW=_weight*puW*wLep;
      }else{
-       EvW=((_weight*puW)/double(Ne));
+       EvW=((_weight*puW*wLep)/double(Ne));
      }
 
      bool isPOG=true;
@@ -2111,17 +2160,17 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
      if(!_isData){
 
-       if(!isSMS){
+       if(!isSMS && !isEffOnly){
 	 for(int y=0; y<Ne; y++){
 	   for(int o=0; o<JetMultiplicity; o++){
-	     SetTags(JetFlavor[o], JetpT[o], JetEta[o], JetTag[o], JetTagNew[o], JetTagNewBUp[o], JetTagNewBDown[o], JetTagNewLUp[o], JetTagNewLDown[o],false);
+	     SetTags(JetFlavor[o], JetpT[o], JetEta[o], JetTagCSV[o], JetTagNew[o], JetTagNewBUp[o], JetTagNewBDown[o], JetTagNewLUp[o], JetTagNewLDown[o],false);
 	   }
 	   TagTree->Fill();
 	 }
 	 
 	 for(int y=0; y<Ne; y++){
 	   for(int o=0; o<JetMultiplicity; o++){
-	     SetTags(JetFlavor[o], JetpT[o], JetEta[o], JetTag[o], JetTagNew[o], JetTagNewBUp[o], JetTagNewBDown[o], JetTagNewLUp[o], JetTagNewLDown[o],true);
+	     SetTags(JetFlavor[o], JetpT[o], JetEta[o], JetTagCSV[o], JetTagNew[o], JetTagNewBUp[o], JetTagNewBDown[o], JetTagNewLUp[o], JetTagNewLDown[o],true);
 	   }
 	   TagTreePOG->Fill();
 	 }
@@ -2129,7 +2178,7 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	 if(!isPOG){
 	   for(int o=0; o<JetMultiplicity; o++){
 	     
-	     Tags=SetTagsSMS(JetFlavor[o], JetpT[o], JetEta[o], JetTag[o], false);
+	     Tags=SetTagsSMS(JetFlavor[o], JetpT[o], JetEta[o], JetTagCSV[o], false);
 	     
 	     JetTagNew[o]=Tags[0];
 	     JetTagNewBUp[o]=Tags[1];
@@ -2148,10 +2197,10 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 	   
 	   TagTreeSMS->Fill();
 	   
-	 }else{
+	 }else if(!isEffOnly){
 	   for(int o=0; o<JetMultiplicity; o++){
 	     
-	     Tags=SetTagsSMS(JetFlavor[o], JetpT[o], JetEta[o], JetTag[o], true);
+	     Tags=SetTagsSMS(JetFlavor[o], JetpT[o], JetEta[o], JetTagCSV[o], true);
 	     
 	     JetTagNew[o]=Tags[0];
 	     JetTagNewBUp[o]=Tags[1];
@@ -2185,8 +2234,8 @@ void SUSYMultiTop::Loop(string outFileName, int start, int stop) {
 
   bool isPOG=true; 
 
-  if(!isSMS && !_isData)TagTree->Write();
-  if(!isSMS && !_isData)TagTreePOG->Write();
+  if(!isSMS && !_isData && !isEffOnly)TagTree->Write();
+  if(!isSMS && !_isData && !isEffOnly)TagTreePOG->Write();
   if(isSMS && !isPOG)TagTreeSMS->Write();
   if(isSMS && isPOG)TagTreeSMSPOG->Write();
   if(isSMS)FullSMSTree->Write();
