@@ -1,0 +1,2 @@
+cp TTbarJets_EffB.txt TTSup_EffB.txt
+cp TTbarJets_EffB.txt TTSdown_EffB.txt
