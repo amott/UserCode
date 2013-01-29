@@ -227,6 +227,8 @@ void MakeSpinFits::AddSWeight(TString mcName,TString catTag,TString inputTag){
 void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
   if(ws==0) return;
 
+  RooRealVar *mass = (RooRealVar*)ws->var("mass");
+
   std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
@@ -234,6 +236,8 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
     RooDataSet * data = (RooDataSet*)ws->data(Form("Data_%s",catIt->Data()));
     RooAbsPdf *signalModel = ws->pdf( Form("%s_FIT_%s",mcName.Data(),catIt->Data()) );
     RooAbsPdf *bkgModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",catIt->Data() ) );
+
+    
 
     RooFormulaVar* Nsig = (RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),catIt->Data()) );
     RooFormulaVar* Nbkg = (RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),catIt->Data()) );
@@ -244,6 +248,7 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
     splotter.addSpecies("background",bkgModel,Nbkg->getVal());
     splotter.addSpecies("signal",signalModel,Nsig->getVal());
 
+    splotter.addVariable(mass);
     cout << "Calculating SWeight ... " <<endl;
     splotter.calculate();
     cout << "Done" <<endl;

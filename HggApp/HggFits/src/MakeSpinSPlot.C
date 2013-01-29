@@ -23,11 +23,17 @@ void MakeSpinSPlot::computeCovMatrix(){
   std::cout << "Entries: "<< __dataSet->sumEntries() <<std::endl;
   std::cout << "Covariance Matrix:" << std::endl;
   Long64_t iEntry=-1;
-  while( __dataSet->get(++iEntry) ){
+  const RooArgSet *set;
+  while( (set=__dataSet->get(++iEntry)) ){
+    for(std::vector<RooRealVar*>::iterator varIt = __variables.begin();
+	varIt!=__variables.end(); varIt++){
+      (*varIt)->setVal( ((RooRealVar*)set->find((*varIt)->GetName()))->getVal() );
+    }
+
     
     for(int iRow = 0; iRow<__nSpec;iRow++){
       for(int iCol = 0; iCol<__nSpec;iCol++){
-	double den = computeDenom();
+	double den = TMath::Power(computeDenom(),2);
 	double num = __pdfs.at(iRow)->getVal()*__pdfs.at(iCol)->getVal();
 	(*__covMatrix)[iRow][iCol] += num/den;
       }
@@ -66,8 +72,12 @@ void MakeSpinSPlot::computeSWeight(){
   
   Long64_t iEntry=-1;
 
-  while( __dataSet->get(++iEntry) ){
-
+  const RooArgSet *set;
+  while( (set=__dataSet->get(++iEntry)) ){
+    for(std::vector<RooRealVar*>::iterator varIt = __variables.begin();
+	varIt!=__variables.end(); varIt++){
+      (*varIt)->setVal( ((RooRealVar*)set->find((*varIt)->GetName()))->getVal() );
+    }
     specIt = __speciesNames.begin();
     for(; specIt != __speciesNames.end(); specIt++){ // loop over the species
       int iRow = specIt - __speciesNames.begin();

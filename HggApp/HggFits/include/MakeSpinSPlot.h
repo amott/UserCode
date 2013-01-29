@@ -21,6 +21,7 @@
 #include "RooExtendPdf.h"
 
 #include "TMatrixT.h"
+#include "TMath.h"
 
 class MakeSpinSPlot{
 public:
@@ -28,7 +29,8 @@ public:
   MakeSpinSPlot(RooAbsData *data);
   
   void addSpecies(TString name, RooAbsPdf* pdf, double expYield);
-
+  void addVariable(RooRealVar* var){ __variables.push_back(var);}
+  
   void calculate();
 
   RooDataSet* getSWeightDataSet(){ return __sWeightDataSet; }
@@ -47,6 +49,8 @@ protected:
   std::vector<RooAbsPdf*> __pdfs;
   std::vector<double> __expectedYields;
   std::vector<TString> __speciesNames;
+
+  std::vector<RooRealVar*> __variables;
 
   RooAbsData *__dataSet;
   
