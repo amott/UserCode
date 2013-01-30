@@ -342,6 +342,48 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
 
 }
 
+void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
+  if(ws==0) return;
+
+  RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
+
+  RooSimultaneous *combFit = new RooSimultaneous(Form("Data_%s_INDFIT",mcName.Data()),"",*cat);
+
+  std::vector<TString>::const_iterator catIt = catLabels.begin();
+  for(; catIt != catLabels.end(); catIt++){
+    cout << *catIt <<endl;
+    
+    RooAbsPdf *signalModel = ws->pdf( Form("Data_%s_FIT_%s",mcName.Data(),catIt->Data()) );
+    RooAbsPdf *bkgModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",catIt->Data() ) );
+    std::cout << signalModel << "   " << bkgModel << std::endl;
+
+    double totalEventsB = ws->data("Data_Combined")->sumEntries();
+    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+
+    RooRealVar *nBkg = new RooRealVar( Form("Data_%s_INDFIT_%s_Nbkg",mcName.Data(),catIt->Data()), "", thisCatB,0,1e9 ); 
+
+
+    RooRealVar *nSig    = new RooRealVar( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),catIt->Data() ), "", 0,0,1e6);
+
+    //RooExtendPdf *exSignalModel = new RooExtendPdf(Form("Data_%s_INDFIT_%s_signalModel",mcName.Data(),catIt->Data()),"",*signalModel,*thisNsig);
+
+    RooAddPdf *comb = new RooAddPdf(Form("Data_%s_INDFIT_%s",mcName.Data(),catIt->Data()),"",RooArgList(*signalModel,*bkgModel),
+				    RooArgList(*nSig,*nBkg) );
+
+    combFit->addPdf(*comb,*catIt);
+  }    
+
+  RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
+
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  res->SetName(Form("Data_%s_INDFIT_fitResult",mcName.Data()) );
+  
+  ws->import(*combFit);
+  ws->import(*res);
+
+}
+
 void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcName){
   if(ws==0) return;
 
@@ -413,358 +455,68 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
 
 }
 
-void MakeSpinFits::MakeBackgroundFitCosTBin(TString mcName,TString catTag,float minCosT,float maxCosT){
+
+void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcName){
   if(ws==0) return;
-  RooRealVar *mass = ws->var("mass");
 
-  const char *ctTag = Form("%0.1f_cosT_%0.1f",minCosT,maxCosT);
-
-  RooRealVar* mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(), catTag.Data()));
-  
-  RooDataSet *dR = (RooDataSet*)ws->data(Form("Data_%s",catTag.Data()))->reduce( Form("%f <= cosT && %f > cosT",minCosT,maxCosT) );
-  ws->import(*dR,RooFit::Rename(Form("Data_%s_%s",ctTag,catTag.Data())));
-
-
-  MakeBackgroundFit( mcName,Form("%s_%s",ctTag,catTag.Data()), mean->getVal(),mean->getError()/3.,true,catTag);
-}
-
-void MakeSpinFits::MakeCombinedBackgroundFitCosTBin(TString mcName,float minCosT,float maxCosT){
-  if(ws==0) return;
-  RooRealVar *mass = ws->var("mass");
-
-  const char *ctTag = Form("%0.1f_cosT_%0.1f",minCosT,maxCosT);
-
-  std::vector<TString>::const_iterator catIt = catLabels.begin();
-  for(; catIt != catLabels.end(); catIt++){
-  
-    RooRealVar* mean = ws->var(Form("Data_%s_FIT_%s_mean",mcName.Data(), catIt->Data()));
-    
-    RooDataSet *dR = (RooDataSet*)ws->data(Form("Data_%s",catIt->Data()))->reduce( Form("%f <= cosT && %f > cosT",minCosT,maxCosT) );
-    ws->import(*dR,RooFit::Rename(Form("Data_%s_%s",ctTag,catIt->Data())));
-    
-  }
-  MakeCombinedBackgroundFit( mcName, 125,2,TString(*ctTag));
-}
-
-void MakeSpinFits::MakeCombinedBackgroundFit(TString mcName,float initMass,float range,TString inputTag){
-  //the mean and relative signal fraction are constrained between the categories
-
-  RooRealVar mass = *(ws->var("mass"));
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
-  cout << "1" <<endl;
 
+  RooSimultaneous *combFit = new RooSimultaneous(Form("Data_m_%s_c_%s_IND2DFIT",massMcName.Data(),costMcName.Data()),"",*cat);
 
-  RooArgSet allConstraints;
+  RooRealVar *nSig = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_Nsig",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
+  RooRealVar *nBkg = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_Nbkg",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
 
-  //common variables
-  RooRealVar mean(Form("Data_%s_FIT_mean",mcName.Data()),"mean",initMass,initMass-range,initMass+range);
-  RooRealVar Nsig(Form("Data_%s_FIT_Nsig",mcName.Data()),"N signal Events",100,0,100000);
+  RooRealVar *mass = ws->var("mass");
+  RooRealVar *cosT = ws->var("cosT");
 
-  RooSimultaneous combinedFit(Form("Data_%s_FIT",mcName.Data()),"",*cat);
-  cout << "2" <<endl;
-  
   std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
-    TString outputTag="";
-    if(inputTag=="") outputTag=*catIt;
-    else outputTag = inputTag+"_"+*catIt;
+    
+    RooAbsPdf *signalMassModel = ws->pdf( Form("Data_%s_FIT_%s",massMcName.Data(),catIt->Data()) );
+    RooAbsPdf *bkgMassModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgShape",catIt->Data() ) );
 
-    RooRealVar sig1Base = *(ws->var(Form("%s_FIT_%s_sigma1",mcName.Data(),catIt->Data())));
-    RooRealVar sig2Base = *(ws->var(Form("%s_FIT_%s_sigma2",mcName.Data(),catIt->Data())));
-    RooRealVar fBase    = *(ws->var(Form("%s_FIT_%s_f",mcName.Data(),catIt->Data())));
-    cout << "\tA" <<endl;
+    RooAbsPdf *signalCosModel = ws->pdf(Form("%s_FIT_%s_cosTpdf",costMcName.Data(),catIt->Data()));
+    RooAbsPdf *bkgCosModel    = ws->pdf(Form("Data_BKGFIT_%s_cosTpdf",catIt->Data()));
+
+    double totalEventsB = ws->data("Data_Combined")->sumEntries();
+    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+
+    RooRealVar *nBkg = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_%s_Nbkg",massMcName.Data(),costMcName.Data(),catIt->Data()), "", thisCatB,0,1e9 ); 
+
+    RooRealVar *nSig    = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_%s_Nsig",massMcName.Data(),costMcName.Data(),catIt->Data() ), "", 0,0,1e6);
+
+    //RooExtendPdf *exSignalModel = new RooExtendPdf(Form("Data_%s_IND2DFIT_%s_signalModel",mcName.Data(),catIt->Data()),"",*signalModel,*thisNsig);
+
+    std::cout << "sig model MASS integral: " << signalMassModel->createIntegral(*mass)->getVal() <<std::endl;
+    std::cout << "bkg model MASS integral: " << bkgMassModel->createIntegral(*mass)->getVal() <<std::endl;
+
+    std::cout << "sig model COST integral: " << signalCosModel->createIntegral(*cosT)->getVal() <<std::endl;
+    std::cout << "bkg model COST integral: " << bkgCosModel->createIntegral(*cosT)->getVal() <<std::endl;
+
+    RooProdPdf *signalModel = new RooProdPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s_signalModel",massMcName.Data(),costMcName.Data(),catIt->Data()),"",
+					     RooArgList(*signalMassModel,*signalCosModel));
+    RooProdPdf *bkgModel = new RooProdPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s_bkgModel",massMcName.Data(),costMcName.Data(),catIt->Data()),"",
+					     RooArgList(*bkgMassModel,*bkgCosModel));
+    
+    std::cout << "sig model integral: " << signalModel->createIntegral(RooArgList(*mass,*cosT))->getVal() <<std::endl;
+    std::cout << "bkg model integral: " << bkgModel->createIntegral(RooArgList(*mass,*cosT))->getVal() <<std::endl;
+
+    RooAddPdf *comb = new RooAddPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s",massMcName.Data(),costMcName.Data(),catIt->Data()),"",RooArgList(*signalModel,*bkgModel),
+				    RooArgList(*nSig,*nBkg) );
+
+    combFit->addPdf(*comb,*catIt);
+  }    
+
+  RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
+
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  res->SetName(Form("Data_m_%s_c_%s_IND2DFIT_fitResult",massMcName.Data(),costMcName.Data()) );
   
-    //fit constraints
-    RooRealVar *sig1Width = new RooRealVar("sig1Wdith","",sig1Base.getError()/8);
-    RooRealVar *sig2Width = new RooRealVar("sig2Wdith","",sig2Base.getError()/8);
-    RooRealVar *fWidth    = new RooRealVar("fWdith","",fBase.getError()/8);
-    
-    RooRealVar *sig1 = new RooRealVar(Form("Data_%s_FIT_%s_sigma1",mcName.Data(), outputTag.Data()),"sig1",sig1Base.getVal(),sig1Base.getVal()-4*sig1Base.getError(),sig1Base.getVal()+4*sig1Base.getError());
-    RooRealVar *sig2 = new RooRealVar(Form("Data_%s_FIT_%s_sigma2",mcName.Data(), outputTag.Data()),"sig2",sig2Base.getVal(),sig2Base.getVal()-4*sig2Base.getError(),sig2Base.getVal()+4*sig2Base.getError());
-    RooRealVar *f    = new RooRealVar(Form("Data_%s_FIT_%s_f",mcName.Data(), outputTag.Data()),"f",fBase.getVal(),fBase.getVal()-4*fBase.getError(),fBase.getVal()+4*fBase.getError());
-  
-    RooGaussian *sig1Const = new RooGaussian(Form("sig1Constraint_%s",outputTag.Data()),"",*sig1,sig1Base,*sig1Width);
-    RooGaussian *sig2Const = new RooGaussian(Form("sig2Constraint_%s",outputTag.Data()),"",*sig2,sig2Base,*sig2Width);
-    RooGaussian *fConst    = new RooGaussian(Form("fConstraint_%s",outputTag.Data()),"",*f,fBase,*fWidth);
-    cout << "\tB" <<endl;
-    allConstraints.add(*sig1Const);
-    allConstraints.add(*sig2Const);
-    allConstraints.add(*fConst);
-    cout << "\tC" <<endl;
-    //sig1.setConstant(kTRUE);
-    //sig2.setConstant(kTRUE);
-    //f.setConstant(kTRUE);
-
-    //build the signal model
-    RooGaussian *g1 = new RooGaussian(Form("Data_%s_FIT_%s_g1",mcName.Data(),outputTag.Data()),"g1",mass,mean,*sig1);
-    RooGaussian *g2 = new RooGaussian(Form("Data_%s_FIT_%s_g2",mcName.Data(),outputTag.Data()),"g2",mass,mean,*sig2);
-    RooAddPdf *SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s_signalModel",mcName.Data(),outputTag.Data()),
-					   "Signal Model",RooArgList(*g1,*g2),*f);
-    cout << "\tD" <<endl;
-    //build the background model
-
-    /*
-    RooRealVar *alpha1 = new RooRealVar(Form("Data_%s_FIT_%s_alpha1",mcName.Data(),outputTag.Data()),"alpha1",-0.1,-1.,0.);
-    RooRealVar *alpha2 = new RooRealVar(Form("Data_%s_FIT_%s_alpha2",mcName.Data(),outputTag.Data()),"alpha2",-0.1,-1.,0.);
-    RooRealVar *f_bkg  = new RooRealVar( Form("Data_%s_FIT_%s_fbkg",mcName.Data(),outputTag.Data()),"f_bkg",0.1,0,1);
-    RooExponential *exp1 = new RooExponential(Form("Data_%s_FIT_%s_exp1",mcName.Data(),outputTag.Data()),"exp1",mass,*alpha1);
-    RooExponential *exp2 = new RooExponential(Form("Data_%s_FIT_%s_exp2",mcName.Data(),outputTag.Data()),"exp2",mass,*alpha2);
-    
-    RooAddPdf *BkgModel = new RooAddPdf(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),outputTag.Data()),"Background Model",
-					RooArgList(*exp1,*exp2),*f_bkg);
-    */
-
-    RooRealVar *pC = new RooRealVar(Form("Data_%s_FIT_%s_pC",mcName.Data(),catIt->Data()),"pC",1,1,1);
-    RooRealVar *p0 = new RooRealVar(Form("Data_%s_FIT_%s_p0",mcName.Data(),catIt->Data()),"p0",0,-1e6,1e6);
-    RooRealVar *p1 = new RooRealVar(Form("Data_%s_FIT_%s_p1",mcName.Data(),catIt->Data()),"p1",0,-1e6,1e6);
-    RooRealVar *p2 = new RooRealVar(Form("Data_%s_FIT_%s_p2",mcName.Data(),catIt->Data()),"p2",0,-1e6,1e6);
-    RooRealVar *p3 = new RooRealVar(Form("Data_%s_FIT_%s_p3",mcName.Data(),catIt->Data()),"p3",0,-1e6,1e6);
-    RooRealVar *p4 = new RooRealVar(Form("Data_%s_FIT_%s_p4",mcName.Data(),catIt->Data()),"p4",0,-1e6,1e6);
-    
-    RooFormulaVar *pCmod = new RooFormulaVar(Form("Data_%s_FIT_%s_pCmod",mcName.Data(),catIt->Data()),"","@0*@0",*pC);
-    RooFormulaVar *p0mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p0mod",mcName.Data(),catIt->Data()),"","@0*@0",*p0);
-    RooFormulaVar *p1mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p1mod",mcName.Data(),catIt->Data()),"","@0*@0",*p1);
-    RooFormulaVar *p2mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p2mod",mcName.Data(),catIt->Data()),"","@0*@0",*p2);
-    RooFormulaVar *p3mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p3mod",mcName.Data(),catIt->Data()),"","@0*@0",*p3);
-    RooFormulaVar *p4mod = new RooFormulaVar(Form("Data_%s_FIT_%s_p4mod",mcName.Data(),catIt->Data()),"","@0*@0",*p4);  
-
-    RooArgList *args;
-
-    args = new RooArgList(*pCmod,*p0mod,*p1mod,*p2mod,*p3mod,*p4mod);
-    
-    RooRealVar *Nbkg = new RooRealVar(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),outputTag.Data()),"N background Events",100,0,1e+09);
-    RooBernstein *BkgShape = new RooBernstein(Form("Data_%s_FIT_%s_bkgShape",mcName.Data(),catIt->Data()),"Background Shape",mass,*args);
-    RooExtendPdf *BkgModel = new RooExtendPdf(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),catIt->Data()),"Background Model",*BkgShape,*Nbkg);
-
-    cout << "\tE" <<endl;
-
-    //fraction of the signal in this category
-    double totalEvents  = ws->var("Hgg125_EB_totalEvents")->getVal() + ws->var("Hgg125_EE_totalEvents")->getVal();
-    double thisCat =  ws->data(Form("Hgg125_%s",outputTag.Data()))->sumEntries();
-    double thisFrac = thisCat/totalEvents;
-    double thisFracE = thisFrac * TMath::Sqrt(1/thisCat+1/totalEvents);
-    RooRealVar *fSig = new RooRealVar(Form("Data_%s_FIT_%s_fSig",mcName.Data(),outputTag.Data()),"",thisFrac,thisFrac-2*thisFracE,thisFrac+2*thisFracE);
-    cout << "\tF" <<endl;
-    //RooFormulaVar *NsigThisCat = new RooFormulaVar(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),outputTag.Data()),"","@0*@1",RooArgSet(*fSig,Nsig) )
-    RooRealVar *NsigThisCat = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),outputTag.Data()),"",0,0,1e6);
-    //fit model
-    RooAddPdf *FitModel = new RooAddPdf(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),outputTag.Data()),"Fit Model",
-					RooArgList(*SignalModel,*BkgModel),RooArgList(*NsigThisCat,*Nbkg));
-
-    combinedFit.addPdf(*FitModel,*catIt);
-  }//category loop
-
-  //data 
-  RooDataSet *data = (RooDataSet*)ws->data("Data_Combined");
-  
-  combinedFit.fitTo(*data,RooFit::ExternalConstraints(allConstraints),RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  //combinedFit.fitTo(*data);
-  RooFitResult *res=combinedFit.fitTo(*data,RooFit::ExternalConstraints(allConstraints),RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  res->SetName(Form("Data_%s_FIT_fitResult",mcName.Data()) );
-
-  ws->import(*res);
-  ws->import(combinedFit);
-  catIt = catLabels.begin();
-  for(; catIt != catLabels.end(); catIt++){
-    //RooFormulaVar* fv = ((RooFormulaVar*)ws->obj(Form("Data_%s_FIT_%s_Nsig_fv",mcName.Data(),catIt->Data())));
-    //RooRealVar * NsigTmp = new RooRealVar(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),catIt->Data()),"", fv->getVal());
-    //NsigTmp->setError( fv->getPropagatedError( *res ) ); // get the error with correlations from the fit results
-
-    AddSWeight(mcName,*catIt,inputTag);
-    //ws->import(*NsigTmp);
-  }
-}
-
- void MakeSpinFits::MakeCombinedBackgroundOnlyFit(){
-
-  RooRealVar mass = *(ws->var("mass"));
-  RooRealVar cosT = *(ws->var("cosT"));
-  RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
-  cout << "1" <<endl;
-
-  RooSimultaneous combinedFit(Form("Data_BKGFIT"),"",*cat);
-  cout << "2" <<endl;
-  
-  std::vector<TString>::const_iterator catIt = catLabels.begin();
-  for(; catIt != catLabels.end(); catIt++){
-    cout << *catIt <<endl;
-
-    //build the background model
-    RooRealVar *Nbkg = new RooRealVar(Form("Data_BKGFIT_%s_Nbkg",catIt->Data()),"N background Events",100,0,1e+09);
-    
-    /*
-    RooRealVar *alpha1 = new RooRealVar(Form("Data_BKGFIT_%s_alpha1",catIt->Data()),"alpha1",-0.1,-1.,0.);
-    RooRealVar *alpha2 = new RooRealVar(Form("Data_BKGFIT_%s_alpha2",catIt->Data()),"alpha2",-0.1,-1.,0.);
-    RooRealVar *f_bkg  = new RooRealVar( Form("Data_BKGFIT_%s_fbkg",catIt->Data()),"f_bkg",0.1,0,1);
-    RooExponential *exp1 = new RooExponential(Form("Data_BKGFIT_%s_exp1",catIt->Data()),"exp1",mass,*alpha1);
-    RooExponential *exp2 = new RooExponential(Form("Data_BKGFIT_%s_exp2",catIt->Data()),"exp2",mass,*alpha2);
-    
-    RooAddPdf *BkgShape = new RooAddPdf(Form("Data_BKGFIT_%s_bkgModel",catIt->Data()),"Background Model",
-					RooArgList(*exp1,*exp2),*f_bkg);
-    */
-
-    RooRealVar *pC = new RooRealVar(Form("Data_BKGFIT_%s_pC",catIt->Data()),"pC",1);
-    RooRealVar *p0 = new RooRealVar(Form("Data_BKGFIT_%s_p0",catIt->Data()),"p0",0,-10,10);
-    RooRealVar *p1 = new RooRealVar(Form("Data_BKGFIT_%s_p1",catIt->Data()),"p1",0,-10,10);
-    RooRealVar *p2 = new RooRealVar(Form("Data_BKGFIT_%s_p2",catIt->Data()),"p2",0,-10,10);
-    RooRealVar *p3 = new RooRealVar(Form("Data_BKGFIT_%s_p3",catIt->Data()),"p3",0,-10,10);
-    RooRealVar *p4 = new RooRealVar(Form("Data_BKGFIT_%s_p4",catIt->Data()),"p4",0,-10,10);
-    
-    RooFormulaVar *pCmod = new RooFormulaVar(Form("Data_BKGFIT_%s_pCmod",catIt->Data()),"","@0*@0",*pC);
-    RooFormulaVar *p0mod = new RooFormulaVar(Form("Data_BKGFIT_%s_p0mod",catIt->Data()),"","@0*@0",*p0);
-    RooFormulaVar *p1mod = new RooFormulaVar(Form("Data_BKGFIT_%s_p1mod",catIt->Data()),"","@0*@0",*p1);
-    RooFormulaVar *p2mod = new RooFormulaVar(Form("Data_BKGFIT_%s_p2mod",catIt->Data()),"","@0*@0",*p2);
-    RooFormulaVar *p3mod = new RooFormulaVar(Form("Data_BKGFIT_%s_p3mod",catIt->Data()),"","@0*@0",*p3);
-    RooFormulaVar *p4mod = new RooFormulaVar(Form("Data_BKGFIT_%s_p4mod",catIt->Data()),"","@0*@0",*p4);  
-
-    RooArgList *args;
-
-    args = new RooArgList(*pC,*p0mod,*p1mod,*p2mod,*p3mod,*p4mod);
-    
-
-    RooBernstein *BkgShape = new RooBernstein(Form("Data_BKGFIT_%s_bkgShape",catIt->Data()),"Background Shape",mass,*args);
-    
-    //ws->import(*Nbkg);
-    //ws->import(*BkgShape);
-    RooExtendPdf *BkgModel = new RooExtendPdf(Form("Data_BKGFIT_%s_bkgModel",catIt->Data()),"Background Model",*BkgShape,*Nbkg);
-    //ws->import(*BkgModel);
-    combinedFit.addPdf(*BkgModel,*catIt);
-    
-  }
-
-  //mass.setRange("fitLow", 110,119);
-  //mass.setRange("fitHigh",135.5,170);
-
-  //data 
-  RooDataSet *data = (RooDataSet*)ws->data("Data_Combined");
-  
-  combinedFit.fitTo(*data,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE),RooFit::NumCPU(8));
-  //combinedFit.fitTo(*data);
-  RooFitResult *res=combinedFit.fitTo(*data,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE),RooFit::NumCPU(8));
-  res->SetName(Form("Data_BKGFIT_fitResult") );
-
-  ws->import(*res);
-  ws->import(combinedFit);
-
-  
-
-  catIt = catLabels.begin();
-  for(; catIt != catLabels.end(); catIt++){
-    cout << *catIt <<endl;
-    ws->var( Form("Data_BKGFIT_%s_pC",catIt->Data()) )->setConstant(kTRUE);
-    for(int i=0;i<4;i++) ws->var( Form("Data_BKGFIT_%s_p%d",catIt->Data(),i) )->setConstant(kTRUE);
-    /*
-    ws->var( Form("Data_BKGFIT_%s_alpha1",catIt->Data()) )->setConstant(kTRUE);
-    ws->var( Form("Data_BKGFIT_%s_alpha2",catIt->Data()) )->setConstant(kTRUE);
-    ws->var( Form("Data_BKGFIT_%s_fbkg",catIt->Data()) )->setConstant(kTRUE);
-    */
-  }
-}
-
-void MakeSpinFits::MakeBackgroundFit(TString mcName, TString catTag,float initMass,float range,bool gausPen,TString inputTag){
-  RooRealVar mass = *(ws->var("mass"));
-  cout << "1" <<endl;
-  if(inputTag=="") inputTag = catTag;
-  //build the signal model
-  float min = initMass - (gausPen ? 3 : 1)*range; //allow 3 sigma up down
-  float max = initMass + (gausPen ? 3 : 1)*range; //allow 3 sigma up down
-  RooRealVar mean(Form("Data_%s_FIT_%s_mean",mcName.Data(), catTag.Data()),"mean",initMass,min,max);
-  cout << "5" <<endl;
-  //won't use this unless gaussian penalty is on
-  RooRealVar initialMass(Form("Data_%s_FIT_%s_initialMass",mcName.Data(), catTag.Data()),"Initial mass val",
-			 initMass);
-  cout << "3" <<endl;
-  RooRealVar penaltyMass(Form("Data_%s_FIT_%s_penaltyMass",mcName.Data(), catTag.Data()),"Mass Penalty",
-			 range);
-  cout << "4" <<endl;
-  RooGaussian meanConst("meanConstraint","",mean,initialMass,penaltyMass);
-  cout << "5   " << Form("%s_FIT_%s_sigma1",mcName.Data(),inputTag.Data()) << endl;
-  RooRealVar sig1Base = *(ws->var(Form("%s_FIT_%s_sigma1",mcName.Data(),inputTag.Data())));
-  cout << "6" <<endl;
-  RooRealVar sig2Base = *(ws->var(Form("%s_FIT_%s_sigma2",mcName.Data(),inputTag.Data())));
-  cout << "7" <<endl;
-  RooRealVar fBase    = *(ws->var(Form("%s_FIT_%s_f",mcName.Data(),inputTag.Data())));
-
-
-  RooRealVar sig1Width("sig1Wdith","",sig1Base.getError()/8);
-  RooRealVar sig2Width("sig2Wdith","",sig2Base.getError()/8);
-  RooRealVar fWidth("fWdith","",fBase.getError()/8);
-
-  RooRealVar sig1(Form("Data_%s_FIT_%s_sigma1",mcName.Data(), catTag.Data()),"sig1",sig1Base.getVal(),sig1Base.getVal()-4*sig1Base.getError(),sig1Base.getVal()+4*sig1Base.getError());
-  RooRealVar sig2(Form("Data_%s_FIT_%s_sigma2",mcName.Data(), catTag.Data()),"sig2",sig2Base.getVal(),sig2Base.getVal()-4*sig2Base.getError(),sig2Base.getVal()+4*sig2Base.getError());
-  RooRealVar f(Form("Data_%s_FIT_%s_f",mcName.Data(), catTag.Data()),"f",fBase.getVal(),fBase.getVal()-4*fBase.getError(),fBase.getVal()+4*fBase.getError());
-  
-  RooGaussian sig1Const("sig1Constraint","",sig1,sig1Base,sig1Width);
-  RooGaussian sig2Const("sig2Constraint","",sig2,sig2Base,sig2Width);
-  RooGaussian fConst("fConstraint","",f,fBase,fWidth);
-  //sig1.setConstant(kTRUE);
-  //sig2.setConstant(kTRUE);
-  //f.setConstant(kTRUE);
-  RooGaussian g1(Form("Data_%s_FIT_%s_g1",mcName.Data(),catTag.Data()),"g1",mass,mean,sig1);
-  RooGaussian g2(Form("Data_%s_FIT_%s_g2",mcName.Data(),catTag.Data()),"g2",mass,mean,sig2);
-  RooAddPdf SignalModel(Form("Data_%s_FIT_%s_signalModel",mcName.Data(),catTag.Data()),
-			"Signal Model",RooArgList(g1,g2),f);
-
-  RooAbsData *ds = ws->data(Form("Data_%s",catTag.Data()));
-
-  //background model
-  cout << "8  " << ds  <<endl;
-  
-  RooRealVar alpha1(Form("Data_%s_FIT_%s_alpha1",mcName.Data(),catTag.Data()),"alpha1",-0.1,-1.,0.);
-  RooRealVar alpha2(Form("Data_%s_FIT_%s_alpha2",mcName.Data(),catTag.Data()),"alpha2",-0.1,-1.,0.);
-  RooRealVar f_bkg( Form("Data_%s_FIT_%s_fbkg",mcName.Data(),catTag.Data()),"f_bkg",0.1,0,1);
-  RooExponential exp1(Form("Data_%s_FIT_%s_exp1",mcName.Data(),catTag.Data()),"exp1",mass,alpha1);
-  RooExponential exp2(Form("Data_%s_FIT_%s_exp2",mcName.Data(),catTag.Data()),"exp2",mass,alpha2);
-    
-  RooAddPdf BkgModel(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),catTag.Data()),"Background Model",
-		     RooArgList(exp1,exp2),f_bkg);
-  
-  /*
-  RooRealVar pC(Form("Data_%s_FIT_%s_pC",mcName.Data(),catTag.Data()),"pC",1,1,1);
-  RooRealVar p0(Form("Data_%s_FIT_%s_p0",mcName.Data(),catTag.Data()),"p0",0,-1e6,1e6);
-  RooRealVar p1(Form("Data_%s_FIT_%s_p1",mcName.Data(),catTag.Data()),"p1",0,-1e6,1e6);
-  RooRealVar p2(Form("Data_%s_FIT_%s_p2",mcName.Data(),catTag.Data()),"p2",0,-1e6,1e6);
-  RooRealVar p3(Form("Data_%s_FIT_%s_p3",mcName.Data(),catTag.Data()),"p3",0,-1e6,1e6);
-
-  RooFormulaVar pCmod(Form("Data_%s_FIT_%s_pCmod",mcName.Data(),catTag.Data()),"","@0*@0",pC);
-  RooFormulaVar p0mod(Form("Data_%s_FIT_%s_p0mod",mcName.Data(),catTag.Data()),"","@0*@0",p0);
-  RooFormulaVar p1mod(Form("Data_%s_FIT_%s_p1mod",mcName.Data(),catTag.Data()),"","@0*@0",p1);
-  RooFormulaVar p2mod(Form("Data_%s_FIT_%s_p2mod",mcName.Data(),catTag.Data()),"","@0*@0",p2);
-  RooFormulaVar p3mod(Form("Data_%s_FIT_%s_p3mod",mcName.Data(),catTag.Data()),"","@0*@0",p3);
-
-  
-
-  RooArgList *args;
-  if(ds->sumEntries() < 300) args = new RooArgList(pCmod,p0mod,p1mod,p2mod);
-  else args = new RooArgList(pCmod,p0mod,p1mod,p2mod,p3mod);
-
-  RooBernstein BkgModel(Form("Data_%s_FIT_%s_bkgModel",mcName.Data(),catTag.Data()),"Background Model",mass,*args);
-  */
-  RooRealVar Nsig(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),catTag.Data()),"N signal Events",100,0,100000);
-  RooRealVar Nbkg(Form("Data_%s_FIT_%s_Nbkg",mcName.Data(),catTag.Data()),"N background Events",100,0,1e+09);
-
-  //fit model
-  RooAddPdf FitModel(Form("Data_%s_FIT_%s_fitModel",mcName.Data(),catTag.Data()),"Fit Model",
-		     RooArgList(SignalModel,BkgModel),RooArgList(Nsig,Nbkg));
-
-
-
-
-  //do the fit
-
-  RooArgSet allConstraints(sig1Const,sig2Const,fConst);
-  if(gausPen) allConstraints.add(meanConst);
-
-
-  FitModel.fitTo(*ds,RooFit::ExternalConstraints(allConstraints),RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE),RooFit::NumCPU(8));
-  RooFitResult *res=FitModel.fitTo(*ds,RooFit::ExternalConstraints(allConstraints),RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE),RooFit::NumCPU(8));
-  res->SetName(Form("Data_%s_FIT_%s_fitResult",mcName.Data(),catTag.Data()) );
-
-  ws->import(FitModel);
+  ws->import(*combFit);
   ws->import(*res);
 
-  if(addSWeight) AddSWeight(mcName,catTag,inputTag);
 }
 
 void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
@@ -922,24 +674,8 @@ void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){
   ws->import(*sigBkgSub);
 }
 
-
-void MakeSpinFits::MakeAllBackgroundFits(TString cat, TString mcName){
-  if(ws==0) return;
-  if(cat != "EB_0_0" && cat !="EB_0") 
-    MakeBackgroundFit(mcName,cat,mean0,meanE0,true);      
-  
-  MakeBackgroundFitCosTBin(mcName,cat,-1,-0.3);
-  MakeBackgroundFitCosTBin(mcName,cat,-0.3,0.3);
-  MakeBackgroundFitCosTBin(mcName,cat,0.3,1);
-  //make background only fits
-
-}
-
-
 void MakeSpinFits::run(){
   if(ws==0) return;
-
-  //if(useCombinedFit) MakeCombinedBackgroundOnlyFit();
 
   std::vector<TString>::const_iterator mcIt = mcLabel.begin();
   for(; mcIt != mcLabel.end(); mcIt++){
@@ -953,9 +689,7 @@ void MakeSpinFits::run(){
     }
     if(useCombinedFit){
       MakeCombinedSignalTest(*mcIt);
-
-      //AddCombinedBkgOnlySWeight(*mcIt);
-      //MakeCombinedBackgroundFit(*mcIt,125,2);
+      MakeFloatingSignalTest(*mcIt);
     }
     catIt = catLabels.begin();
     for(; catIt != catLabels.end(); catIt++){
@@ -969,6 +703,7 @@ void MakeSpinFits::run(){
   for(int i=0;i<mcLabel.size();i++){
     for(int j=0;j<mcLabel.size();j++){
       Make2DCombinedSignalTest(mcLabel.at(i),mcLabel.at(j));
+      Make2DFloatingSignalTest(mcLabel.at(i),mcLabel.at(j));
     }
   }
     

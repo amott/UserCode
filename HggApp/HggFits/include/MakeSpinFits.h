@@ -55,20 +55,13 @@ public:
 
   void MakeCombinedSignalSpin(TString mcName);
 
-  void MakeBackgroundFit(TString mcName,TString catTag,float initMass,float range,bool gausPen,TString inputTag="");
-  void MakeCombinedBackgroundFit(TString mcName,float initMass, float range,TString inputTag="");
-
-  void MakeBackgroundFitCosTBin(TString mcName,TString catTag,float minCosT,float maxCosT);
-  void MakeCombinedBackgroundFitCosTBin(TString mcName,float minCosT,float maxCosT);
-
   void MakeBackgroundOnlyFit(TString catTag);
-  void MakeCombinedBackgroundOnlyFit();
 
   void MakeCombinedSignalTest(TString mcName);
   void Make2DCombinedSignalTest(TString massMcName,TString costMcName);
 
-
-  void MakeAllBackgroundFits(TString cat, TString mcTag);
+  void MakeFloatingSignalTest(TString mcName);
+  void Make2DFloatingSignalTest(TString massMcName,TString costMcName);
 
   void getSimpleBkgSubtraction(TString mcName,TString tag);
   void getSimpleTotalBkgSubtraction(TString mcName);
