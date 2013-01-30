@@ -4,6 +4,8 @@ using namespace std;
 #include "selectionMaps.C"
 
 MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
+  //setup the defaults
+
   requireCiC=true;
   tightPt=false;
   selectionMap=0;
@@ -13,6 +15,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
 
   useR9=false;
 
+  //open output file and create the new workspace
   outputFile = TFile::Open(outputFileName,"RECREATE");
   ws = new RooWorkspace();
   ws->SetName("cms_hgg_spin_workspace");  
@@ -20,6 +23,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
 }
 
 MakeSpinWorkspace::~MakeSpinWorkspace(){
+//write the workspace and close the input file
   if(outputFile){
     outputFile->cd();
     ws->Write();
@@ -27,24 +31,10 @@ MakeSpinWorkspace::~MakeSpinWorkspace(){
   }
 }
 
-void MakeSpinWorkspace::runOnAll( void (*f)(TString,TString), TString mcName){
-  for(int i=0;i<nCat;i++){
-    for(int j=0;j<nCat;j++){
-      f(Form("EB_%d_%d",i,j),mcName);
-      f(Form("EE_%d_%d",i,j),mcName);
-    }
-  }
-}
-
-void MakeSpinWorkspace::runOnAllR9( void (*f)(TString,TString), TString mcName){
-  for(int i=0;i<nCat;i++){
-      f(Form("EB_%d",i),mcName);
-      f(Form("EE_%d",i),mcName);
-  }
-}
-
 
 TH2F* MakeSpinWorkspace::getSelectionMap(int map,bool isData){
+  // get selection map
+  // needs to be cleaned up, but useful for testing atm
   switch(map){
   case 0:
     return getSelectionMap0();
@@ -86,19 +76,19 @@ bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int mi
 }
 
 void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData){
-  //gROOT->ProcessLine(".L /home/amott/HggApp/spin/LeptonSPlots/src/HggOutputReader2.C+");
+  //adds the data/MC to the workspace with the given tag
   cout << "saveDataSet" <<endl;
   TFile *f = TFile::Open(inputFile);
   TTree *tree = (TTree*)f->Get("HggOutput");
-  
+
+  //define a reader class for the input tree
   HggOutputReader2 h(tree);
   
   std::cout << "Get Selection Map" << std::endl;
   TH2F* map = getSelectionMap(selectionMap,isData);
   std::cout << map->GetBinContent(1,1) << std::endl;
 
-  float **offset=0,**scale=0;
-  // fit variables
+  //define the variables for the workspace
   RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", 100., 180.);
   RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", -1, 1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
@@ -127,6 +117,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   RooCategory *cat = new RooCategory("evtcat","evtcat");
 
+  //create the RooArgSet to initialize the datasets
   RooArgSet set;
   set.add(*mass);
   set.add(*cosT);
@@ -148,6 +139,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   std::map<std::pair<int,int>, RooDataSet*> *datamap;
 
   if(useR9){
+    //if we are using the CiC categories, we only have nCat categories per detector region, so we don't use the 
+    //second index of the pair and define fewer categories
     for(int j=0;j<nCat;j++){
       cat->defineType( Form("EB_%d",j),2*j );
       cat->defineType( Form("EE_%d",j),2*j+1 );
@@ -155,6 +148,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set,"evtWeight");
     }
   }else{
+    //using the sigmaE/E categories, we have nCat^2 categories
     for(int i=0;i<nCat;i++){
       for(int j=0;j<nCat;j++){
 	cat->defineType( Form("EB_%d_%d",i,j),4*i+2*j );
@@ -167,18 +161,24 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   Long64_t iEntry=-1;
   cout << "Making DataSet" << endl;
-  Long64_t nEB=0,nEE=0;
+  Long64_t nEB=0,nEE=0; // store the total number of events before any cuts or selection
+
+  //begin main loop over tree
   while(h.GetEntry(++iEntry)){
+
     if( !(iEntry%10000) ) cout << "Processing " << iEntry << "\t\t" << h.evtWeight << endl;
+    //determine  the leading and trailing photons
     int maxI = (h.Photon_pt[1] > h.Photon_pt[0] ? 1:0);
     int minI = (h.Photon_pt[1] > h.Photon_pt[0] ? 0:1);
-    if(!getBaselineSelection(&h,maxI,minI)) continue;
-    if(tightPt && (h.Photon_pt[maxI]/h.mPair < 1./3. || h.Photon_pt[minI]/h.mPair < 1./4.) ) continue;
-
     if(isData && (h.runNumber < runLow || h.runNumber > runHigh) ) continue;
 
     if(fabs(h.Photon_etaSC[1]) < 1.48 && fabs(h.Photon_etaSC[0]) < 1.48) nEB+=h.evtWeight;
     else nEE+=h.evtWeight;
+
+    // apply selections
+    if(!getBaselineSelection(&h,maxI,minI)) continue;
+    if(tightPt && (h.Photon_pt[maxI]/h.mPair < 1./3. || h.Photon_pt[minI]/h.mPair < 1./4.) ) continue;
+
 
     if(requireCiC){
       if(h.Photon_passPFCiC[1]==false || h.Photon_passPFCiC[0]==false) continue;
@@ -188,6 +188,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     float se2 = h.Photon_EError[minI]/h.Photon_E[minI];
 
     int p1,p2;
+    //determine the photon categories
     if(useR9){
       p1 = passSelection(h.Photon_r9[maxI]);
       p2 = passSelection(h.Photon_r9[minI]);
@@ -195,10 +196,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       p1 = passSelection(map,se1,h.Photon_etaSC[maxI],h.Photon_pt[maxI]);
       p2 = passSelection(map,se2,h.Photon_etaSC[minI],h.Photon_pt[minI]);
     }
-    if(p1 >= nCat || p2 >= nCat) continue;
+    if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
     datamap = ((fabs(h.Photon_etaSC[maxI]) < 1.48 && fabs(h.Photon_etaSC[minI]) < 1.48) ?
-	       &dataMapEB : & dataMapEE);
+	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
       
+    //set all the variables
     mass->setVal(h.mPair);
     cosT->setVal(h.cosThetaLead);
     sige1->setVal(se1);
@@ -224,6 +226,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     
     diPhotonMVA->setVal(h.diPhotonMVA);
 
+    //set the event weight
     if(!isData) evtW->setVal(h.evtWeight);
     else evtW->setVal(1);
     if( !(iEntry%10000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
@@ -240,12 +243,14 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   totEB->setVal(nEB);
   totEE->setVal(nEE);
 
+  //build a combined DataSet using the cat RooCategory
   RooArgSet setCat(set);
   setCat.add(*cat);
   RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat );
   
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
+    //loop over the barrel datasets and add the individual data to the combined dataset
     TString cattag;
     if(useR9) cattag = Form("EB_%d", (dIt->first).first );
     else cattag = Form("EB_%d_%d", (dIt->first).first, (dIt->first).second );
@@ -255,6 +260,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     ws->import(*(dIt->second));
   }
   for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
+    //loop over the endcap datasets and add the individual data to the combined dataset
     TString cattag;
     if(useR9) cattag = Form("EE_%d", (dIt->first).first );
     else cattag = Form("EE_%d_%d", (dIt->first).first, (dIt->first).second );
@@ -263,12 +269,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     dataComb->append(*tmp);    
     ws->import(*(dIt->second));
   }
+  //import everything
   ws->import(*dataComb);
   ws->import(*totEB);
   ws->import(*totEE);
   cout << "Done" <<endl;
-  if(offset) delete offset;
-  if(scale)  delete scale;
 }
 
 void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
@@ -279,7 +284,7 @@ void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
 
 
 void MakeSpinWorkspace::MakeWorkspace(){
-
+  //run AddToWorkspace(...) on all the input files
   std::vector<TString>::const_iterator fnIt,lIt;
   std::vector<bool>::const_iterator idIt;
 
