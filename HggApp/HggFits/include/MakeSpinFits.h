@@ -26,12 +26,15 @@
 #include "RooCBShape.h"
 #include "RooSimultaneous.h"
 #include "RooExtendPdf.h"
+#include "RooProdPdf.h"
 
 #include <HggOutputReader2.h>
 
 #include <iostream>
 #include <map>
 #include <vector>
+#include <assert.h>
+
 
 #include "MakeSpinWorkspace.h"
 #include "MakeSpinSPlot.h"
@@ -62,6 +65,8 @@ public:
   void MakeCombinedBackgroundOnlyFit();
 
   void MakeCombinedSignalTest(TString mcName);
+  void Make2DCombinedSignalTest(TString massMcName,TString costMcName);
+
 
   void MakeAllBackgroundFits(TString cat, TString mcTag);
 
@@ -81,9 +86,13 @@ public:
 
   static float computeFWHM(RooAbsPdf* pdf, float mean, RooRealVar* var);
 
+  enum BkgFitType{kExp,kPoly};
+
+  void setBkgFit(BkgFitType t){fitType=t;}
+
   void AddSWeight(TString mcName, TString catTag,TString inputTag);
   void AddCombinedBkgOnlySWeight(TString mcName);
-private:
+protected:
   RooWorkspace *ws;
 
   std::vector<TString> mcLabel;
@@ -99,7 +108,7 @@ private:
   bool useCombinedFit;
   float mean0,meanE0;
 
-
+  BkgFitType fitType;
 };
 
 #endif

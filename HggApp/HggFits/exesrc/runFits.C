@@ -11,6 +11,7 @@ int main(int argc, char** argv){
   a.addArgument("OutputWorkspace",ArgParser::required,"output workspace");
   a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
   a.addLongOption("CombinedFit",ArgParser::noArg,"use a combined fit to the categories (default: off)");
+  a.addLongOption("BkgFit",ArgParser::reqArg,"Background Fit Type [poly,exp] (default: exp)");
 
   string ret;
   if(a.process(ret) != 0){
@@ -22,8 +23,16 @@ int main(int argc, char** argv){
   string outputWS = a.getArgument("OutputWorkspace");
   bool useR9 = a.longFlagPres("useR9");
   bool useCombFit = a.longFlagPres("CombinedFit");
+  string fit = "exp";
+  if(a.longFlagPres("BkgFit")){
+    fit = a.getLongFlag("BkgFit");    
+  }
 
+  
   MakeSpinFits msf(inputWS,outputWS);
+
+  if(fit.compare("poly")==0) msf.setBkgFit(MakeSpinFits::kPoly);
+  else msf.setBkgFit(MakeSpinFits::kExp);
 
   msf.setAddSWeight(true);
   msf.addMCLabel("Hgg125");
