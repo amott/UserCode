@@ -60,6 +60,7 @@ public:
   void setLumi(float l){lumi = l;} //!< set the lumi for the plots to display
   void setBasePath(TString s){basePath = s;} //!< set the base path to which to save the figures
 
+  void printYields(const char* mcType);
 protected:
   TFile *inputFile;
   RooWorkspace *ws;

@@ -7,7 +7,7 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
   inputFile = new TFile(inputFileName);
   ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
 
-  MakeSpinFits::getLabels("Labels",&mcNames,ws);
+  MakeSpinFits::getLabels("labels",&mcNames,ws);
   MakeSpinFits::getLabels("evtcat",&catNames,ws);
   
 
@@ -433,5 +433,29 @@ void MakeSpinPlots::setStyle(){
 
   gROOT->SetStyle("vecbosStyle");
   gROOT->ForceStyle();
+
+}
+
+void MakeSpinPlots::printYields(const char* mcType){
+  RooRealVar * tot = ws->var(Form("Data_%s_FULLFIT_Nsig",mcType));
+
+  cout << "Total Yield:  " << tot->getVal() << "  +-  " << tot->getError() <<endl;
+  cout << "Category Yields: CONSTRAINED FIT " << endl;
+  for(int i=0;i<catNames.size();i++){
+    RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
+    cout << "\t" << catNames.at(i) <<":   " << tot->getVal()*f->getVal() << "  +-  " << tot->getError()*f->getVal() <<endl;
+  }
+  cout << "\nCategory Yields: INDEPENDENT FIT " << endl;
+  for(int i=0;i<catNames.size();i++){
+    RooRealVar *ind = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcType, catNames.at(i).Data()) );
+    cout << "\t" << catNames.at(i) <<":   " << ind->getVal() << "  +-  " << ind->getError() <<endl;
+  }
+
+  float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
+
+  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries()/total * 607*lumi/12.;
+  cout << endl << "Expected Events:  "  << exp << endl;
+  cout << "mu:  " << tot->getVal()/exp << "  +-  "
+       << tot->getError()/exp <<endl;
 
 }
