@@ -13,6 +13,7 @@ void MakeSpinSPlot::addSpecies(TString name, RooAbsPdf* pdf, double expYield){
   __speciesNames.push_back(name);
   __expectedYields.push_back(expYield);
   __nSpec++;
+  //these need to be kept in sync
 }
 
 
@@ -24,13 +25,15 @@ void MakeSpinSPlot::computeCovMatrix(){
   std::cout << "Covariance Matrix:" << std::endl;
   Long64_t iEntry=-1;
   const RooArgSet *set;
+  //loop over dataset
   while( (set=__dataSet->get(++iEntry)) ){
+    //update variables 
     for(std::vector<RooRealVar*>::iterator varIt = __variables.begin();
 	varIt!=__variables.end(); varIt++){
       (*varIt)->setVal( ((RooRealVar*)set->find((*varIt)->GetName()))->getVal() );
     }
 
-    
+    //compute the matrix
     for(int iRow = 0; iRow<__nSpec;iRow++){
       for(int iCol = 0; iCol<__nSpec;iCol++){
 	double den = TMath::Power(computeDenom(),2);
@@ -49,7 +52,7 @@ void MakeSpinSPlot::computeCovMatrix(){
 }
 
 double MakeSpinSPlot::computeDenom(){ //compute the denominator for the covariance matrix
-
+  //this is used in multiple places
   std::vector<RooAbsPdf*>::iterator pdfIt = __pdfs.begin();
   std::vector<double>::iterator expIt = __expectedYields.begin();
 
@@ -62,6 +65,7 @@ double MakeSpinSPlot::computeDenom(){ //compute the denominator for the covarian
 
 void MakeSpinSPlot::computeSWeight(){
 
+  //create SWeight variables
   __sWeightVars = new RooArgSet();
   std::vector<TString>::const_iterator specIt = __speciesNames.begin();
   for(; specIt != __speciesNames.end(); specIt++){
@@ -73,7 +77,9 @@ void MakeSpinSPlot::computeSWeight(){
   Long64_t iEntry=-1;
 
   const RooArgSet *set;
+  //loop
   while( (set=__dataSet->get(++iEntry)) ){
+    //update variables
     for(std::vector<RooRealVar*>::iterator varIt = __variables.begin();
 	varIt!=__variables.end(); varIt++){
       (*varIt)->setVal( ((RooRealVar*)set->find((*varIt)->GetName()))->getVal() );

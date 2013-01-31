@@ -1,5 +1,12 @@
 #ifndef MakeSpinSPlot_h
 #define MakeSpinSPlot_h
+
+/*!
+  A Generic Class for computing SWeights for a data set.
+  The yields must be fitted externally and the fitted yields passed to the class
+
+  The output will be a dataset that can be merged with the input datasets
+*/
 #include <RooWorkspace.h>
 #include <RooRealVar.h>
 #include <RooDataSet.h>
@@ -26,22 +33,30 @@
 class MakeSpinSPlot{
 public:
 
-  MakeSpinSPlot(RooAbsData *data);
+  MakeSpinSPlot(RooAbsData *data); //!< Constructor, dataset is passed at this point
   
-  void addSpecies(TString name, RooAbsPdf* pdf, double expYield);
-  void addVariable(RooRealVar* var){ __variables.push_back(var);}
+  void addSpecies(TString name, RooAbsPdf* pdf, double expYield); //!< add a species to have an sweight computed.  
+  /*!
+    \param name The name to use for the species (e.g. 'signal' and 'background') The SWeight will be named <name>_sw
+    \param pdf  The pdf associated with this species
+    \\param expYield the fitted yield of this species
+  */
+  void addVariable(RooRealVar* var){ __variables.push_back(var);} //!< add a variable
+  /*!
+    Add a variable whose value will be updated for every event.  All varaibles used in any species pdf must be given here.
+  */
   
-  void calculate();
+  void calculate(); //!< run the sweight calculation
 
-  RooDataSet* getSWeightDataSet(){ return __sWeightDataSet; }
+  RooDataSet* getSWeightDataSet(){ return __sWeightDataSet; } //!< return the SWeight dataset
 
-  RooArgSet* getSWeightVars(){return __sWeightVars;}
+  RooArgSet* getSWeightVars(){return __sWeightVars;} //!< get the sweight varaibles
 protected:
-  void computeCovMatrix();
+  void computeCovMatrix(); //!< internal method to compute the covariance matrix
 
-  double computeDenom();
+  double computeDenom(); //!< compute the denominator for the covariance matrix and the SWeight
 
-  void computeSWeight();
+  void computeSWeight(); //!< internal computer
   RooDataSet* __sWeightDataSet;
   RooArgSet* __sWeightVars;
 
