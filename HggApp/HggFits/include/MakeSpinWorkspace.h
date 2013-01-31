@@ -76,6 +76,7 @@ protected:
   std::vector<TString> fileName,label; //!< lists of input file names and corresponding labels
   std::vector<bool> isData;            //!< list of bools specifying whether the files correspond to data
   RooWorkspace *ws;                    //!< workspace for output
+  RooCategory* labels;                 //!< list of labels to store inside the RooWorkspace
   bool requireCiC;                     //!< whether to require the photons to pass CiC (default: true)
   bool tightPt;                        //!< whether to require tight pt/m cuts (default: false)
   int selectionMap;                    //!< selection map number to use

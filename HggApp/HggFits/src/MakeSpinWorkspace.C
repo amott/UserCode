@@ -19,16 +19,11 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
   outputFile = TFile::Open(outputFileName,"RECREATE");
   ws = new RooWorkspace();
   ws->SetName("cms_hgg_spin_workspace");  
+  labels = new RooCategory("labels","labels");
   
 }
 
 MakeSpinWorkspace::~MakeSpinWorkspace(){
-//write the workspace and close the input file
-  if(outputFile){
-    outputFile->cd();
-    ws->Write();
-    outputFile->Close();
-  }
 }
 
 
@@ -280,6 +275,7 @@ void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
   fileName.push_back(fName);
   label.push_back(l);
   isData.push_back(is);
+  if(!is) labels->defineType(l,labels->numBins(""));
 }
 
 
@@ -296,6 +292,7 @@ void MakeSpinWorkspace::MakeWorkspace(){
   }
   
   outputFile->cd();
+  ws->import(*labels);
   ws->Write();
   outputFile->Close();
 }

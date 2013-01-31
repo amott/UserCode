@@ -59,6 +59,7 @@ clean:
 runWorkspaces:		$(EXESRCDIR)runWorkspaces.C \
 			$(OUTLIB)MakeSpinWorkspace.o \
 			$(OUTLIB)MakeSpinFits.o \
+			$(OUTLIB)MakeSpinToy.o \
 			$(OUTLIB)ArgParser.o \
 			$(HGGAPPINC)ReadConfig.hh
 	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o runWorkspaces $(OUTLIB)/*.o  $(GLIBS) $ $<	
@@ -78,6 +79,7 @@ runPlots:		$(EXESRCDIR)runPlots.C \
 
 runToyWorkspaces:		$(EXESRCDIR)runToyWorkspaces.C \
 				$(OUTLIB)MakeSpinToy.o\
+				$(OUTLIB)MakeSpinFits.o\
 				$(OUTLIB)ArgParser.o \
 				$(HGGAPPINC)ReadConfig.hh
 	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o runToyWorkspaces $(OUTLIB)/*.o  $(GLIBS) $ $<	
