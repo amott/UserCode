@@ -58,6 +58,7 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,genType gen){
   toyws.import(*(ws->data("RSG125_Combined")));
   toyws.import(*(ws->var("Hgg125_FIT_Combined_sigmaEff")));
   toyws.import(*(ws->var("RSG125_FIT_Combined_sigmaEff")));
+  toyws.import(*((RooCategory*)ws->obj("labels")));
 }
 
 void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genType gen,float nSigTot){

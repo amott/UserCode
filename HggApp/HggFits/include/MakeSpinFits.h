@@ -71,8 +71,8 @@ public:
 
   void setWorkspace(RooWorkspace *inputWs){ //<! set the input workspace 
     ws = inputWs;
-    getLabels("labels",mcLabel);
-    getLabels("evtcat",catLabels);
+    getLabels("labels",&mcLabel,ws);
+    getLabels("evtcat",&catLabels,ws);
   }
 
   void MakeSignalFit(TString tag,TString mcName); //<! used to make the signal fits
@@ -126,12 +126,13 @@ public:
   void setBkgFit(BkgFitType t){fitType=t;} //<! specify which type of background fit to use
 
   void AddCombinedBkgOnlySWeight(TString mcName); //<! add the SWeighted datasets from the combined fit
+
+  static void getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace *w);
 protected:
   RooWorkspace *ws;
 
   std::vector<TString> mcLabel;
 
-  void getLabels(const char *varName, std::vector<TString> &lblVec);
   std::vector<TString> catLabels;
 
   bool addSWeight;

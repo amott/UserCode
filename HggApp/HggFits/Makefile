@@ -100,7 +100,8 @@ $(OUTLIB)MakeSpinFits.o:	$(SRCDIR)MakeSpinFits.C \
 				$(OUTLIB)MakeSpinSPlot.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinFits.o $<
 
-$(OUTLIB)MakeSpinPlots.o:	$(SRCDIR)MakeSpinPlots.C
+$(OUTLIB)MakeSpinPlots.o:	$(SRCDIR)MakeSpinPlots.C \
+				$(OUTLIB)MakeSpinFits.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinPlots.o $<
 
 $(OUTLIB)MakeSpinSeparationTest.o:	$(SRCDIR)MakeSpinSeparationTest.C \

@@ -18,9 +18,9 @@ MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
     ws = ((RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace"));
 
     //extract MC labels from the input workspace
-    getLabels("labels",mcLabel);
+    getLabels("labels",&mcLabel,ws);
     //extract category labels from the input workspace
-    getLabels("evtcat",catLabels);
+    getLabels("evtcat",&catLabels,ws);
   }
   if(outputFileName != ""){
     //opens the output file
@@ -34,13 +34,13 @@ MakeSpinFits::~MakeSpinFits(){
 
 }
 //get the labels (MC names or category names) from the workspace and put them in lblVec
-void MakeSpinFits::getLabels(const char *varName, std::vector<TString> &lblVec){
-  RooCategory* labels = ((RooCategory*)ws->obj(varName));
-  lblVec.clear();
+void MakeSpinFits::getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace* w){
+  RooCategory* labels = ((RooCategory*)w->obj(varName));
+  lblVec->clear();
   for(int i=0;i<labels->numBins("");i++){
     labels->setIndex(i);
-    lblVec.push_back(labels->getLabel());
-    std::cout << lblVec.back() <<std::endl;
+    lblVec->push_back(labels->getLabel());
+    std::cout << lblVec->back() <<std::endl;
   }
 }
 

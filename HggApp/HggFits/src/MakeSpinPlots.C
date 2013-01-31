@@ -3,45 +3,31 @@
 #include "subtract.cc"
 
 
-MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag): nCat(MakeSpinWorkspace::nCat){
+MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
   inputFile = new TFile(inputFileName);
   ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
+
+  MakeSpinFits::getLabels("Labels",&mcNames,ws);
+  MakeSpinFits::getLabels("evtcat",&catNames,ws);
+  
 
   basePath = "figs/";
   outputTag=outTag;
 
   setStyle();
 
-  if(ws->pdf("Data_Hgg125_FIT")==0) combinedFit=false;
-  else combinedFit=true;
 }
 
 MakeSpinPlots::~MakeSpinPlots(){
   inputFile->Close();
 }
 
-void MakeSpinPlots::addMCType(TString s){
-  mcNames.push_back(s);
-}
-
 void MakeSpinPlots::runAll(TString mcName){
-  if(useR9){
-    for(int i=0;i<nCat;i++){
-      for(int eb=0;eb<2;eb++){
-	TString tag = Form("%s_%d",(eb==0?"EB":"EE"),i);
-	runAll(tag,mcName);
-      }
-    }
-  }else{
-      for(int i=0;i<nCat;i++){
-	for(int j=0;j<nCat;j++){
-	  for(int eb=0;eb<2;eb++){
-	    TString tag = Form("%s_%d_%d",(eb==0?"EB":"EE"),i,j);
-	    runAll(tag,mcName);
-	  }
-	}
-      }
+  std::vector<TString>::const_iterator catIt = catNames.begin();
+  for(; catIt != catNames.end(); catIt++){
+    runAll(*catIt,mcName);
   }
+
   DrawSpinSubTotBackground(mcName,false);
   DrawSpinSubTotBackground(mcName,true);
 }
@@ -49,7 +35,6 @@ void MakeSpinPlots::runAll(TString mcName){
 void MakeSpinPlots::runAll(TString tag, TString mcName){
   getFitValues(tag,mcName);
   DrawBlindFit(tag,mcName);
-  //if(!combinedFit) DrawBlindFit(tag,mcName);
   DrawFit(tag,mcName);
   PlotSignalFits(tag,mcName);
   DrawSpinSubBackground(tag,mcName,false);
@@ -219,64 +204,6 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
-/*
-void printYields(TString wsFile,TString mcName){
-  TFile *f = TFile::Open(wsFile);
-  RooWorkspace *ws = (RooWorkspace*)f->Get("cms_hgg_spin_workspace");
-
-  cout << "\\begin{tabular}{c|c|c||c|c|c|c|c}" << endl;
-  cout << "Region & $\\gamma_1$ & $\\gamma_2$ & $N_{bkg}$ & $N_{sig}$ & mean & $\\sigma_{eff}$ & Signal Efficiency \\\\" <<endl;
-  cout << "\\hline" <<endl;
-  float N=0,Esq=0;
-  double selEB=0;
-
-  double totEB  = ws->var("Hgg125_EB_totalEvents")->getVal();
-  double totEE  = ws->var("Hgg125_EE_totalEvents")->getVal();
-
-  for(int i=0;i<nCat;i++){
-    for(int j=0;j<nCat;j++){
-      double thisEB  = ws->data(Form("%s_EB_%d_%d",mcName.Data(),i,j))->sumEntries();
-      selEB+=thisEB;
-      double v[8];
-      getSignalFitVals(ws,mcName,Form("EB_%d_%d",i,j),v);
-      N+=v[0];
-      Esq+=v[1]*v[1];
-      cout  << "EB & " << (i==0?"pass":"fail") << " & " << (j==0?"pass":"fail") << " & "
-	    << v[2]  << " $\\pm$ " << v[3]  << " & "
-	    << v[0]  << " $\\pm$ " << v[1]  << " & "
-	    << v[4] << " $\\pm$ " << v[5] << " & "
-	    << v[6] <<  " $\\pm$ " << v[7] << " & "
-	    << thisEB/(totEB+totEE) << " \\\\ " << endl;
-	
-    }
-  }
-  cout << "\\hline" << endl;
-  double selEE = 0;
-  for(int i=0;i<nCat;i++){
-    for(int j=0;j<nCat;j++){
-      double thisEE  = ws->data(Form("%s_EE_%d_%d",mcName.Data(),i,j))->sumEntries();
-      selEE+=thisEE;
-      double v[8];
-      getSignalFitVals(ws,mcName,Form("EE_%d_%d",i,j),v);
-      N+=v[0];
-      Esq+=v[1]*v[1];
-      cout  << "EE & " << (i==0?"pass":"fail") << " & " << (j==0?"pass":"fail") << " & "
-	    << v[2]  << " $\\pm$ " << v[3]  << " & "
-	    << v[0]  << " $\\pm$ " << v[1]  << " & "
-	    << v[4] << " $\\pm$ " << v[5] << " & "
-	    << v[6] <<  " $\\pm$ " << v[7] << " & " 
-	    << thisEE/(totEB+totEE) <<" \\\\\ " << endl;
-	
-    }
-  }
-
-  cout << "\\end{tabular}" << endl;
-
-  cout << "Total Nsig:  " << N << " +- " << TMath::Sqrt(Esq) << endl;
-  cout << "Total Eff: \n\tEB: " << selEB/totEB << "\n\tEE: " << selEE/totEE << "\n\tTot: " << (selEB+selEE)/(totEB+totEE) << endl;
-
-}
-*/
 
 void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   double totEB  = ws->var("Hgg125_EB_totalEvents")->getVal();

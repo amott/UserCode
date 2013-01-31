@@ -1,5 +1,13 @@
 #ifndef MakeSpinPlots_h
 #define MakeSpinPlots_h
+/*!
+  Used to make the output plots of data, MC and fits for the Hgg analysis.
+  Requires a workspace file output from MakeSpinFits
+
+  Author: Alex Mott (Caltech)
+  Date: Jan 2013
+*/
+
 #include <RooWorkspace.h>
 #include <RooRealVar.h>
 #include <RooDataSet.h>
@@ -25,58 +33,50 @@
 #include "TLegend.h"
 #include "TStyle.h"
 
-#include "MakeSpinWorkspace.h"
+#include "MakeSpinFits.h"
 
 #include <map>
 
 class MakeSpinPlots{
 public:
-  MakeSpinPlots(TString inputFileName,TString outTag);
+  MakeSpinPlots(TString inputFileName,TString outTag); //!< Constructor requires path to input workspace file and a tag which will be inserted into every output filename
   ~MakeSpinPlots();
-  
+
   typedef std::pair<TString,TString> tPair;
   typedef std::pair<double,double> dPair;
   typedef std::map<tPair,dPair> paramMap;
-  paramMap nSignal, nBackground,fitMean,fitSigEff,fitBkg1Sigma;
   
-  void addMCType(TString s);
-
-  //RooDataHist* getSimpleBkgSubtraction(TString tag,TString mcName);
-  void DrawBlindFit(TString tag,TString mcName);
-  void DrawFit(TString tag,TString mcName);
-  void DrawSpinBackground(TString tag,TString mcName,bool signal);
-  void DrawSpinSubBackground(TString tag,TString mcName,bool signal);
-  void DrawSpinSubTotBackground(TString mcName,bool signal);
-  void PlotSignalFits(TString tag,TString mcName);
+  void DrawBlindFit(TString tag,TString mcName); //!< draw blinded mass distribution of the given category
+  void DrawFit(TString tag,TString mcName); //!< draw non-blinded mass distributions
+  void DrawSpinBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) SPlots
+  void DrawSpinSubBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) background-subtracted plots
+  void DrawSpinSubTotBackground(TString mcName,bool signal); //!< Draw inclusive cos(theta) background-subtracted plots
+  void PlotSignalFits(TString tag,TString mcName); //!< Draw the signal fits
 
 
-  void runAll(TString tag,TString mcName);
-  void runAll(TString mcName);
+  void runAll(TString tag,TString mcName); //!< make all plots for given category and MC type (for the signal fits)
+  void runAll(TString mcName); //!< Draw all plots for all categories
 
-  const int nCat;
+  void setLumi(float l){lumi = l;} //!< set the lumi for the plots to display
+  void setBasePath(TString s){basePath = s;} //!< set the base path to which to save the figures
 
-  void setLumi(float l){lumi = l;}
-  void setBasePath(TString s){basePath = s;}
-
-  void setUseR9(bool b){useR9=b;}
-
-private:
+protected:
   TFile *inputFile;
   RooWorkspace *ws;
 
   float lumi;
+
+  paramMap nSignal, nBackground,fitMean,fitSigEff,fitBkg1Sigma;
   
   TString basePath;
   TString outputTag;
   std::vector<TString> mcNames;
+  std::vector<TString> catNames;
 
-  bool useR9;
-  bool combinedFit;
-
-  void getFitValues(TString tag,TString mcName);
+  void getFitValues(TString tag,TString mcName); //!< fill the maps with fitted yields from the signal
 
   TStyle *vecbosStyle;
-  void setStyle();
+  void setStyle(); //!< setup the plot style 
 };
 
 #endif

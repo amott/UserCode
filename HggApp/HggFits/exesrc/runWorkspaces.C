@@ -30,8 +30,10 @@ int main(int argc, char** argv){
   ReadConfig cfgReader(cfgFile,ReadConfig::kSection);
 
   string data = cfgReader.getParameter("data",cfgOption);
-  string hgg = cfgReader.getParameter("HggMC",cfgOption);
-  string rsg = cfgReader.getParameter("RSGMC",cfgOption);
+  string mcList = cfgReader.getParameter("mcList",cfgOption);
+  cout << mcList <<endl;
+  vector<string> mcListVec = cfgReader.tokenizeString(mcList,",");
+  cout << mcListVec.size() <<endl;
   int runMin = atoi(cfgReader.getParameter("runMin",cfgOption).c_str());
   int runMax = atoi(cfgReader.getParameter("runMax",cfgOption).c_str());
 
@@ -45,13 +47,17 @@ int main(int argc, char** argv){
 
   MakeSpinWorkspace msw(wsFile);
 
-  cout << "Data:    " << data <<endl
-       << "Hgg MC:  " << hgg << endl
-       << "RSG MC:  " << rsg << endl;
+  cout << "Data:    " << data <<endl;
 
   msw.addFile(data,"Data",true);
-  msw.addFile(hgg,"Hgg125",false);
-  msw.addFile(rsg,"RSG125",false);
+  for(vector<string>::const_iterator mcIt = mcListVec.begin();
+      mcIt != mcListVec.end();
+      mcIt++){
+    string mcName = *mcIt;
+    string filePath = cfgReader.getParameter(mcName,cfgOption);
+    cout << mcName << ":    " << filePath <<endl;
+    msw.addFile(filePath,mcName,false);
+  }
 
   msw.setRequireCiC(requireCiC);
   msw.setSelectionMap(selectionMap);
