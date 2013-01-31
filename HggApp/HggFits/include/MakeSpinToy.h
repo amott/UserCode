@@ -63,7 +63,6 @@ public:
 
   TTree* makeForCombineTool(TString treeName, RooAbsData* hggData, RooAbsData* rsgData);
 
-  void setUseR9(bool b);
   void setSaveWorkspaces(bool b){saveWorkspaces = b;}
 
   const static int nBins = 9;

@@ -5,6 +5,9 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName):
   nCat(MakeSpinWorkspace::nCat){
   TFile *f = new TFile(fileName);
   ws = (RooWorkspace*)f->Get(wsName);
+
+  MakeSpinFits::getLabels("evtcat",&catLabels,ws);
+
   mass = ws->var("mass");
   cosT = ws->var("cosT");
   cosT->setRange(-0.8,1);
@@ -416,20 +419,4 @@ void MakeSpinToy::save(TString outputFile){
   makeForCombineTool("q2D",S_2D_TruthHgg,S_2D_TruthRSG)->Write();
   if(toyWSs.GetEntries()>0) toyWSs.Write();
   f->Close();
-}
-
-void MakeSpinToy::setUseR9(bool b){
-  useR9 = b;
-  catLabels.clear();
-  if(useR9){
-    for(int i=0;i<nCat;i++){
-      catLabels.push_back( Form("EB_%d",i) );
-      catLabels.push_back( Form("EE_%d",i) );
-    }
-  }else{
-    for(int i=0;i<nCat;i++){ for(int j=0;j<nCat;j++){ 
-	catLabels.push_back( Form("EB_%d_%d",i,j) );
-	catLabels.push_back( Form("EE_%d_%d",i,j) );
-      } }
-  }
 }
