@@ -15,6 +15,7 @@ int main(int argc, char** argv){
   a.addArgument("InputLumi",ArgParser::required,"input luminosity");
 
   a.addLongOption("SaveToyWorkspaces",ArgParser::noArg,"save the generated toy workspaces (for debugging!) (default: off)");
+  a.addLongOption("RunData",ArgParser::noArg,"determine the S value for data");
 
 
   string ret;
@@ -32,12 +33,14 @@ int main(int argc, char** argv){
   float nlumi = atof(a.getArgument("InputLumi").c_str());
   
   bool saveWS = a.longFlagPres("SaveToyWorkspaces");
+  bool runData = a.longFlagPres("RunData");
   MakeSpinToy mst(wsFile);
 
   mst.setTargetLumi(tlumi);
   mst.setNominalLumi(nlumi);
 
   mst.setSaveWorkspaces(saveWS);
+  mst.setDoData(runData);
   mst.runN(N);
   mst.save(outFile);
 

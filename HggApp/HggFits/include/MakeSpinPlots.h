@@ -48,6 +48,7 @@ public:
   
   void DrawBlindFit(TString tag,TString mcName); //!< draw blinded mass distribution of the given category
   void DrawFit(TString tag,TString mcName); //!< draw non-blinded mass distributions
+  void DrawIndFit(TString tag,TString mcName); //!< draw non-blinded mass distributions using the floated category fits
   void DrawSpinBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) SPlots
   void DrawSpinSubBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) background-subtracted plots
   void DrawSpinSubTotBackground(TString mcName,bool signal); //!< Draw inclusive cos(theta) background-subtracted plots

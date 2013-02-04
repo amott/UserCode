@@ -37,7 +37,7 @@ public:
   void setTargetLumi(float l){targetLumi = l;}
   void setNominalLumi(float l){nominalLumi = l;}
 
-  enum genType{Hgg125,RSG125};
+  enum genType{Data,Hgg125,RSG125};
   
   float getExpEvents(float lumi, TString cat,TString mcType,RooWorkspace* toyws=0);
 
@@ -54,16 +54,19 @@ public:
   RooWorkspace *ws;
   RooRealVar* cosT, *mass;
   RooRealVar *S,*GenMinusFit;
-  RooDataSet *S_TruthHgg, *S_TruthRSG;
-  RooDataSet *S_tot_TruthHgg, *S_tot_TruthRSG;
-  RooDataSet *S_splot_TruthHgg, *S_splot_TruthRSG;
-  RooDataSet *S_2D_TruthHgg, *S_2D_TruthRSG;
+  RooDataSet *S_TruthHgg, *S_TruthRSG, *S_TruthData;
+  RooDataSet *S_tot_TruthHgg, *S_tot_TruthRSG, *S_tot_TruthData;
+  RooDataSet *S_splot_TruthHgg, *S_splot_TruthRSG, *S_splot_TruthData;
+  RooDataSet *S_2D_TruthHgg, *S_2D_TruthRSG, *S_2D_TruthData;
+  RooDataSet *S_2DFIT_TruthHgg, *S_2DFIT_TruthRSG, *S_2DFIT_TruthData;
 
   RooHistPdf *rsgPdf,*hggPdf,*bkgPdf;
 
-  TTree* makeForCombineTool(TString treeName, RooAbsData* hggData, RooAbsData* rsgData);
+  TTree* makeForCombineTool(TString treeName, RooAbsData* hggData, RooAbsData* rsgData,RooAbsData* dataData=0);
 
   void setSaveWorkspaces(bool b){saveWorkspaces = b;}
+
+  void setDoData(bool b);
 
   const static int nBins = 9;
 
@@ -77,9 +80,10 @@ protected:
   
   bool useR9;
   bool saveWorkspaces;
+  bool doData;
   std::vector<TString> catLabels;
 
-  TString mcLabels[2];
+  TString mcLabels[3];
 };
 
 #endif

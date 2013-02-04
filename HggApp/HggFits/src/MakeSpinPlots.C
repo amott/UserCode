@@ -36,7 +36,10 @@ void MakeSpinPlots::runAll(TString tag, TString mcName){
   getFitValues(tag,mcName);
   DrawBlindFit(tag,mcName);
   DrawFit(tag,mcName);
+  DrawIndFit(tag,mcName);
   PlotSignalFits(tag,mcName);
+  DrawSpinBackground(tag,mcName,false);
+  DrawSpinBackground(tag,mcName,true);
   DrawSpinSubBackground(tag,mcName,false);
   DrawSpinSubBackground(tag,mcName,true);
 }
@@ -195,13 +198,84 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
 
   frame->addObject(prelim);
   frame->addObject(lum);
-  frame->addObject(owner);
+  //frame->addObject(owner);
   frame->addObject(mu);
   frame->addObject(sig);
   frame->addObject(Nsig);
   frame->Draw();
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.png",outputTag.Data(),mcName.Data(),tag.Data()) );
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
+  delete cv;
+}
+
+void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
+  TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
+  
+  RooRealVar* mass = ws->var("mass");
+  RooPlot* frame  = mass->frame(110,170,40);
+
+  tPair lbl(mcName,tag);
+
+  double Ns = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) )->getVal();
+  double Nb = ws->var( Form("Data_%s_INDFIT_%s_Nbkg",mcName.Data(),tag.Data()) )->getVal();
+
+  double Nblind = ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries();
+  double Ntot   = ws->data(Form("Data_%s",tag.Data()))->sumEntries();
+
+  RooFitResult* fitres = (RooFitResult*)ws->obj(Form("Data_%s_INDFIT_fitResult",mcName.Data())); 
+  std::cout << fitres << std::endl;
+  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
+  //Data_Hgg125_INDFIT_EB_0
+  ws->pdf(Form("Data_%s_INDFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
+  ws->pdf(Form("Data_%s_INDFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
+  ws->pdf(Form("Data_%s_INDFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::LineColor(kRed));
+  std::cout << "1" << std::endl;
+  ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Nb+Ns)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
+  std::cout << "2" << std::endl;
+
+  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame);
+  frame->Draw();
+
+  //TLatex *prelim = new TLatex(250,x->GetXmax()-40.,"CMS Preliminary");
+  TLatex *prelim = new TLatex(0.12,0.96,"CMS Preliminary");
+  TLatex *lum = new TLatex(0.7,0.96,Form("#sqrt{s}=8 TeV  L = %0.1f fb^{-1}",lumi));
+  prelim->SetNDC();
+  lum->SetNDC();
+  prelim->SetTextSize(0.045);
+  prelim->SetTextColor(kBlack);
+  lum->SetTextSize(0.045);
+  lum->SetTextColor(kBlack);
+
+  TLatex *owner = new TLatex(0.6,0.88,"Alex Mott (Nov. 13, 2012)");
+  owner->SetNDC();
+  owner->SetTextSize(0.045);
+  owner->SetTextColor(kBlack);
+
+  TLatex *mu = new TLatex(0.7,0.8,Form("#mu = %0.1f #pm %0.2f", fitMean[lbl].first,fitMean[lbl].second));
+  mu->SetNDC();
+  mu->SetTextSize(0.045);
+
+  TLatex *sig = new TLatex(0.7,0.72,Form("#sigma_{eff} = %0.1f #pm %0.2f", fitSigEff[lbl].first,fitSigEff[lbl].second));
+  sig->SetNDC();
+  sig->SetTextSize(0.045);
+
+  float nSig = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) )->getVal();
+  float nSigErr = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) )->getError();
+
+  TLatex *Nsig = new TLatex(0.7,0.64,Form("N_{sig}= %0.1f #pm %0.1f",nSig,nSigErr));
+  Nsig->SetNDC();
+  Nsig->SetTextSize(0.045);
+
+
+  frame->addObject(prelim);
+  frame->addObject(lum);
+  //frame->addObject(owner);
+  frame->addObject(mu);
+  frame->addObject(sig);
+  frame->addObject(Nsig);
+  frame->Draw();
+  cv->SaveAs( basePath+Form("/mgg-FloatedFraction-%s-%s-%s.png",outputTag.Data(),mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/mgg-FloatedFraction-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
 
@@ -212,20 +286,25 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   TCanvas cv;
   double thisN  = ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->sumEntries();
   float norm = 607*lumi/12.*thisN/(totEB+totEE);
-  if(signal) norm = ws->var(Form("Data_%s_FIT_%s_Nsig",mcName.Data(),tag.Data()))->getVal();
+  cout << norm <<endl;
+  if(signal) norm = ws->data(Form("Data_%s_%s_sigWeight",tag.Data(),mcName.Data()))->sumEntries();
   RooPlot *frame = ws->var("cosT")->frame(-1,1,3);
 
-  RooDataSet* bkgWeight = (RooDataSet*)ws->data(Form("%s_bkgWeight_%s",mcName.Data(),tag.Data()));
+  RooDataSet* bkgWeight = (RooDataSet*)ws->data(Form("Data_%s_%s_bkgWeight",tag.Data(),mcName.Data()));
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
-
+  cout << "b" <<endl;
   ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   ws->pdf(Form("RSG125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
+  cout << "c   " <<bkgWeight <<endl;
 
   bkgWeight->plotOn(frame,RooFit::Rescale(norm/bkgWeight->sumEntries()),RooFit::MarkerColor(kBlue) );  
   if(signal){
-    ws->data(Form("%s_sigWeight_%s",mcName.Data(),tag.Data()))->plotOn(frame,RooFit::MarkerStyle(4));
+    cout << "d" <<endl;
+      
+    ws->data(Form("Data_%s_%s_sigWeight",tag.Data(),mcName.Data()))->plotOn(frame,RooFit::MarkerStyle(4));
   }
+    cout << "d" <<endl;
   
   frame->SetMaximum(frame->GetMaximum()*(signal?0.8:0.4)*norm/tmp->sumEntries());
   frame->SetMinimum(-1*frame->GetMaximum());
@@ -238,7 +317,8 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   l.AddEntry(frame->getObject(2),"RS Graviton","l");
   l.AddEntry(frame->getObject(3),"background weighted Data","p");
   if(signal) l.AddEntry(frame->getObject(4),"signal weighted Data","p");
-  
+  cout << "e" <<endl;
+
   frame->Draw();
   l.Draw("SAME");
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_%s%s_%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
@@ -255,7 +335,7 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   tPair lbl(mcName,tag);
 
 
-  if(signal) norm = nSignal[lbl].first;   //((RooFormulaVar*)ws->obj(Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),tag.Data())) )->getVal();
+  if(signal) norm = nSignal[lbl].first;   //((RooFormulaVar*)ws->obj(Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data())) )->getVal();
   RooPlot *frame = ws->var("cosT")->frame(-1,1,10);
 
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
@@ -455,7 +535,19 @@ void MakeSpinPlots::printYields(const char* mcType){
 
   float exp = ws->data(Form("%s_Combined",mcType))->sumEntries()/total * 607*lumi/12.;
   cout << endl << "Expected Events:  "  << exp << endl;
+  cout << "Expected Yields Per Category: " <<endl;
+  for(int i=0;i<catNames.size();i++){ 
+    RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
+    cout << "\t" << catNames.at(i) <<":   " << exp*f->getVal() <<endl;
+  }
+
   cout << "mu:  " << tot->getVal()/exp << "  +-  "
        << tot->getError()/exp <<endl;
+  
+  for(int i=0;i<catNames.size();i++){
+    RooRealVar *ind = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcType, catNames.at(i).Data()) );
+    RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
+    cout << "\t" << catNames.at(i) <<":   " << ind->getVal()/(exp*f->getVal()) << "  +-  " << ind->getError()/(exp*f->getVal()) <<endl;
+  }
 
 }
