@@ -22,6 +22,7 @@
 #include "RooKeysPdf.h"
 #include "RooDataHist.h"
 #include "RooHistPdf.h"
+#include "RooHist.h"
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -32,6 +33,10 @@
 #include "TGraphErrors.h"
 #include "TLegend.h"
 #include "TStyle.h"
+#include "TBox.h"
+#include "TLine.h"
+#include "TF1.h"
+#include "TText.h"
 
 #include "MakeSpinFits.h"
 
@@ -62,6 +67,7 @@ public:
   void setBasePath(TString s){basePath = s;} //!< set the base path to which to save the figures
 
   void printYields(const char* mcType);
+  void MakeChannelComp(const char* mcType);
 protected:
   TFile *inputFile;
   RooWorkspace *ws;

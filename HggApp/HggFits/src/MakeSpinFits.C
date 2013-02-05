@@ -254,7 +254,7 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
 
   RooSimultaneous *combFit = new RooSimultaneous(Form("Data_%s_FULLFIT",mcName.Data()),"",*cat);
 
-  RooRealVar *nSig = new RooRealVar( Form("Data_%s_FULLFIT_Nsig",mcName.Data() ), "", 0, 0,1e6);
+  RooRealVar *nSig = new RooRealVar( Form("Data_%s_FULLFIT_Nsig",mcName.Data() ), "", 0, -1e6,1e6);
   RooRealVar *nBkg = new RooRealVar( Form("Data_%s_FULLFIT_Nbkg",mcName.Data() ), "", 0, 0,1e6);
 
   std::vector<TString>::const_iterator catIt = catLabels.begin();
@@ -350,7 +350,7 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
 
   RooSimultaneous *combFit = new RooSimultaneous(Form("Data_m_%s_c_%s_FULL2DFIT",massMcName.Data(),costMcName.Data()),"",*cat);
 
-  RooRealVar *nSig = new RooRealVar( Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
+  RooRealVar *nSig = new RooRealVar( Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",massMcName.Data(),costMcName.Data() ), "", 0, -1e6,1e6);
   RooRealVar *nBkg = new RooRealVar( Form("Data_m_%s_c_%s_FULL2DFIT_Nbkg",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
 
   RooRealVar *mass = ws->var("mass");
@@ -425,7 +425,7 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
 
   RooSimultaneous *combFit = new RooSimultaneous(Form("Data_m_%s_c_%s_IND2DFIT",massMcName.Data(),costMcName.Data()),"",*cat);
 
-  RooRealVar *nSig = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_Nsig",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
+  RooRealVar *nSig = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_Nsig",massMcName.Data(),costMcName.Data() ), "", 0, -1e6,1e6);
   RooRealVar *nBkg = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_Nbkg",massMcName.Data(),costMcName.Data() ), "", 0, 0,1e6);
 
   RooRealVar *mass = ws->var("mass");

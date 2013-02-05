@@ -15,6 +15,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
 
   useR9=false;
 
+  EfficiencyCorrectionFile="";
+
   //open output file and create the new workspace
   outputFile = TFile::Open(outputFileName,"RECREATE");
   ws = new RooWorkspace();
@@ -83,6 +85,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   TH2F* map = getSelectionMap(selectionMap,isData);
   std::cout << map->GetBinContent(1,1) << std::endl;
 
+  TFile *efficiencyCorrection=0;
+  if(EfficiencyCorrectionFile!=""){ //Use MC derived correction weights for the photons
+    //as a function of eta/R9/phi
+    efficiencyCorrection = new TFile(EfficiencyCorrectionFile);
+  }
+
   //define the variables for the workspace
   RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", 100., 180.);
   RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", -1, 1);
@@ -139,8 +147,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     for(int j=0;j<nCat;j++){
       cat->defineType( Form("EB_%d",j),2*j );
       cat->defineType( Form("EE_%d",j),2*j+1 );
-      dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set,"evtWeight");
-      dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set,"evtWeight");
+      dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set);
+      dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set);
     }
   }else{
     //using the sigmaE/E categories, we have nCat^2 categories
@@ -148,8 +156,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       for(int j=0;j<nCat;j++){
 	cat->defineType( Form("EB_%d_%d",i,j),4*i+2*j );
 	cat->defineType( Form("EE_%d_%d",i,j), 4*i+2*j+1 );
-	dataMapEB[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
-	dataMapEE[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set,"evtWeight");
+	dataMapEB[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set);
+	dataMapEE[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set);
       }
     }
   }
@@ -220,11 +228,17 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     idMVA2->setVal(h.Photon_idMVA[minI]);
     
     diPhotonMVA->setVal(h.diPhotonMVA);
+    //efficiencyCorrection=0
+    float pho1EffWeight = getEffWeight(efficiencyCorrection,eta1->getVal(),pt1->getVal(),phi1->getVal(),r91->getVal());
+    float pho2EffWeight = getEffWeight(efficiencyCorrection,eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
 
     //set the event weight
-    if(!isData) evtW->setVal(h.evtWeight);
-    else evtW->setVal(1);
+    if(!isData) evtW->setVal(h.evtWeight*pho1EffWeight*pho2EffWeight);
+    else evtW->setVal(1*pho1EffWeight*pho2EffWeight);
     if( !(iEntry%10000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
+
+    //cout << pho1EffWeight << "\t" <<pho2EffWeight << "\t" << evtW->getVal()<<endl;
+
 
     if(useR9){
       int cat = (p1==0 && p2==0 ? 0 : 1);
@@ -241,11 +255,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   //build a combined DataSet using the cat RooCategory
   RooArgSet setCat(set);
   setCat.add(*cat);
-  RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat );
+  RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat);
   
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
     //loop over the barrel datasets and add the individual data to the combined dataset
+    //dIt->setWeightVar(*evtW);
     TString cattag;
     if(useR9) cattag = Form("EB_%d", (dIt->first).first );
     else cattag = Form("EB_%d_%d", (dIt->first).first, (dIt->first).second );
@@ -256,6 +271,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   }
   for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
     //loop over the endcap datasets and add the individual data to the combined dataset
+    //dIt->setWeightVar(*evtW);
     TString cattag;
     if(useR9) cattag = Form("EE_%d", (dIt->first).first );
     else cattag = Form("EE_%d_%d", (dIt->first).first, (dIt->first).second );
@@ -264,11 +280,38 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     dataComb->append(*tmp);    
     ws->import(*(dIt->second));
   }
+
+  RooDataSet *dataComb_w = new RooDataSet(tag+"_Combined","",dataComb,setCat,0,"evtWeight");
   //import everything
-  ws->import(*dataComb);
+  ws->import(*dataComb_w);
   ws->import(*totEB);
   ws->import(*totEE);
+  ws->import(*evtW);
   cout << "Done" <<endl;
+
+  if(efficiencyCorrection) delete efficiencyCorrection;
+}
+
+float MakeSpinWorkspace::getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9){
+
+  if(effFile==0) return 1;
+
+  TH3F* effMap=0;
+  TList *keyList = effFile->GetListOfKeys();
+  const char* prefix = (requireCiC ? "cic" : "pre");
+  for(int i=0;i<keyList->GetSize(); i++){
+    TObjArray *o = TString(keyList->At(i)->GetName()).Tokenize("_");
+    //the keys have names of the form <effType>_minPt_maxPt
+    if( strcmp(prefix,o->At(0)->GetName()) != 0) continue;
+    if( atof(o->At(1)->GetName()) > pt) continue; //if the min pt is above the photon pt
+    if( atof(o->At(2)->GetName()) <= pt) continue; // if the max pt is below the photon pt
+    effMap = (TH3F*)effFile->Get(keyList->At(i)->GetName());
+    break;
+  }
+  if(effMap==0) return 1;
+  if(effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9))==0) return 1;
+
+  return 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
 }
 
 void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
@@ -296,3 +339,4 @@ void MakeSpinWorkspace::MakeWorkspace(){
   ws->Write();
   outputFile->Close();
 }
+

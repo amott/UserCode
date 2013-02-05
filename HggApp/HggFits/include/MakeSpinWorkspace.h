@@ -20,6 +20,9 @@ Date: Jan 2013
 #include <TFile.h>
 #include <TH2F.h>
 #include <TCanvas.h>
+#include <TList.h>
+#include <TObjArray.h>
+#include <TH3F.h>
 
 //All RooFit includes
 #include <RooWorkspace.h>
@@ -72,6 +75,8 @@ public:
   void setUseR9(bool b){useR9 = b;} //!< Specify whether to use the CiC (R9) categorization
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
+  void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;}
+
 protected:
   std::vector<TString> fileName,label; //!< lists of input file names and corresponding labels
   std::vector<bool> isData;            //!< list of bools specifying whether the files correspond to data
@@ -88,6 +93,10 @@ protected:
   bool useR9;                          //!< whether to use CiC (R9) or sigma_E/E cateogries (default: false)
 
   void AddToWorkspace(TString inputFile,TString tag, bool isData); //!< takes a file and its labels and adds to the workspace
+
+  TString EfficiencyCorrectionFile;
+
+  float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); //!< returns the weight for this photon from the efficiency correction file
 
 };
 

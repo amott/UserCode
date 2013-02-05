@@ -549,5 +549,57 @@ void MakeSpinPlots::printYields(const char* mcType){
     RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
     cout << "\t" << catNames.at(i) <<":   " << ind->getVal()/(exp*f->getVal()) << "  +-  " << ind->getError()/(exp*f->getVal()) <<endl;
   }
+  MakeChannelComp(mcType);
+}
 
+void MakeSpinPlots::MakeChannelComp(const char* mcType){
+  TGraphErrors graph(catNames.size());
+
+  RooRealVar mu("mu","",-50,50);
+
+  float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
+  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries()/total * 607*lumi/12.;
+
+  TH1F frame("frame","",catNames.size(),0,catNames.size());
+
+  //graph.GetXaxis()->SetNdivisions(catNames.size());
+
+  float min=99999,max=-99999;
+  for(int i=0;i<catNames.size();i++){
+    RooRealVar *ind = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcType, catNames.at(i).Data()) );
+    RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
+    float mu = ind->getVal()/exp/f->getVal();
+    float muE = ind->getError()/exp/f->getVal();
+    graph.SetPoint(i,i+0.5,mu);
+    graph.SetPointError(i,0,muE);
+
+    if(mu-muE < min) min = mu-muE;
+    if(mu+muE > max) max = mu+muE;
+    
+    //graph.GetXaxis()->SetBinLabel(i+1,catNames.at(i));
+  }
+
+  TF1 fit("fit","[0]",0+0.5,catNames.size()+0.5);
+  graph.Fit(&fit,"MNE");
+  float mean  = fit.GetParameter(0);
+  float meanE = fit.GetParError(0);
+  
+  frame.SetAxisRange(min-1.5,max+0.5,"Y");
+  frame.SetYTitle("Fitted #sigma/#sigma_{SM}");
+  frame.SetXTitle("Category");
+  TCanvas cv;
+  frame.Draw();
+
+  TBox err(0,mean-meanE,catNames.size(),mean+meanE);
+  err.SetFillColor(kGreen);
+
+  frame.Draw();
+  err.Draw("SAME");
+  TLine mLine(0,mean,catNames.size(),mean);
+  mLine.Draw("SAME");
+  graph.Draw("PSAME");
+  
+
+  cv.SaveAs(basePath+Form("/ChannelComp_%s_%s.png",mcType,outputTag.Data()));
+  cv.SaveAs(basePath+Form("/ChannelComp_%s_%s.pdf",mcType,outputTag.Data()));
 }
