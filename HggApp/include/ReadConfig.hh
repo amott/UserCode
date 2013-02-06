@@ -23,6 +23,7 @@ class ReadConfig{
   int read(string);
   string getParameter(string s,string section="");
   vector<string> getTokens(string s,const char *tok);
+  static vector<string> tokenizeString(string s, const char *tok);
   void printAll();
   vector<string> getAllParameters();
  private:
@@ -110,6 +111,8 @@ int ReadConfig::parseLine(string s){
 
 int ReadConfig::parseSectionLine(string s,string &sec){
   string sc = stripComments(s);
+
+  if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
   if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
   int eqPos = sc.find_first_of('='); // location of the assignment
 
@@ -118,10 +121,15 @@ int ReadConfig::parseSectionLine(string s,string &sec){
     int openParPos = sc.find_first_of('[');
     int closeParPos = sc.find_first_of(']');
     if(openParPos==string::npos || closeParPos==string::npos) throw runtime_error(string("non l-value assignment:  ")+s);; // need an assignment operator
-    if(openParPos > closeParPos || closeParPos==openParPos+1) throw runtime_error(string("invalid section heading:  ")+s);
+    if(openParPos >= closeParPos || closeParPos==openParPos+1) throw runtime_error(string("invalid section heading:  ")+s);
 
     //we have a section header of the form [NAME]
-    sec = stripSpaces(sc.substr(openParPos+1,closeParPos-openParPos-1));  // set the new section heading
+    try{
+      sec = stripSpaces(sc.substr(openParPos+1,closeParPos-openParPos-1));  // set the new section heading
+    }catch(runtime_error &e){
+      std::cout << sc << endl << openParPos << endl << closeParPos <<endl;
+      throw e;
+    }
     return 0;
   }
   //not a section, just an l-value assignment
@@ -163,15 +171,21 @@ string ReadConfig::getParameter(string s,string section){
 }
 
 vector<string> ReadConfig::getTokens(string s,const char *tok){
+  return tokenizeString(getParameter(s),tok);
+}
+
+
+vector<string> ReadConfig::tokenizeString(string s, const char* tok){
   vector<string> out;
   char line[4000];
-  strcpy(line,this->getParameter(s).c_str());
+  strcpy(line,s.c_str());
   char *chunk = strtok(line,tok);
   while(chunk){
     out.push_back(string(chunk));
     chunk = strtok(NULL,","); 
   }
   return out;
+
 }
 
 void ReadConfig::printAll(){
