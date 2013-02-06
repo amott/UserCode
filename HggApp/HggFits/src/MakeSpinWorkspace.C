@@ -309,7 +309,23 @@ float MakeSpinWorkspace::getEffWeight(TFile *effFile, float eta, float pt, float
     break;
   }
   if(effMap==0) return 1;
-  if(effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9))==0) return 1;
+  if(effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9))==0){ // try to interpolate the above and below in phi
+    int ix,iy,iz;
+    int index = effMap->FindFixBin(eta,phi,r9); // global coordinate
+    effMap->GetBinXYZ(index,ix,iy,iz);
+    int indexYup   = (iy == effMap->GetNbinsY() ? 1 : iy+1); //wrap around if we are at the top edge of the map
+    int indexYdown = (iy == 1 ? effMap->GetNbinsY() : iy-1); //wrap around if we are at the bottom edge of the map
+    
+    float up = effMap->GetBinContent(ix,indexYup,iz);
+    float down = effMap->GetBinContent(ix,indexYdown,iz);
+    if(up==0){
+      if(down!=0) return 1./down;
+      else return 1;
+    }
+    if(down==0) return 1./up;
+    return 2./(up+down); //return 1/avg
+  }
+
 
   return 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
 }

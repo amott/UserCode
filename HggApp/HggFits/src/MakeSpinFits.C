@@ -115,7 +115,9 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   //RooAddPdf SignalModelCB(outputTag.Data(),"Signal Model",RooArgList(cb1,cb2),fCB);
   
   //signal MC data
-  RooDataSet *ds = (RooDataSet*)ws->data(inputTag);
+  RooDataSet *ds=0;
+  if(tag!="Combined") ds = (RooDataSet*)ws->data( Form("%s_Combined",mcName.Data()) )->reduce(TString("evtcat==evtcat::")+tag.Data());
+  else ds = (RooDataSet*)ws->data( Form("%s_Combined",mcName.Data()) );
 
   RooDataHist hist(Form("%s_cosThist",outputTag.Data()),"Data Hist for cos(theta)",RooArgSet(cosT),*ds);
   RooHistPdf cosTkde(Form("%s_cosTpdf",outputTag.Data()),"Hist PDF for cos(theta)",RooArgSet(cosT),hist);
@@ -200,7 +202,7 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
 
-    RooDataSet * data = (RooDataSet*)ws->data(Form("Data_%s",catIt->Data()));
+    RooDataSet * data = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+*catIt);
     RooAbsPdf *signalModel = ws->pdf( Form("%s_FIT_%s",mcName.Data(),catIt->Data()) );
     RooAbsPdf *bkgModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",catIt->Data() ) );    
 
@@ -266,14 +268,14 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
     std::cout << signalModel << "   " << bkgModel << std::endl;
 
     double totalEventsB = ws->data("Data_Combined")->sumEntries();
-    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+    double thisCatB     = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
 
     RooRealVar *fBkg = new RooRealVar( Form("Data_%s_FULLFIT_%s_fbkg",mcName.Data(),catIt->Data()), "", thisCatB/totalEventsB ); 
     RooFormulaVar *thisNbkg = new RooFormulaVar(Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),catIt->Data() ),"","@0*@1",RooArgSet(*nBkg,*fBkg));
 
     //compute the fraction of events expected in this category
     double totalEvents  = ws->data(Form("%s_Combined",mcName.Data()))->sumEntries(); 
-    double thisCat =  ws->data(Form("%s_%s",mcName.Data(),catIt->Data()) )->sumEntries();
+    double thisCat =  ws->data(mcName+"_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
     double thisFrac = thisCat/totalEvents;
     double thisFracE = thisFrac * TMath::Sqrt(1/thisCat+1/totalEvents);
 
@@ -317,7 +319,7 @@ void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
     std::cout << signalModel << "   " << bkgModel << std::endl;
 
     double totalEventsB = ws->data("Data_Combined")->sumEntries();
-    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+    double thisCatB     = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
 
     RooRealVar *nBkg = new RooRealVar( Form("Data_%s_INDFIT_%s_Nbkg",mcName.Data(),catIt->Data()), "", thisCatB,0,1e9 ); 
 
@@ -369,14 +371,14 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
     RooAbsPdf *bkgCosModel    = ws->pdf(Form("Data_BKGFIT_%s_cosTpdf",catIt->Data()));
 
     double totalEventsB = ws->data("Data_Combined")->sumEntries();
-    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+    double thisCatB     = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
 
     RooRealVar *fBkg = new RooRealVar( Form("Data_m_%s_c_%s_FULL2DFIT_%s_fbkg",massMcName.Data(),costMcName.Data(),catIt->Data()), "", thisCatB/totalEventsB ); 
     RooFormulaVar *thisNbkg = new RooFormulaVar(Form("Data_m_%s_c_%s_FULL2DFIT_%s_Nbkg",massMcName.Data(),costMcName.Data(),catIt->Data() ),"","@0*@1",RooArgSet(*nBkg,*fBkg));
 
 
-    double totalEvents  = ws->data(Form("%s_Combined",massMcName.Data()))->sumEntries(); 
-    double thisCat =  ws->data(Form("%s_%s",massMcName.Data(),catIt->Data()) )->sumEntries();
+    double totalEvents  = ws->data(massMcName+"_Combined")->sumEntries();
+    double thisCat =  ws->data(massMcName+"_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
     double thisFrac = thisCat/totalEvents;
     double thisFracE = thisFrac * TMath::Sqrt(1/thisCat+1/totalEvents);
     //fix signal fraction
@@ -442,7 +444,7 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
     RooAbsPdf *bkgCosModel    = ws->pdf(Form("Data_BKGFIT_%s_cosTpdf",catIt->Data()));
 
     double totalEventsB = ws->data("Data_Combined")->sumEntries();
-    double thisCatB     = ws->data( Form("Data_%s",catIt->Data()) )->sumEntries();
+    double thisCatB     = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+*catIt);
 
     RooRealVar *nBkg = new RooRealVar( Form("Data_m_%s_c_%s_IND2DFIT_%s_Nbkg",massMcName.Data(),costMcName.Data(),catIt->Data()), "", thisCatB,0,1e9 ); 
     //float signal yield
@@ -486,7 +488,7 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   RooRealVar mass = *(ws->var("mass"));
   cout << "1" <<endl;
 
-  RooAbsData *ds = ws->data(Form("Data_%s",catTag.Data()));
+  RooAbsData *ds = ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+catTag);
 
   //background model
   RooAbsPdf* BkgShape;
@@ -572,7 +574,7 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
 }
 
 void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
-  RooDataSet *data = (RooDataSet*)ws->data( Form("Data_%s",tag.Data()) );
+  RooDataSet *data = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag);
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
 

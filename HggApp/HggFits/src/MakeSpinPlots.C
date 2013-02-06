@@ -91,11 +91,11 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
   RooPlot* frame  = mass->frame(110,170,40);
   double Nb = ws->var(Form("Data_BKGFIT_%s_Nbkg",tag.Data()))->getVal();
   cout << Nb << endl;
-  RooDataSet *blind = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>110 && mass<119) || (mass>135.5 && mass<170)");
+  RooDataSet *blind = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>110 && mass<119) || (mass>135.5 && mass<170)) && evtcat==evtcat::")+tag);
   blind->plotOn(frame);
 
   tPair lbl(mcName,tag);
-  double nBkg = ws->data(Form("Data_%s",tag.Data()))->sumEntries();
+  double nBkg = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+tag);
 
   ws->pdf( Form("Data_BKGFIT_%s_bkgModel",tag.Data()) )->plotOn(frame,RooFit::Range("all"),RooFit::Normalization(nBkg/blind->sumEntries()),
 									       RooFit::LineColor(kRed));
@@ -151,12 +151,12 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   double Ns = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),tag.Data()) ))->getVal();
   double Nb = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),tag.Data()) ))->getVal();
 
-  double Nblind = ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries();
-  double Ntot   = ws->data(Form("Data_%s",tag.Data()))->sumEntries();
+  double Nblind = ws->data("Data_Combined")->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries(TString("evtcat==evtcat::")+tag);
+  double Ntot   = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+tag);
 
   RooFitResult* fitres = (RooFitResult*)ws->obj(Form("Data_%s_FULLFIT_fitResult",mcName.Data())); 
   std::cout << fitres << std::endl;
-  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
+  ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
   //Data_Hgg125_FULLFIT_EB_0
   ws->pdf(Form("Data_%s_FULLFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
   ws->pdf(Form("Data_%s_FULLFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
@@ -165,7 +165,7 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Nb+Ns)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
   std::cout << "2" << std::endl;
 
-  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame);
+  ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame);
   frame->Draw();
 
   //TLatex *prelim = new TLatex(250,x->GetXmax()-40.,"CMS Preliminary");
@@ -219,12 +219,12 @@ void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
   double Ns = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) )->getVal();
   double Nb = ws->var( Form("Data_%s_INDFIT_%s_Nbkg",mcName.Data(),tag.Data()) )->getVal();
 
-  double Nblind = ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries();
-  double Ntot   = ws->data(Form("Data_%s",tag.Data()))->sumEntries();
+  double Nblind = ws->data("Data_Combined")->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries(TString("evtcat==evtcat::")+tag);
+  double Ntot   = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+tag);
 
   RooFitResult* fitres = (RooFitResult*)ws->obj(Form("Data_%s_INDFIT_fitResult",mcName.Data())); 
   std::cout << fitres << std::endl;
-  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
+    ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
   //Data_Hgg125_INDFIT_EB_0
   ws->pdf(Form("Data_%s_INDFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
   ws->pdf(Form("Data_%s_INDFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
@@ -233,7 +233,7 @@ void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
   ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Nb+Ns)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
   std::cout << "2" << std::endl;
 
-  ws->data(Form("Data_%s",tag.Data()))->plotOn(frame);
+  ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame);
   frame->Draw();
 
   //TLatex *prelim = new TLatex(250,x->GetXmax()-40.,"CMS Preliminary");
@@ -284,14 +284,14 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   double totEE  = ws->var("Hgg125_EE_totalEvents")->getVal();
 
   TCanvas cv;
-  double thisN  = ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->sumEntries();
+  double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->sumEntries();
   float norm = 607*lumi/12.*thisN/(totEB+totEE);
   cout << norm <<endl;
   if(signal) norm = ws->data(Form("Data_%s_%s_sigWeight",tag.Data(),mcName.Data()))->sumEntries();
   RooPlot *frame = ws->var("cosT")->frame(-1,1,3);
 
   RooDataSet* bkgWeight = (RooDataSet*)ws->data(Form("Data_%s_%s_bkgWeight",tag.Data(),mcName.Data()));
-  RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
+  RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
   cout << "b" <<endl;
   ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
@@ -330,15 +330,15 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   double totEE  = ws->var("Hgg125_EE_totalEvents")->getVal();
 
   TCanvas cv;
-  double thisN  = ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->sumEntries();
+  double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag.Data())->sumEntries();
   float norm = 607*lumi/12.*thisN/(totEB+totEE);
   tPair lbl(mcName,tag);
 
 
   if(signal) norm = nSignal[lbl].first;   //((RooFormulaVar*)ws->obj(Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data())) )->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(-1,1,10);
+  RooPlot *frame = ws->var("cosT")->frame(-0.8,1,3);
 
-  RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_%s",tag.Data()))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
+  RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
 
   ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
@@ -376,7 +376,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
 
 
   if(signal) norm = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(-1,1,10);
+  RooPlot *frame = ws->var("cosT")->frame(-0.8,1,9);
 
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_Combined"))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
@@ -411,14 +411,14 @@ void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
   TCanvas cv;
   float mean = ws->var(Form("%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
   RooPlot *frame = ws->var("mass")->frame(mean-10,mean+10,40);
-  ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->plotOn(frame); //data
+  ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame); //data
   RooFitResult *res = (RooFitResult*)ws->obj(Form("%s_FIT_%s_fitResult",mcName.Data(),tag.Data()));
   RooAbsPdf * pdf = ws->pdf(Form("%s_FIT_%s",mcName.Data(),tag.Data())); //signal model
   std::cout << pdf << "\t" << res << std::endl;
   pdf->plotOn(frame,RooFit::FillColor(kGreen),RooFit::VisualizeError(*res,2.0));
   pdf->plotOn(frame,RooFit::FillColor(kYellow),RooFit::VisualizeError(*res,1.0));
   pdf->plotOn(frame,RooFit::LineColor(kRed));
-  ws->data(Form("%s_%s",mcName.Data(),tag.Data()))->plotOn(frame); //data
+  ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame); //data
   
   tPair lbl(mcName,tag);
 
