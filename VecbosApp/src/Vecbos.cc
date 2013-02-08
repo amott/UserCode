@@ -2721,12 +2721,13 @@ bool Vecbos::isTightMuon(int iMu, bool CorrectingIsoforMuons){
   return false;
 }
 
-bool Vecbos::isLooseMuon(int iMu){
+bool Vecbos::isLooseMuon(int iMu, bool CorrectingIsoforMuons){
   bool MuID = true;
 
   isMuonID2012(iMu,&MuID);
   float pt = GetPt(pxMuon[iMu],pyMuon[iMu]);
   float iso = pfCombinedIsoMuon[iMu]/pt;
+  if(CorrectingIsoforMuons) iso -= CorrrectIsoforMuons(pt);
 
   if(MuID && iso < 0.4) return true;
 
@@ -2928,26 +2929,25 @@ bool Vecbos::isLooseElectron(int iEle){
   return false;
 }
 
+double Vecbos::CorrrectIsoforMuons(double pt) {
+  if(pt <= 0.) return 0.0;
+  float Check_Muon_Pt = 0.0;
+  for (Int_t i = 0; i < nMuon; i++) {
+    if (isLooseMuon(i)) {
+      Check_Muon_Pt = GetPt(pxMuon[i],pyMuon[i]);
+      if (Check_Muon_Pt > 15) return Check_Muon_Pt/pt;
+    }
+  }
+  return 0.;
+}
+
 bool Vecbos::isPFIsolatedMuon(int muonIndex, bool CorrectingIsoforMuons) {
   float eta = etaMuon[muonIndex];
   float pt = GetPt(pxMuon[muonIndex],pyMuon[muonIndex]);
   float iso = pfCombinedIsoMuon[muonIndex]/pt;
 
-  // Correct for Muons passing Loose Selection with pt > 30 GeV
-  if (CorrectingIsoforMuons) {
-    float Check_Muon_Pt = 0.0;
-
-    for (Int_t i = 0; i < nMuon; i++) {
-      
-      if (isLooseMuon(i)) {
-	Check_Muon_Pt = GetPt(pxMuon[i],pyMuon[i]);
-
-	if (Check_Muon_Pt > 30)
-	  iso -= (Check_Muon_Pt/pt);
-      }
-    }
-  }
-  //
+  // Correct for Muons passing Loose Selection with pt > 15 GeV
+  if (CorrectingIsoforMuons) iso -= CorrrectIsoforMuons(pt);
 
   if( pt>=20. && fabs(eta)<1.479 ) return (iso < 0.13);
   if( pt>=20. && fabs(eta)>=1.479 ) return (iso < 0.09);
@@ -2955,9 +2955,6 @@ bool Vecbos::isPFIsolatedMuon(int muonIndex, bool CorrectingIsoforMuons) {
   if( pt<20. && fabs(eta)>=1.479 ) return (iso < 0.05);
   return true;
 }
-
-
-
 
 bool Vecbos::isLooseTau(int iTau){
   if(abs(thehpsTauDiscrByTightElectronRejectionPFTau[iTau]-1.) < 0.0001 && 
