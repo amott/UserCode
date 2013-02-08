@@ -385,7 +385,7 @@ protected:
 
   /// LEPTON SELECTION 2012
   void isMuonID2012(int muonIndex, bool *muonIdOutput);
-  bool isTightMuon(int iMu);
+  bool isTightMuon(int iMu, bool CorrectingIsoforMuons = false);
   bool isLooseMuon(int iMu);
   bool isTrigElectron(int iEle);
   bool isTightElectron(int iEle);

@@ -2710,9 +2710,9 @@ void Vecbos::isMuonID2012(int muonIndex, bool *muonIdOutput) {
 
 }
 
-bool Vecbos::isTightMuon(int iMu){
+bool Vecbos::isTightMuon(int iMu, bool CorrectingIsoforMuons){
   bool MuID = true;
-  bool ISO = isPFIsolatedMuon(iMu); // isPFIsolatedMuon Corrects for pt > 30 GeV Muons
+  bool ISO = isPFIsolatedMuon(iMu,CorrectingIsoforMuons); // isPFIsolatedMuon Corrects for pt > 30 GeV Muons
 
   isMuonID2012(iMu,&MuID);
 
