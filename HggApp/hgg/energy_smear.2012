@@ -1,7 +1,8 @@
 # default energy scale originally called energy_scale()
+# 3=ICHEP
 RunUpper=0,1,2,3
 EBlowEtaBadDeltaE=0,0.0112,0.0123,0.0116
-EBlowEtaGoldDeltaE=0,0.0123,0.0112.01035
+EBlowEtaGoldDeltaE=0,0.0123,0.0112,0.01035
 EBhiEtaBadDeltaE=0,0.0152,0.0224,0.0222
 EBhiEtaGoldDeltaE=0,0.0224,0.0152,0.0138
 EElowEtaBadDeltaE=0,0.0372,0.0328,0.0292

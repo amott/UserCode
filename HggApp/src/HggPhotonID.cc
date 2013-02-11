@@ -11,7 +11,8 @@ using namespace TMVA;
 
 #define debugPhotonID 0
 
-HggPhotonID::HggPhotonID()
+HggPhotonID::HggPhotonID():
+  doECALIso(true)
 {
 }
 
@@ -31,6 +32,11 @@ void HggPhotonID::Init(){
   methodName_Id  = cfg.getParameter("methodName_Id");
 
   version = cfg.getParameter("PhotonIDVersion");
+
+  if(cfg.getParameter("doEcalIso").compare("no")==0) doECALIso=false;
+  else doECALIso=true;
+
+  cout << "doECALIso: " << doECALIso <<endl;
 
   photonMVA_EB_2011 = new TMVA::Reader( "!Color:!Silent" );;
   photonMVA_EE_2011 = new TMVA::Reader( "!Color:!Silent" );;
@@ -312,22 +318,26 @@ bool HggPhotonID::getPreSelectionMay2012(VecbosPho* pho, int nVertex, float rhoF
 			      << "\ttrkIso:  " << pho->dr03TrackIso[selVtxIndex] - 0.002*eT
 			      << "\tpfCharged: " << pho->dr02ChargedHadronPFIso[selVtxIndex] 
 			      << std::endl;
+  double ECALIso = (pho->dr03EcalRecHitSumEtCone - 0.012*eT);
+  if(!doECALIso) ECALIso=0; // don't do th ECAL isolation
 
   if(pho->SC.r9 < 0.9){
-    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 4
+    if( ECALIso > 4
         || (pho->dr03HcalTowerSumEtCone - 0.005*eT) > 4
         || (pho->dr03TrackIso[selVtxIndex] - 0.002*eT) > 4
 	|| pho->dr02ChargedHadronPFIso[selVtxIndex] > 4) return false;
     if( (pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.014) )
         || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
   }else{ //(SC->r9 > 0.9
-    if( (pho->dr03EcalRecHitSumEtCone - 0.012*eT) > 50
+    if( ECALIso > 50 
         || (pho->dr03HcalTowerSumEtCone - 0.005*eT) > 50
         || (pho->dr03TrackIso[selVtxIndex] - 0.002*eT) > 50 
 	|| pho->dr02ChargedHadronPFIso[selVtxIndex] > 4) return false;
     if( (pho->isBarrel() && (pho->HoverE > 0.082 || pho->SC.sigmaIEtaIEta > 0.014) )
         || (!pho->isBarrel() && (pho->HoverE > 0.075 || pho->SC.sigmaIEtaIEta > 0.034) ) ) return false;
   }
+
+
   return true;
 }
 

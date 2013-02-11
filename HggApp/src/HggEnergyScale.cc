@@ -7,6 +7,16 @@ using namespace std;
 HggEnergyScale::HggEnergyScale(std::string path){
   valid= false; // only s
 
+  ReadConfig reader;
+  try{
+    reader.read(path);
+  }catch(std::exception &e){
+    std::cout << "HggEnergyScale" <<std::endl;
+    std::cout << path <<std::endl;
+    throw  e;
+  }
+
+
   configNames.push_back("EBlowEtaBadDeltaE");
   configNames.push_back("EBlowEtaGoldDeltaE");
   configNames.push_back("EBhiEtaBadDeltaE");
@@ -116,7 +126,6 @@ HggEnergyScale::HggEnergyScale(std::string path){
   maxEta.push_back(3.);
 
   nRegions = configNames.size();
-  ReadConfig reader(path);
 
   if(debugEnergyScale) cout << "reader status: " << reader.is_init() << endl;
   if(!reader.is_init()) return;

@@ -25,6 +25,8 @@
 #include "HggScaling.hh"
 #include "VecbosJetCorrector.hh"
 
+#include <exception>
+#include <stdexcept>
 using namespace std;
 
 class HggReducer : public Vecbos{

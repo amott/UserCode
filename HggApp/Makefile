@@ -118,6 +118,26 @@ HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 	$(OUTLIB)HggSelector.o
 	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
+HggEfficiencyMapApp: $(SRCDIR)HggEfficiencyMapApp.C \
+	$(OUTLIBCOMMON)Conditions.o \
+	$(OUTLIBCOMMON)Selection.o \
+	$(OUTLIBCOMMON)Counters.o \
+	$(OUTLIBCOMMON)TriggerMask.o \
+	$(OUTLIBCOMMON)Utils.o \
+	$(OUTLIBCOMMON)Skimmer.o \
+	$(OUTLIBEGAMMA)ElectronTrackerIsolation.o \
+	$(OUTLIBEGAMMA)ElectronCaloIsolation.o \
+	$(OUTLIBEGAMMA)ElectronBestCandidateSelector.o \
+	$(OUTLIBEGAMMA)LikelihoodPdf.o \
+	$(OUTLIBEGAMMA)LikelihoodSpecies.o \
+	$(OUTLIBEGAMMA)LikelihoodPdfProduct.o \
+	$(OUTLIBEGAMMA)ElectronLikelihood.o \
+	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
+	$(OUTLIB)VecbosEGObject.o \
+	$(OUTLIB)HggMCWeight.o \
+	$(OUTLIB)HggEfficiencyMap.o
+	$(CXX) $(CXXFLAGS) -o HggEfficiencyMapApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
+
 ZeeSelectorApp: $(SRCDIR)ZeeSelectorApp.C \
 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIBCOMMON)Selection.o \
@@ -169,6 +189,14 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)HggEnergyScale.o \
 			$(OUTLIB)MitDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggSelector.o $<
+
+$(OUTLIB)HggEfficiencyMap.o: $(SRCDIR)HggEfficiencyMap.cc \
+			$(OUTLIB)HggPhotonID.o \
+			$(OUTLIB)Vecbos.o \
+			$(OUTLIB)VecbosEGObject.o \
+			$(OUTLIB)HggDict.o \
+			$(OUTLIB)MitDict.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggEfficiencyMap.o $<
 
 $(OUTLIB)ZeeSelector.o: $(SRCDIR)ZeeSelector.cc \
 			$(OUTLIB)Vecbos.o \

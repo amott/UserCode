@@ -420,14 +420,14 @@ void HggReducer::init(string outputFileName){
  this->setOutputBranches(); // initialize the branches of the output tree
 
  ReadConfig cfg;
- int errorCode = cfg.read(config);
- if(errorCode){
-   cout << "ERROR READING CONFIG FILE!!!! " << endl
-	<< "ABORTING" << endl;
-   throw 1;
-   return;
+ try{
+   cfg.read(config);
+ }catch(exception &e){
+   std::cout << "HggReducer" << std::endl;
+   std::cout << "config file: " << config <<std::endl;
+   throw e;
+   
  }
-
  string EnergyScaleCFG  = cfg.getParameter("EnergyScaleCFG");
  string EnergySmearCFG  = cfg.getParameter("EnergySmearCFG");
  string MCScalingCFG    = cfg.getParameter("ScalingFile");
@@ -456,20 +456,23 @@ void HggReducer::init(string outputFileName){
       << "Requiring " << minPhoSel << " Photons" <<endl
       << "Doing Jet Corrections: " << correctJets << endl;
 
+ 
  vertexer  = new HggVertexing(this);
  vertexer->setConfigFile(config);
  vertexer->useConversions();
  vertexer->saveInputs(outTree);
  vertexer->init();
+ 
  corrector = new HggEGEnergyCorrector(this,config,_isData);
  elecorrector = new HggEGEnergyCorrector(this,config,_isData);
  elecorrector->useElectronWeights();
  energyScale = new HggEnergyScale(EnergyScaleCFG);
  energySmear = new HggEnergyScale(EnergySmearCFG);
-
+ 
  if(correctJets) jetCorr = new VecbosJetCorrector(cfg);
  
- scaler = new HggScaling(MCScalingCFG);
+ 
+ if(!_isData) scaler = new HggScaling(MCScalingCFG);
 }
 
 

@@ -10,7 +10,13 @@ HggScaling::HggScaling(std::string cfg){
 }
 
 void HggScaling::LoadConfig(std::string cfg){
-  ReadConfig cfgReader(cfg);
+  ReadConfig cfgReader;
+  try{
+    cfgReader.read(cfg);
+  }catch(const std::runtime_error &e){
+    std::cout << "HggScaling" << std::endl;
+    throw e;
+  }
   if(debugScaling) std::cout << "Loading file " << cfg << std::endl;
   if(debugScaling) cfgReader.printAll();
   std::vector<std::string> allRescales = cfgReader.getAllParameters();

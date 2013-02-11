@@ -8,12 +8,13 @@
 #include <iostream>
 //using namespace std;
 
-void makePileupReweight(TChain *chain, TH1F *dataHist,TString outputName){
-  TH1F* mcPU = new TH1F("mcPU","",dataHist->GetNbinsX(),0,dataHist->GetNbinsX());
+void makePileupReweight(TChain *chain, TH1D *dataHist,TString outputName){
+  TH1D* mcPU = new TH1D("mcPU","",dataHist->GetNbinsX(),0,dataHist->GetNbinsX());
   chain->Project("mcPU","nPU");
   mcPU->Scale(1./mcPU->Integral());
   
-  TH1F* pu = (TH1F*)dataHist->Clone("pileupReWeight");
+  dataHist->Scale(1./dataHist->Integral());
+  TH1D* pu = (TH1D*)dataHist->Clone("pileupReWeight");
   pu->Divide(mcPU);
   
   TFile *f = new TFile(outputName,"RECREATE");
@@ -26,7 +27,7 @@ void makePileupReweight(TChain *chain, TH1F *dataHist,TString outputName){
 
 void makeAllPU(string mcFileList,TString dataFileName){
   TFile * dataFile = new TFile(dataFileName);
-  TH1F* dataHist = (TH1F*)dataFile->Get("pileup");
+  TH1D* dataHist = (TH1D*)dataFile->Get("pileup");
   dataHist->Scale(1./dataHist->Integral());
 
   string mcFile;
@@ -49,7 +50,7 @@ void makeAllPU(string mcFileList,TString dataFileName){
 
 void make1PU(string mcFileList,TString dataFileName,TString outputFile){
   TFile * dataFile = new TFile(dataFileName);
-  TH1F* dataHist = (TH1F*)dataFile->Get("pileup");
+  TH1D* dataHist = (TH1D*)dataFile->Get("pileup");
   dataHist->Scale(1./dataHist->Integral());
 
   string mcFile;

@@ -75,6 +75,7 @@ void ZeeSelector::Loop(){
       // Choose First Electron
       for (int k=0; k<nEle-1;k++) { 
 	VecbosEle ele1 = Electrons->at(k);
+	if(ele1.SC.index<0) continue;
 	if(!passPresel(ele1)) continue;
 	// Choose Second Electron
 	for (int j=k+1; j<nEle;j++) {   
@@ -83,6 +84,7 @@ void ZeeSelector::Loop(){
 	  mvapass = 0;
 	  Zeemass = 0;
 	  VecbosEle ele2 = Electrons->at(j);
+	  if(ele2.SC.index<0) continue;
 	  if(!passPresel(ele2)) continue;
 	  // Verify Opposite Charges
 	  if (ele1.charge != ele2.charge) {

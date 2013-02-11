@@ -39,9 +39,12 @@ public:
 
   void fillIsoVariables(VecbosPho*,ReducedPhotonData*,int, float, int );
   
+  void setDoEcalIso(bool b){doECALIso=b;}
 private:
   string configFile;
   bool valid;
+
+  bool doECALIso;
 
   string version;
 
