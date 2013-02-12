@@ -185,6 +185,7 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 			$(OUTLIB)GBRTree.o \
 			$(OUTLIB)HggMCWeight.o \
 			$(OUTLIB)HggPhotonID.o \
+			$(OUTLIB)HggMuonID.o \
 			$(OUTLIB)HggMassResolution.o \
 			$(OUTLIB)HggEnergyScale.o \
 			$(OUTLIB)MitDict.o
@@ -192,6 +193,7 @@ $(OUTLIB)HggSelector.o: $(SRCDIR)HggSelector.cc \
 
 $(OUTLIB)HggEfficiencyMap.o: $(SRCDIR)HggEfficiencyMap.cc \
 			$(OUTLIB)HggPhotonID.o \
+			$(OUTLIB)HggMuonID.o \
 			$(OUTLIB)Vecbos.o \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o \
@@ -219,6 +221,11 @@ $(OUTLIB)HggPhotonID.o: $(SRCDIR)HggPhotonID.cc \
 			$(OUTLIB)VecbosEGObject.o \
 			$(OUTLIB)HggDict.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggPhotonID.o $<
+
+$(OUTLIB)HggMuonID.o: $(SRCDIR)HggMuonID.cc \
+			$(OUTLIB)VecbosEGObject.o \
+			$(OUTLIB)HggDict.o
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggMuonID.o $<
 
 $(OUTLIB)HggMCWeight.o: $(SRCDIR)HggMCWeight.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggMCWeight.o $<
