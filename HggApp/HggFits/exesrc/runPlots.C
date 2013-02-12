@@ -12,6 +12,7 @@ int main(int argc, char** argv){
   a.addArgument("OutputPath",ArgParser::required,"output directory");
   a.addArgument("OutputTag",ArgParser::required,"tag for the output plots");
   a.addLongOption("PrintOnly",ArgParser::noArg,"Only print the yields, don't make plots");
+  a.addLongOption("AllMC",ArgParser::noArg,"make plots for all MC samples in the workspace (default: just Hgg125)");
 
   string ret;
   if(a.process(ret) != 0){
@@ -24,18 +25,16 @@ int main(int argc, char** argv){
   string bp  = a.getArgument("OutputPath");
   string tag = a.getArgument("OutputTag");
   bool pOnly = a.longFlagPres("PrintOnly");
-
+  bool all = a.longFlagPres("AllMC");
   MakeSpinPlots msp(inputWS,tag);
 
   msp.setLumi(lumi);
   msp.setBasePath(bp);
 
-  if(!pOnly)  msp.runAll("Hgg125");
+  if(!pOnly){
+    if(all) msp.runAll();
+    else msp.runAll("Hgg125");
+  }
 
-  
-  std::cout << "Event Yields for H-->gg MC" <<std::endl <<std::endl;
-  msp.printYields("Hgg125");
-
-  std::cout << "Event Yields for RS Graviton-->gg MC" <<std::endl <<std::endl;
-  msp.printYields("RSG125");
+  msp.printAll();
 }

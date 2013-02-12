@@ -22,6 +22,13 @@ MakeSpinPlots::~MakeSpinPlots(){
   inputFile->Close();
 }
 
+void MakeSpinPlots::runAll(){
+  std::vector<TString>::const_iterator mcIt = mcNames.begin();
+  for(; mcIt != mcNames.end(); mcIt++){
+    runAll(*mcIt);
+  }
+}
+
 void MakeSpinPlots::runAll(TString mcName){
   std::vector<TString>::const_iterator catIt = catNames.begin();
   for(; catIt != catNames.end(); catIt++){
@@ -516,6 +523,14 @@ void MakeSpinPlots::setStyle(){
 
 }
 
+void MakeSpinPlots::printAll(){
+  std::vector<TString>::const_iterator mcIt = mcNames.begin();
+  for(; mcIt != mcNames.end(); mcIt++){
+    std::cout << "\n\n" << *mcIt << std::endl;
+    printYields(*mcIt);
+  }
+
+}
 void MakeSpinPlots::printYields(const char* mcType){
   RooRealVar * tot = ws->var(Form("Data_%s_FULLFIT_Nsig",mcType));
 

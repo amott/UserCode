@@ -62,10 +62,12 @@ public:
 
   void runAll(TString tag,TString mcName); //!< make all plots for given category and MC type (for the signal fits)
   void runAll(TString mcName); //!< Draw all plots for all categories
+  void runAll(); //!< Draw all plots for all categories and all MC
 
   void setLumi(float l){lumi = l;} //!< set the lumi for the plots to display
   void setBasePath(TString s){basePath = s;} //!< set the base path to which to save the figures
 
+  void printAll();
   void printYields(const char* mcType);
   void MakeChannelComp(const char* mcType);
 protected:
