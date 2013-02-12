@@ -667,16 +667,19 @@ void MakeSpinFits::run(){
     MakeCombinedSignalSpin(*mcIt);
     getSimpleTotalBkgSubtraction(*mcIt);
     AddCombinedBkgOnlySWeight(*mcIt);
+    std::cout << "DONE WITH " << *mcIt <<std::endl;
   }
+    std::cout << "DONE" <<std::endl;
 
   //make the 2D fits for all possible combinations of cos(theta) pdf and lineshape
+  /*
   for(int i=0;i<mcLabel.size();i++){
     for(int j=0;j<mcLabel.size();j++){
       Make2DCombinedSignalTest(mcLabel.at(i),mcLabel.at(j));
       Make2DFloatingSignalTest(mcLabel.at(i),mcLabel.at(j));
     }
   }
-    
+  */ // combinatorics too high for more than 2-3 signal samples
   
 }
 
