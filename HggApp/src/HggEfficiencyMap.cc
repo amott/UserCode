@@ -235,9 +235,10 @@ void HggEfficiencyMap::runMMG(){
 	TLorentzVector p4Mu1; p4Mu1.SetPtEtaPhiM(mu1.pt,mu1.eta,mu1.phi,0.106);
 	TLorentzVector p4Mu2; p4Mu2.SetPtEtaPhiM(mu2.pt,mu2.eta,mu2.phi,0.106);
 	TLorentzVector p4Pho = pho.p4FromVtx(vtxPos,pho.finalEnergy);
+	float Mmumu = (p4Mu1+p4Mu2).M();
 
 	float M = (p4Mu1+p4Mu2+p4Pho).M();
-	if(M<88 || M>94) continue;
+	if(Mmumu>75 || M<88 || M>94) continue;
 	this->clear();
 	outPt = -1;
 	outEta = 0;
