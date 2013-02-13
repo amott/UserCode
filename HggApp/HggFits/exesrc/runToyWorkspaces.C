@@ -16,7 +16,7 @@ int main(int argc, char** argv){
 
   a.addLongOption("SaveToyWorkspaces",ArgParser::noArg,"save the generated toy workspaces (for debugging!) (default: off)");
   a.addLongOption("RunData",ArgParser::noArg,"determine the S value for data");
-
+  a.addLongOption("Alternate",ArgParser::reqArg,"Specify the alternate hypothesis");
 
   string ret;
   if(a.process(ret) !=0){
@@ -36,6 +36,9 @@ int main(int argc, char** argv){
   bool runData = a.longFlagPres("RunData");
   MakeSpinToy mst(wsFile);
 
+  if(a.longFlagPres("Alternate")){
+    mst.setMCComparison(a.getLongFlag("Alternate"));
+  }
   mst.setTargetLumi(tlumi);
   mst.setNominalLumi(nlumi);
 

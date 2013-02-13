@@ -15,6 +15,8 @@ int main(int argc, char** argv){
   a.addLongOption("noCiC",ArgParser::noArg,"specify to disable CiC selection (default: on)");
   a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
   a.addLongOption("tightPt",ArgParser::noArg,"use tight pt/m cuts (default: off)");
+  a.addLongOption("mixMC",ArgParser::required,"Specify two MC samples to mix, comma-separated (e.g.: --mixMC=Hgg125,RSG125)");
+  a.addLongOption("fractions",ArgParser::required,"Specify the fractions of the MC samples specified in --mixMC, comma-separated (e.g.: --fractions=0.1,0.2,0.8)");
 
   string ret;
   if(a.process(ret) !=0){

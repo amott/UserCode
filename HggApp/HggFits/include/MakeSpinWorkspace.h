@@ -34,6 +34,7 @@ Date: Jan 2013
 #include "RooCategory.h"
 
 #include <HggOutputReader2.h>
+#include <MixSpinDatasets.h>
 
 #include <iostream>
 #include <map>
@@ -77,6 +78,9 @@ public:
 
   void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;}
 
+  void setMixDatasets(){mixer = new MixSpinDatasets(ws);}
+  MixSpinDatasets* getMixer(){return mixer;}
+
 protected:
   std::vector<TString> fileName,label; //!< lists of input file names and corresponding labels
   std::vector<bool> isData;            //!< list of bools specifying whether the files correspond to data
@@ -97,6 +101,8 @@ protected:
   TString EfficiencyCorrectionFile;
 
   float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); //!< returns the weight for this photon from the efficiency correction file
+
+  MixSpinDatasets *mixer;
 
 };
 

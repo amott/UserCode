@@ -26,6 +26,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
 }
 
 MakeSpinWorkspace::~MakeSpinWorkspace(){
+  if(mixer) delete mixer;
 }
 
 

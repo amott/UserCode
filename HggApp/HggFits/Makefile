@@ -92,6 +92,7 @@ $(OUTLIB)HggOutputReader2.o:	$(SRCDIR)HggOutputReader2.C
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggOutputReader2.o $<
 
 $(OUTLIB)MakeSpinWorkspace.o:	$(SRCDIR)MakeSpinWorkspace.C \
+				$(OUTLIB)MixSpinDatasets.o \
 				$(OUTLIB)HggOutputReader2.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinWorkspace.o $<
 
@@ -120,3 +121,8 @@ $(OUTLIB)MakeSpinToy.o:		$(SRCDIR)MakeSpinToy.C \
 
 $(OUTLIB)MakeSpinSPlot.o:	$(SRCDIR)MakeSpinSPlot.C
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinSPlot.o $<
+
+$(OUTLIB)MixSpinDatasets.o:	$(SRCDIR)MixSpinDatasets.C \
+				$(OUTLIB)MakeSpinFits.o
+		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MixSpinDatasets.o $<
+

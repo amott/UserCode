@@ -37,7 +37,7 @@ public:
   void setTargetLumi(float l){targetLumi = l;}
   void setNominalLumi(float l){nominalLumi = l;}
 
-  enum genType{Data,Hgg125,RSG125};
+  enum genType{Data,Hgg125,ALT125};
   
   float getExpEvents(float lumi, TString cat,TString mcType,RooWorkspace* toyws=0);
 
@@ -54,19 +54,21 @@ public:
   RooWorkspace *ws;
   RooRealVar* cosT, *mass;
   RooRealVar *S,*GenMinusFit;
-  RooDataSet *S_TruthHgg, *S_TruthRSG, *S_TruthData;
-  RooDataSet *S_tot_TruthHgg, *S_tot_TruthRSG, *S_tot_TruthData;
-  RooDataSet *S_splot_TruthHgg, *S_splot_TruthRSG, *S_splot_TruthData;
-  RooDataSet *S_2D_TruthHgg, *S_2D_TruthRSG, *S_2D_TruthData;
-  RooDataSet *S_2DFIT_TruthHgg, *S_2DFIT_TruthRSG, *S_2DFIT_TruthData;
+  RooDataSet *S_TruthHgg, *S_TruthALT, *S_TruthData;
+  RooDataSet *S_tot_TruthHgg, *S_tot_TruthALT, *S_tot_TruthData;
+  RooDataSet *S_splot_TruthHgg, *S_splot_TruthALT, *S_splot_TruthData;
+  RooDataSet *S_2D_TruthHgg, *S_2D_TruthALT, *S_2D_TruthData;
+  RooDataSet *S_2DFIT_TruthHgg, *S_2DFIT_TruthALT, *S_2DFIT_TruthData;
 
-  RooHistPdf *rsgPdf,*hggPdf,*bkgPdf;
+  RooHistPdf *altPdf,*hggPdf,*bkgPdf;
 
-  TTree* makeForCombineTool(TString treeName, RooAbsData* hggData, RooAbsData* rsgData,RooAbsData* dataData=0);
+  TTree* makeForCombineTool(TString treeName, RooAbsData* hggData, RooAbsData* altData,RooAbsData* dataData=0);
 
   void setSaveWorkspaces(bool b){saveWorkspaces = b;}
 
   void setDoData(bool b);
+
+  void setMCComparison(TString s){mcLabels[2]=s;}
 
   const static int nBins = 9;
 
