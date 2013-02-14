@@ -38,6 +38,7 @@ Date: Jan 2013
 #include "RooSimultaneous.h"
 #include "RooExtendPdf.h"
 #include "RooProdPdf.h"
+#include "RooCategory.h"
 
 #include <HggOutputReader2.h>
 
@@ -47,7 +48,6 @@ Date: Jan 2013
 #include <assert.h>
 
 
-#include "MakeSpinWorkspace.h"
 #include "MakeSpinSPlot.h"
 
 class MakeSpinFits{

@@ -122,10 +122,10 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   RooDataHist hist(Form("%s_cosThist",outputTag.Data()),"Data Hist for cos(theta)",RooArgSet(cosT),*ds);
   RooHistPdf cosTkde(Form("%s_cosTpdf",outputTag.Data()),"Hist PDF for cos(theta)",RooArgSet(cosT),hist);
 
-  SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0));
-  RooFitResult *res = SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2));
-  //SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0));
-  //RooFitResult *resCB = SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2));
+  SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
+  RooFitResult *res = SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
+  //SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
+  //RooFitResult *resCB = SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
   std::cout << res <<std::endl;
   res->SetName(Form("%s_FitResult",outputTag.Data()));
   //resCB->SetName(Form("%s_FitResultCB",outputTag.Data()));
@@ -294,8 +294,8 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_%s_FULLFIT_fitResult",mcName.Data()) );
   
   ws->import(*combFit);
@@ -336,8 +336,8 @@ void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_%s_INDFIT_fitResult",mcName.Data()) );
   
   ws->import(*combFit);
@@ -410,8 +410,8 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",massMcName.Data(),costMcName.Data()) );
   
   ws->import(*combFit);
@@ -474,8 +474,8 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_m_%s_c_%s_IND2DFIT_fitResult",massMcName.Data(),costMcName.Data()) );
   
   ws->import(*combFit);
@@ -546,8 +546,8 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   //  mass.setRange("fitLow", 100,120.5);
   //mass.setRange("fitHigh",127.5,180);
 
-  BkgModel->fitTo(*ds,RooFit::Strategy(0),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=BkgModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  BkgModel->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=BkgModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_BKGFIT_%s_fitResult",catTag.Data()) );
 
   //set all parameters of the background fit as constant after the fit
