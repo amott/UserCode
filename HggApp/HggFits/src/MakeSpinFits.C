@@ -683,10 +683,33 @@ void MakeSpinFits::run(){
   
 }
 
+int MakeSpinFits::specifySamples(std::vector<std::string> samples){
+  mcLabel.clear();
+
+  RooCategory* labels = ((RooCategory*)ws->obj("labels"));
+  
+  for(std::vector<std::string>::const_iterator it = samples.begin();
+      it != samples.end(); it++)
+    {
+      std::cout << "Running: " << *it << std::endl;
+      if( labels->setLabel(it->c_str(),kFALSE) != 0) //MC sample not in workspace
+	{
+	  std::cout << "\n\nERROR: MC Sample " << *it 
+		    << " not in workspace" <<std::endl;
+	  return -1;
+	}
+      mcLabel.push_back(TString(it->c_str()));
+    }
+  return 0;
+}
+
 void MakeSpinFits::save(){
   if(ws==0 || outputFile==0) return;
+  std::cout << "SAVING" <<std::endl;
   outputFile->cd();
+  std::cout <<"WRITING" <<std::endl;
   ws->Write();
+  std::cout << "CLOSING" <<std::endl;
   outputFile->Close();
 }
 

@@ -350,9 +350,11 @@ void MakeSpinWorkspace::MakeWorkspace(){
   for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++){
     AddToWorkspace(*fnIt,*lIt,*idIt);
   }
+  ws->import(*labels);
+
+  if(mixer) mixer->mixAll();
   
   outputFile->cd();
-  ws->import(*labels);
   ws->Write();
   outputFile->Close();
 }

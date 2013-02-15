@@ -49,7 +49,30 @@ int main(int argc, char** argv){
   bool tightPt = a.longFlagPres("tightPt");
   TString effMap="";
   if(a.longFlagPres("EfficiencyMap")) effMap = a.getLongFlag("EfficiencyMap").c_str();
+
+
   MakeSpinWorkspace msw(wsFile);
+
+  if(a.longFlagPres("mixMC") && a.longFlagPres("fractions")){
+    msw.setMixDatasets();
+    std::vector<string> mc = ReadConfig::tokenizeString(a.getLongFlag("mixMC"),",");
+    std::vector<string> fst = ReadConfig::tokenizeString(a.getLongFlag("fractions"),",");
+    cout << mc.at(0) << endl << mc.at(1) <<endl;
+    if(mc.size() != 2){
+      cout << "\n\n invalid argument to flag --mixMC\n" <<std::endl;
+      a.printOptions(argv[0]);
+      return -1;
+    }
+    if(fst.size()==0){
+      cout << "\n\n invalid argument to flag --fractions\n" <<std::endl;
+      a.printOptions(argv[0]);
+      return -1;
+    }
+
+    for(int i=0;i<fst.size();i++){
+      msw.getMixer()->scheduleMix(mc.at(0).c_str(),mc.at(1).c_str(),atof(fst.at(i).c_str()));
+    }
+  }
 
   cout << "Data:    " << data <<endl;
 

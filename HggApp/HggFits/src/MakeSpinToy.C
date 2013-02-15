@@ -243,17 +243,21 @@ TTree* MakeSpinToy::makeForCombineTool(TString treeName, RooAbsData* hggData, Ro
   type=1; //SM HIggs
   const RooArgSet *set;
 
+  std::cout << "SM" <<std::endl;
   while( (set=hggData->get(++iEntry)) ){ 
     q = ((RooRealVar*)set->find("S"))->getVal();
     gMf = ((RooRealVar*)set->find("NgenMinusNfit"))->getVal();
+    std::cout << q << std::endl;
     out->Fill();
   }
   iEntry=-1;
   type=-1;
 
+  std::cout << "ALT" <<std::endl;
   while( (set=altData->get(++iEntry)) ){ 
     q = ((RooRealVar*)set->find("S"))->getVal();
     gMf = ((RooRealVar*)set->find("NgenMinusNfit"))->getVal();
+    std::cout << q << std::endl;
     out->Fill();
   }
   if(dataData != 0){
@@ -303,31 +307,31 @@ double* MakeSpinToy::run1(genType gen, int& N){
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
       toyws->import(*ws->data(Form("Hgg125_%s",it->Data())));
-      toyws->import(*ws->data(mcType+"_"+*it));
+      toyws->import(*ws->data(mcLabels[2]+"_"+*it));
       
       toyws->import(*ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",it->Data())));
-      toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcType.Data(),it->Data())));
+      toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data())));
       
       fits.MakeSignalFitForFit(*it,"Hgg125");
-      fits.MakeSignalFitForFit(*it,mcType);
+      fits.MakeSignalFitForFit(*it,mcLabels[2]);
       fits.MakeBackgroundOnlyFit(*it);    
     }
     fits.MakeCombinedSignalTest("Hgg125");
-    fits.MakeCombinedSignalTest(mcType);
+    fits.MakeCombinedSignalTest(mcLabels[2]);
     fits.AddCombinedBkgOnlySWeight("Hgg125");
-    fits.AddCombinedBkgOnlySWeight(mcType);
+    fits.AddCombinedBkgOnlySWeight(mcLabels[2]);
 
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
       fits.getSimpleBkgSubtraction("Hgg125",*it);
-      fits.getSimpleBkgSubtraction(mcType,*it);
+      fits.getSimpleBkgSubtraction(mcLabels[2],*it);
     }
     
     fits.Make2DCombinedSignalTest("Hgg125","Hgg125");
-    fits.Make2DCombinedSignalTest("Hgg125",mcType);
+    fits.Make2DCombinedSignalTest("Hgg125",mcLabels[2]);
 
     fits.getSimpleTotalBkgSubtraction("Hgg125");
-    fits.getSimpleTotalBkgSubtraction(mcType);
+    fits.getSimpleTotalBkgSubtraction(mcLabels[2]);
 
   }
   else{ //doing data
@@ -343,14 +347,14 @@ double* MakeSpinToy::run1(genType gen, int& N){
     //fits.MakeBackgroundFit("Hgg125",*it,125,2,false);
 
     RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data( Form("Data_Hgg125_%s_bkgSub_cosT",it->Data()));
-    RooDataHist *thisBkgALT = (RooDataHist*)toyws->data( Form("Data_%s_%s_bkgSub_cosT",mcType.Data(),it->Data()));
+    RooDataHist *thisBkgALT = (RooDataHist*)toyws->data( Form("Data_%s_%s_bkgSub_cosT",mcLabels[2].Data(),it->Data()));
     RooDataSet *thisSdataHgg = (RooDataSet*)toyws->data( Form("Data_%s_Hgg125_sigWeight",it->Data()));
-    RooDataSet *thisSdataALT = (RooDataSet*)toyws->data( Form("Data_%s_%s_sigWeight",it->Data(),mcType.Data()));
+    RooDataSet *thisSdataALT = (RooDataSet*)toyws->data( Form("Data_%s_%s_sigWeight",it->Data(),mcLabels[2].Data()));
     RooDataHist *thisShistHgg = new RooDataHist("tmpHgg","",*cosT,*thisSdataHgg);
     RooDataHist *thisShistALT = new RooDataHist("tmpALT","",*cosT,*thisSdataALT);
 
     hggPdf = (RooHistPdf*)ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",it->Data()));
-    altPdf = (RooHistPdf*)ws->pdf(Form("%s_FIT_%s_cosTpdf",mcType.Data(),it->Data()));
+    altPdf = (RooHistPdf*)ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data()));
 
 
     if(gen==Hgg125) nFit+= thisSdataHgg->sumEntries();
@@ -387,9 +391,9 @@ double* MakeSpinToy::run1(genType gen, int& N){
     delete thisShistALT;
   }
   RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data(Form("Data_Hgg125_Combined_bkgSub_cosT"));
-  RooDataHist *thisBkgALT = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcType.Data()));
+  RooDataHist *thisBkgALT = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcLabels[2].Data()));
   hggPdf = (RooHistPdf*)ws->pdf("Hgg125_FIT_cosTpdf");
-  altPdf = (RooHistPdf*)ws->pdf(mcType+"_FIT_cosTpdf");
+  altPdf = (RooHistPdf*)ws->pdf(mcLabels[2]+"_FIT_cosTpdf");
 
   double totHggLL = computeLL(hggPdf,thisBkgHgg,cosT);
   //double totALTLL = computeLL(altPdf,thisBkgALT,cosT);
@@ -398,7 +402,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   //use 2D fit to test compatibility
   RooRealVar *yield1D   = toyws->var("Data_Hgg125_FULLFIT_Nsig");
   RooRealVar *yieldHgg  = toyws->var("Data_m_Hgg125_c_Hgg125_FULL2DFIT_Nsig");
-  RooRealVar *yieldALT  = toyws->var(Form("Data_m_Hgg125_c_%s_FULL2DFIT_Nsig",mcType.Data())); // yield fitting hgg mass and alt cosT distributions
+  RooRealVar *yieldALT  = toyws->var(Form("Data_m_Hgg125_c_%s_FULL2DFIT_Nsig",mcLabels[2].Data())); // yield fitting hgg mass and alt cosT distributions
   
   double errHgg = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldHgg->getError(),2));
   double errALT = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldALT->getError(),2));
@@ -407,14 +411,14 @@ double* MakeSpinToy::run1(genType gen, int& N){
   double alt2Dll  = TMath::Log(TMath::Prob( pow(yield1D->getVal()-yieldALT->getVal(),2)/pow(errALT,2),1));
 
   RooFitResult *fitHgg = (RooFitResult*)toyws->obj("Data_m_Hgg125_c_Hgg125_FULL2DFIT_fitResult");
-  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_Hgg125_c_%s_FULL2DFIT_fitResult",mcType.Data()));
+  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_Hgg125_c_%s_FULL2DFIT_fitResult",mcLabels[2].Data()));
 
 
   std::cout << "FIT NLL: " << endl
 	    << "Hgg: " << fitHgg->minNll() << endl
 	    << "ALT: " << fitALT->minNll() << endl;
-  double hgg2DFITll = fitHgg->minNll();
-  double alt2DFITll = fitALT->minNll();
+  double hgg2DFITNll = fitHgg->minNll();
+  double alt2DFITNll = fitALT->minNll();
 
   GenMinusFit->setVal( nGen-nFit);
   std::cout << "Gen - Fit: " << nGen - nFit <<std::endl;
@@ -426,7 +430,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   out[1] = 2*(totALTLL-totHggLL);
   out[2] = 2*(saltll-shggll);
   out[3] = 2*(alt2Dll-hgg2Dll);
-  out[4] = -2*(alt2DFITll-hgg2DFITll);
+  out[4] = -2*(alt2DFITNll-hgg2DFITNll);
 
   return out;
 }

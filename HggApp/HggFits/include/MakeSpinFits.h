@@ -128,6 +128,8 @@ public:
   void AddCombinedBkgOnlySWeight(TString mcName); //<! add the SWeighted datasets from the combined fit
 
   static void getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace *w);
+
+  int specifySamples(std::vector<std::string> samples);
 protected:
   RooWorkspace *ws;
 
