@@ -100,7 +100,7 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genTy
   RooAbsPdf* bkgMassPdf = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",cat) );
 
   //cosT
-  RooDataSet *tmp  = (RooDataSet*)(ws->data("Data_Combined")->reduce(Form("evtcat==evtcat::%s && ((mass>110 && mass<120) || (mass>130 && mass<140)",cat)));
+  RooDataSet *tmp  = (RooDataSet*)(ws->data("Data_Combined")->reduce(Form("evtcat==evtcat::%s && ((mass>110 && mass<120) || (mass>130 && mass<140))",cat)));
   RooDataSet *tmpH = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[1].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
   RooDataSet *tmpR = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[2].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
 
