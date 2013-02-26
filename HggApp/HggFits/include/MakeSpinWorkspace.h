@@ -23,6 +23,9 @@ Date: Jan 2013
 #include <TList.h>
 #include <TObjArray.h>
 #include <TH3F.h>
+#include <TH1D.h>
+#include <TGraphAsymmErrors.h>
+#include <TLorentzVector.h>
 
 //All RooFit includes
 #include <RooWorkspace.h>
@@ -39,7 +42,7 @@ Date: Jan 2013
 #include <iostream>
 #include <map>
 #include <vector>
-
+#include "assert.h"
 
 class MakeSpinWorkspace{
 public:
@@ -48,7 +51,7 @@ public:
   static TH2F* getSelectionMap(int map, bool isData); //!< takes the index of the map required and returns a TH2F* map of the selection cut as a function of pT and eta
   static int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
   static int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
-  static bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
+  static bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
   
   const static int nCat=2; //!< currently define only two categories (for both CiC and R9 categorization)
 
@@ -76,10 +79,14 @@ public:
   void setUseR9(bool b){useR9 = b;} //!< Specify whether to use the CiC (R9) categorization
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
+  void setUseUncorrMass(bool b=true){useUncorrMass=b;}
   void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;}
 
   void setMixDatasets(){mixer = new MixSpinDatasets(ws);}
   MixSpinDatasets* getMixer(){return mixer;}
+
+  void setKFactorFile(TString s){filenameKFactor = s;}
+  void setRescaleFile(TString s){filenameRescaleFactor = s;}
 
 protected:
   std::vector<TString> fileName,label; //!< lists of input file names and corresponding labels
@@ -95,6 +102,7 @@ protected:
   TFile *outputFile;                   //!< pointer to output file
 
   bool useR9;                          //!< whether to use CiC (R9) or sigma_E/E cateogries (default: false)
+  bool useUncorrMass;
 
   void AddToWorkspace(TString inputFile,TString tag, bool isData); //!< takes a file and its labels and adds to the workspace
 
@@ -103,6 +111,18 @@ protected:
   float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); //!< returns the weight for this photon from the efficiency correction file
 
   MixSpinDatasets *mixer;
+
+  float getEfficiency(HggOutputReader2 &h, int massPoint);
+
+  TString filenameKFactor;
+  TFile *fileKFactor;
+  float getKFactor(HggOutputReader2 &h, int massPoint);
+
+  TString filenameRescaleFactor;
+  TFile *fileRescaleFactor;
+  float getRescaleFactor(HggOutputReader2 &h);
+
+  float getEffFromTGraph(TGraphAsymmErrors* e,float pt);
 
 };
 

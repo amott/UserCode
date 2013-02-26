@@ -25,6 +25,8 @@ MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
   if(outputFileName != ""){
     //opens the output file
     outputFile = new TFile(outputFileName,"RECREATE");
+    outputFile->cd();
+    ws->Write();
   }
   //default fit type
   setBkgFit(MakeSpinFits::kExp);
@@ -142,8 +144,11 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 
   //compute the full width at half maximum and the sigma effective
   float FWHM = computeFWHM(&SignalModel,mean.getVal(),&mass);
+  float sige = computeSigEff(&SignalModel,mean.getVal(),&mass);
   RooRealVar rvFWHM(Form("%s_FWHM",outputTag.Data()),"",FWHM);
-  RooRealVar rvSE(Form("%s_sigmaEff",outputTag.Data()),"",FWHM/(2*TMath::Sqrt(2*TMath::Log(2))));
+
+
+  RooRealVar rvSE(Form("%s_sigmaEff",outputTag.Data()),"",sige);
   
   ws->import(SignalModel);
   //ws->import(SignalModelCB);
@@ -181,6 +186,33 @@ float MakeSpinFits::computeFWHM(RooAbsPdf* pdf, float mean,RooRealVar *var){
 
   if(diffPos<diffNeg) return 2*firstNegOffset - 2*step;
   return 2*firstNegOffset;
+}
+
+float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
+  // compute the sigma_eff for the pdf
+  //only valid for symmetric pdfs
+
+  float width=0.0;
+
+  float below=0, belowCov=0;
+  float above=0, aboveCov=0;
+
+  while(true){
+    width+=0.01;
+    var->setRange("sigEff",mean-offset,mean+offset);
+    float cov = pdf->createIntegral(*var,RooFit::NormSet(*var),RooFit::Range("sigEff"))->getVal();
+    if(cov > 0.683){
+      above=width;
+      aboveCov=cov;
+      break;
+    }else{
+      below=width;
+      belowCov=cov;
+    }
+  }
+
+  return (above*aboveCov+below*belowCov)/(aboveCov+belowCov); //weighted average
+
 }
 
 void MakeSpinFits::MakeCombinedSignalSpin(TString mcName){
@@ -668,6 +700,7 @@ void MakeSpinFits::run(){
     getSimpleTotalBkgSubtraction(*mcIt);
     AddCombinedBkgOnlySWeight(*mcIt);
     std::cout << "DONE WITH " << *mcIt <<std::endl;
+    ws->Write(ws->GetName(),TObject::kWriteDelete);
   }
     std::cout << "DONE" <<std::endl;
 
@@ -708,6 +741,12 @@ void MakeSpinFits::save(){
   std::cout << "SAVING" <<std::endl;
   outputFile->cd();
   std::cout <<"WRITING" <<std::endl;
+  RooCategory *outLabels = new RooCategory("fitlabels","");
+  for(std::vector<TString>::const_iterator it = mcLabel.begin();
+      it != mcLabel.end(); it++){
+    outLabels->defineType(it->Data(),it-mcLabel.begin());
+  }
+  ws->import(*outLabels);
   ws->Write();
   std::cout << "CLOSING" <<std::endl;
   outputFile->Close();

@@ -7,7 +7,7 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
   inputFile = new TFile(inputFileName);
   ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
 
-  MakeSpinFits::getLabels("labels",&mcNames,ws);
+  MakeSpinFits::getLabels("fitlabels",&mcNames,ws);
   MakeSpinFits::getLabels("evtcat",&catNames,ws);
   
 
@@ -417,7 +417,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
 void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
   TCanvas cv;
   float mean = ws->var(Form("%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
-  RooPlot *frame = ws->var("mass")->frame(mean-10,mean+10,40);
+  RooPlot *frame = ws->var("mass")->frame(105,140,70);//mean-10,mean+10,40);
   ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame); //data
   RooFitResult *res = (RooFitResult*)ws->obj(Form("%s_FIT_%s_fitResult",mcName.Data(),tag.Data()));
   RooAbsPdf * pdf = ws->pdf(Form("%s_FIT_%s",mcName.Data(),tag.Data())); //signal model
@@ -430,7 +430,7 @@ void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
   tPair lbl(mcName,tag);
 
   TLatex *prelim = new TLatex(0.57,0.9,"CMS Preliminary Simulation");
-  TLatex *sigL  = new TLatex(0.67,0.6,Form("#sigma_{eff} = %0.1f #pm %0.2f GeV",fitSigEff[lbl].first,fitSigEff[lbl].second));
+  TLatex *sigL  = new TLatex(0.67,0.6,Form("#sigma_{eff} = %0.2f GeV",fitSigEff[lbl].first,fitSigEff[lbl].second));
   prelim->SetNDC();
   sigL->SetNDC();
   prelim->SetTextSize(0.05);

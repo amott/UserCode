@@ -3,7 +3,11 @@
 using namespace std;
 #include "selectionMaps.C"
 
-MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
+MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
+  mixer(0),
+  fileKFactor(0),
+  fileRescaleFactor(0)
+{
   //setup the defaults
 
   requireCiC=true;
@@ -16,6 +20,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName){
   useR9=false;
 
   EfficiencyCorrectionFile="";
+  filenameKFactor="";
+  filenameRescaleFactor="";
 
   //open output file and create the new workspace
   outputFile = TFile::Open(outputFileName,"RECREATE");
@@ -63,11 +69,11 @@ int MakeSpinWorkspace::passSelection(float r9){
   if(r9 > 0.94) return 0;
   return 1;
 }
-bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int minI){
+bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass){
   if(h->nPhoton < 2
      || h->diPhotonMVA<-1
-     || h->mPair < 100
-     || h->mPair > 180
+     || mass < 100
+     || mass > 180
      || h->Photon_pt[minI] < 24
      || h->Photon_pt[maxI] < 32) return false;
   return true;
@@ -90,6 +96,15 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   if(EfficiencyCorrectionFile!=""){ //Use MC derived correction weights for the photons
     //as a function of eta/R9/phi
     efficiencyCorrection = new TFile(EfficiencyCorrectionFile);
+  }
+
+  if(filenameKFactor!=""){
+    if(tag=="Hgg125") fileKFactor = new TFile(filenameKFactor);
+    else fileKFactor=0;
+  }
+
+  if(filenameRescaleFactor!=""){
+    fileRescaleFactor = new TFile(filenameRescaleFactor);
   }
 
   //define the variables for the workspace
@@ -125,9 +140,10 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooArgSet set;
   set.add(*mass);
   set.add(*cosT);
+  set.add(*evtW);
+  /*
   set.add(*sige1);
   set.add(*sige2);
-  set.add(*evtW);
   set.add(*eta1); set.add(*eta2);
   set.add(*etaSC1); set.add(*etaSC2);
   set.add(*phi1); set.add(*phi2);
@@ -135,7 +151,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   set.add(*r91); set.add(*r92);
   set.add(*idMVA1); set.add(*idMVA2);
   set.add(*diPhotonMVA);
-
+  */
   RooRealVar *totEB = new RooRealVar(Form("%s_EB_totalEvents",tag.Data()),"",0,0,1e9);
   RooRealVar *totEE = new RooRealVar(Form("%s_EE_totalEvents",tag.Data()),"",0,0,1e9);
 
@@ -165,7 +181,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   Long64_t iEntry=-1;
   cout << "Making DataSet" << endl;
-  Long64_t nEB=0,nEE=0; // store the total number of events before any cuts or selection
+  double nEB=0,nEE=0; // store the total number of events before any cuts or selection
 
   //begin main loop over tree
   while(h.GetEntry(++iEntry)){
@@ -179,9 +195,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     if(fabs(h.Photon_etaSC[1]) < 1.48 && fabs(h.Photon_etaSC[0]) < 1.48) nEB+=h.evtWeight;
     else nEE+=h.evtWeight;
 
+    float m = (useUncorrMass ? h.mPairNoCorr : h.mPair);
+
     // apply selections
-    if(!getBaselineSelection(&h,maxI,minI)) continue;
-    if(tightPt && (h.Photon_pt[maxI]/h.mPair < 1./3. || h.Photon_pt[minI]/h.mPair < 1./4.) ) continue;
+    if(!getBaselineSelection(&h,maxI,minI,m)) continue;
+    if(tightPt && (h.Photon_pt[maxI]/m < 1./3. || h.Photon_pt[minI]/m < 1./4.) ) continue;
 
 
     if(requireCiC){
@@ -205,7 +223,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
       
     //set all the variables
-    mass->setVal(h.mPair);
+    mass->setVal(m);
     cosT->setVal(h.cosThetaLead);
     sige1->setVal(se1);
     sige2->setVal(se2);
@@ -234,10 +252,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     float pho2EffWeight = getEffWeight(efficiencyCorrection,eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
 
     //set the event weight
-    if(!isData) evtW->setVal(h.evtWeight*pho1EffWeight*pho2EffWeight);
+    if(!isData) evtW->setVal(h.evtWeight*pho1EffWeight*pho2EffWeight*getEfficiency(h,125));
     else evtW->setVal(1*pho1EffWeight*pho2EffWeight);
-    if( !(iEntry%10000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
+    if( !(iEntry%1000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
 
+
+    //if(evtW->getVal() > 7.4) cout << iEntry << ": " << mass->getVal() << " : " << cosT->getVal() << " : " << evtW->getVal() << endl;
     //cout << pho1EffWeight << "\t" <<pho2EffWeight << "\t" << evtW->getVal()<<endl;
 
 
@@ -268,7 +288,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
     dataComb->append(*tmp);
-    ws->import(*(dIt->second));
+    //ws->import(*(dIt->second));
   }
   for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
     //loop over the endcap datasets and add the individual data to the combined dataset
@@ -279,7 +299,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
     dataComb->append(*tmp);    
-    ws->import(*(dIt->second));
+    //ws->import(*(dIt->second));
   }
 
   RooDataSet *dataComb_w = new RooDataSet(tag+"_Combined","",dataComb,setCat,0,"evtWeight");
@@ -291,6 +311,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   cout << "Done" <<endl;
 
   if(efficiencyCorrection) delete efficiencyCorrection;
+  if(fileKFactor) fileKFactor->Close();
+  if(fileRescaleFactor) fileRescaleFactor->Close();
 }
 
 float MakeSpinWorkspace::getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9){
@@ -359,3 +381,86 @@ void MakeSpinWorkspace::MakeWorkspace(){
   outputFile->Close();
 }
 
+float MakeSpinWorkspace::getEfficiency(HggOutputReader2 &h, int massPoint){
+  float KFac = getKFactor(h,massPoint);
+  float rescale = getRescaleFactor(h);
+
+  return KFac*rescale;
+}
+
+float MakeSpinWorkspace::getKFactor(HggOutputReader2 &h, int massPoint){
+  if(fileKFactor==0) return 1;
+  TString name = Form("kfact%d_0",massPoint);
+
+  TH1D* hist = (TH1D*)fileKFactor->Get(name);
+
+  float kf=1;
+  assert(hist!=0);
+  if(hist){
+    kf = hist->GetBinContent(hist->FindFixBin(h.genHiggsPt));
+  }
+  delete hist;
+  return kf;
+}
+
+float MakeSpinWorkspace::getRescaleFactor(HggOutputReader2 &h){
+  if(fileRescaleFactor==0) return 1;
+
+  float EFF=1;
+
+  int cicCat = 2*(fabs(h.Photon_etaSC[0])>1.48 || fabs(h.Photon_etaSC[1])>1.48)
+    + (h.Photon_r9[0]<0.94 || h.Photon_r9[1]<0.94);
+
+  TLorentzVector p4_1; p4_1.SetPtEtaPhiM(h.Photon_pt[0],h.Photon_eta[0],h.Photon_phi[0],0);
+  TLorentzVector p4_2; p4_2.SetPtEtaPhiM(h.Photon_pt[1],h.Photon_eta[1],h.Photon_phi[1],0);
+
+  float pt_sys = (p4_1+p4_1).Pt();
+
+  //L1-HLT factor
+  TGraphAsymmErrors* e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("effL1HLT_cat%d",cicCat) );
+  EFF*=getEffFromTGraph(e,pt_sys);
+
+  //vertex efficiencies
+  e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("ratioVertex_cat%d_pass",cicCat) );
+  EFF*=getEffFromTGraph(e,pt_sys);
+  e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("ratioVertex_cat%d_fail",cicCat) );
+  EFF*=getEffFromTGraph(e,pt_sys);
+
+  //per-photon efficiencies
+  TString labels[4] = {"EBHighR9","EBLowR9","EEHighR9","EELowR9"};
+  for(int i=0;i<2;i++){
+    int index = 2*(fabs(h.Photon_etaSC[i])>1.48)+(h.Photon_r9[i] > 0.94);
+    e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioTP_")+labels[index] );
+    EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+    e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioR9_")+labels[index] );
+    EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+  }
+  return EFF;
+}
+
+
+float MakeSpinWorkspace::getEffFromTGraph(TGraphAsymmErrors* e,float pt){
+  int nBins = e-> GetN();
+  int selectedBin=0;
+  for(selectedBin=0;selectedBin<nBins;selectedBin++){
+    Double_t x,y;
+    e->GetPoint(selectedBin,x,y);
+    if(pt < x) break; // found the first bin above the pT
+  }
+  if(selectedBin==nBins) selectedBin--;                       
+
+  if(selectedBin==0){
+    double x,y;
+    e->GetPoint(selectedBin,x,y);
+    return y;
+  }else{
+    double xLow,yLow;
+    e->GetPoint(selectedBin-1,xLow,yLow);
+    double xHigh,yHigh;
+    e->GetPoint(selectedBin,xHigh,yHigh);
+    float fracLow = (pt-xLow)/(xHigh-xLow); // the weight to give to the lower bin
+    float weight = yLow*fracLow+yHigh*(1-fracLow);
+    return weight;
+  }
+  return 1;
+}

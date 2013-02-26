@@ -17,6 +17,7 @@ int main(int argc, char** argv){
   a.addLongOption("tightPt",ArgParser::noArg,"use tight pt/m cuts (default: off)");
   a.addLongOption("mixMC",ArgParser::required,"Specify two MC samples to mix, comma-separated (e.g.: --mixMC=Hgg125,RSG125)");
   a.addLongOption("fractions",ArgParser::required,"Specify the fractions of the MC samples specified in --mixMC, comma-separated (e.g.: --fractions=0.1,0.2,0.8)");
+  a.addLongOption("useUncorrectedMass",ArgParser::noArg,"Use the uncorrected (no regression, scale or smear) mass");
 
   string ret;
   if(a.process(ret) !=0){
@@ -40,6 +41,8 @@ int main(int argc, char** argv){
   int runMin = atoi(cfgReader.getParameter("runMin",cfgOption).c_str());
   int runMax = atoi(cfgReader.getParameter("runMax",cfgOption).c_str());
 
+  string KFactorFile = cfgReader.getParameter("KFactorFile",cfgOption);
+  string RescaleFile = cfgReader.getParameter("RescaleFile",cfgOption);
 
   int selectionMap=7;
   if(a.longFlagPres("SelectionMap")) selectionMap = atoi(a.getLongFlag("SelectionMap").c_str());
@@ -73,6 +76,7 @@ int main(int argc, char** argv){
       msw.getMixer()->scheduleMix(mc.at(0).c_str(),mc.at(1).c_str(),atof(fst.at(i).c_str()));
     }
   }
+  if(a.longFlagPres("useUncorrectedMass")) msw.setUseUncorrMass();
 
   cout << "Data:    " << data <<endl;
 
@@ -92,6 +96,8 @@ int main(int argc, char** argv){
   msw.setEfficiencyCorrectionFile(effMap);
   msw.setUseR9(useR9);
   msw.setTightPt(tightPt);
+  msw.setKFactorFile(KFactorFile.c_str());
+  msw.setRescaleFile(RescaleFile.c_str());
 
   msw.MakeWorkspace();
 

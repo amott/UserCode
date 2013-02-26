@@ -47,6 +47,7 @@ Date: Jan 2013
 #include <vector>
 #include <assert.h>
 
+#include <omp.h> //threading!
 
 #include "MakeSpinSPlot.h"
 
@@ -120,6 +121,7 @@ public:
   void save(); //<! save the output workspace
 
   static float computeFWHM(RooAbsPdf* pdf, float mean, RooRealVar* var); //<! compute the Full Width at Half Maximum for a pdf
+  static float computeSigEff(RooAbsPdf* pdf,float mean, RooRealVar* var);
 
   enum BkgFitType{kExp,kPoly}; //<! allowed types for background fit
 
