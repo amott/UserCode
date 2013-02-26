@@ -199,7 +199,7 @@ float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
 
   while(true){
     width+=0.01;
-    var->setRange("sigEff",mean-offset,mean+offset);
+    var->setRange("sigEff",mean-width,mean+width);
     float cov = pdf->createIntegral(*var,RooFit::NormSet(*var),RooFit::Range("sigEff"))->getVal();
     if(cov > 0.683){
       above=width;
@@ -211,7 +211,7 @@ float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
     }
   }
 
-  return (above*aboveCov+below*belowCov)/(aboveCov+belowCov); //weighted average
+  return (above*aboveCov+below*belowCov)/(aboveCov+belowCov)/2.; //weighted average
 
 }
 
