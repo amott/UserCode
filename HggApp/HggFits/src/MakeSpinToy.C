@@ -336,6 +336,10 @@ double* MakeSpinToy::run1(genType gen, int& N){
   }
   else{ //doing data
     toyws = ws;
+    MakeSpinFits fits("","");
+    fits.setWorkspace(toyws);
+    fits.Make2DCombinedSignalTest("Hgg125","Hgg125");
+    fits.Make2DCombinedSignalTest("Hgg125",mcLabels[2]);
   }
   toyws->Print();
 
