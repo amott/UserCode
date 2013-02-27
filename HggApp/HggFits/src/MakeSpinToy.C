@@ -306,8 +306,8 @@ double* MakeSpinToy::run1(genType gen, int& N){
     
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
-      toyws->import(*ws->data(Form("Hgg125_%s",it->Data())));
-      toyws->import(*ws->data(mcLabels[2]+"_"+*it));
+      //toyws->import(*ws->data(Form("Hgg125_%s",it->Data())));
+      //toyws->import(*ws->data(mcLabels[2]+"_"+*it));
       
       toyws->import(*ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",it->Data())));
       toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data())));
