@@ -22,7 +22,7 @@ using namespace std;
 class SUSYMultiTop : public Vecbos{
 public:
 
-  SUSYMultiTop(TTree *tree=0, double weight=1.0); /// Class Constructor
+  SUSYMultiTop(TTree *tree=0, double weight=1.0, int tWfile=0); /// Class Constructor
   SUSYMultiTop(TTree *tree=0, bool goodRunLS=false, bool isData=false); /// Class Constructor
   virtual ~SUSYMultiTop();     /// Class Destructor
   int HighestPtJet(vector<TLorentzVector> Jet, int firstJet);
@@ -32,6 +32,7 @@ public:
   bool SwitchTagPOG(bool isBTagged, double Btag_SF, double Btag_eff);
   int NearestInt(double num);
   double FindWeight(string, double);
+  bool isLooseJetMva(float pt, float eta, float id);
   std::string FindSample(string fileWeight, double weight);
   vector <double> ReadBins(string _file, bool isVerbose);
   vector <double> GetSFLight(string _file, int Error);
@@ -41,17 +42,18 @@ public:
   vector<int> SetTagsSMS(int JetFlavor, double JetpT, double JetEta, int JetTag, bool isPOG);
   void Loop(string outFileName, int start, int stop);
   void SetConditions(TTree* treeCond);
-  bool isTightMuon(int);
-  bool isGlobalMuon(int);
-  bool isLooseMuon(int);
-  bool is80Electron(int);
-  bool is95Electron(int);
+  //  bool isTightMuon(int);
+  // bool isGlobalMuon(int);
+  //bool isLooseMuon(int);
+  //bool is80Electron(int);
+  //bool is95Electron(int);
   void SetWeight(double);
   int JetFlavorFull(TLorentzVector);
   int JetFlavorEasy(TLorentzVector);
   vector<TLorentzVector> CombineJets(vector<TLorentzVector>);
   void BubbleSort(vector<float> &);
   double _weight;
+  string _sample;
   vector <double> pTB;
   vector <double> pTL;
   vector <double> EtaB;
