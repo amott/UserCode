@@ -89,7 +89,7 @@ int main(int argc, char** argv){
     cout << mcName << ":    " << filePath <<endl;
     msw.addFile(filePath,mcName,false);
   }
-
+  
   msw.setRequireCiC(requireCiC);
   msw.setSelectionMap(selectionMap);
   msw.setRunRange(runMin,runMax);

@@ -26,7 +26,7 @@ MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
     //opens the output file
     outputFile = new TFile(outputFileName,"RECREATE");
     outputFile->cd();
-    ws->Write();
+    ws->Write(ws->GetName(),TObject::kWriteDelete);
   }
   //default fit type
   setBkgFit(MakeSpinFits::kExp);
@@ -39,6 +39,7 @@ MakeSpinFits::~MakeSpinFits(){
 void MakeSpinFits::getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace* w){
   RooCategory* labels = ((RooCategory*)w->obj(varName));
   lblVec->clear();
+  if(labels==0) return;
   for(int i=0;i<labels->numBins("");i++){
     labels->setIndex(i);
     lblVec->push_back(labels->getLabel());
@@ -91,11 +92,11 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 
   //signal fit parameters -- Triple Gaussian
   RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,100,180);
-  RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.2,10);
-  RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),1,0.2,10);
-  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),1,0.2,10);
-  RooRealVar f1(Form("%s_f1",outputTag.Data()),Form("%s_f1",outputTag.Data()),0.1,0,1);
-  RooRealVar f2(Form("%s_f2",outputTag.Data()),Form("%s_f2",outputTag.Data()),0.1,0,1);
+  RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,20);
+  RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),1,0.1,20);
+  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),1,0.1,20);
+  RooRealVar f1(Form("%s_f1",outputTag.Data()),Form("%s_f1",outputTag.Data()),0.1,0.01,1);
+  RooRealVar f2(Form("%s_f2",outputTag.Data()),Form("%s_f2",outputTag.Data()),0.1,0.01,1);
   RooGaussian g1(Form("%s_g1",outputTag.Data()),Form("%s_g1",outputTag.Data()),mass,mean,sig1);
   RooGaussian g2(Form("%s_g2",outputTag.Data()),Form("%s_g2",outputTag.Data()),mass,mean,sig2);
   RooGaussian g3(Form("%s_g3",outputTag.Data()),Form("%s_g3",outputTag.Data()),mass,mean,sig3);
@@ -747,7 +748,7 @@ void MakeSpinFits::save(){
     outLabels->defineType(it->Data(),it-mcLabel.begin());
   }
   ws->import(*outLabels);
-  ws->Write();
+  ws->Write(ws->GetName(),TObject::kWriteDelete);
   std::cout << "CLOSING" <<std::endl;
   outputFile->Close();
 }

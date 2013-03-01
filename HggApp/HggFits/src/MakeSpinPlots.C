@@ -8,6 +8,8 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
   ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
 
   MakeSpinFits::getLabels("fitlabels",&mcNames,ws);
+
+  if(mcNames.size()==0) MakeSpinFits::getLabels("labels",&mcNames,ws);
   MakeSpinFits::getLabels("evtcat",&catNames,ws);
   
 
@@ -439,8 +441,8 @@ void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
   frame->addObject(prelim);
   frame->addObject(sigL);
   frame->Draw();
-  cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s.png",outputTag.Data(),tag.Data()));
-  cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s.pdf",outputTag.Data(),tag.Data()));
+  cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s_%s.png",mcName.Data(),outputTag.Data(),tag.Data()));
+  cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s_%s.pdf",mcName.Data(),outputTag.Data(),tag.Data()));
 
 }
 

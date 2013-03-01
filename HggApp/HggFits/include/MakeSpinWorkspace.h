@@ -55,12 +55,12 @@ public:
   
   const static int nCat=2; //!< currently define only two categories (for both CiC and R9 categorization)
 
-  void addFile(TString fName,TString l,bool is); //!< takes a file name, label, and a bool specifying whether this corresponds to data and adds this to the list of files to process
   /*!
     \param fName the path to the input file
     \param l the label associated with this file
     \param is true = data, false = MC
   */
+  void addFile(TString fName,TString l,bool is); //!< takes a file name, label, and a bool specifying whether this corresponds to data and adds this to the list of files to process
   void setRequireCiC(bool b){requireCiC=b;} //!< specify whether to require the photons to have passed the CiC selection
   bool getRequireCiC(){return requireCiC;}  //!< returns whether CiC will be required 
   
@@ -79,36 +79,36 @@ public:
   void setUseR9(bool b){useR9 = b;} //!< Specify whether to use the CiC (R9) categorization
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
-  void setUseUncorrMass(bool b=true){useUncorrMass=b;}
-  void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;}
+  void setUseUncorrMass(bool b=true){useUncorrMass=b;} //!< selected whether to use the default photon energies (no cluster corrections or scaling/smearing) for the mass
+  void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;} //!< specify the file to do MC-based data efficiency corrections
 
-  void setMixDatasets(){mixer = new MixSpinDatasets(ws);}
-  MixSpinDatasets* getMixer(){return mixer;}
+  void setMixDatasets(){mixer = new MixSpinDatasets(ws);} //!< specify that we will be mixing MC datasets
+  MixSpinDatasets* getMixer(){return mixer;} //!< return the mixing module for customization
 
-  void setKFactorFile(TString s){filenameKFactor = s;}
-  void setRescaleFile(TString s){filenameRescaleFactor = s;}
+  void setKFactorFile(TString s){filenameKFactor = s;} //!< specify the file containing the KFactor weights for the higgs signal
+  void setRescaleFile(TString s){filenameRescaleFactor = s;} //!< specify the file containing the data/MC weights for the signal MC
 
 protected:
-  std::vector<TString> fileName,label; //!< lists of input file names and corresponding labels
-  std::vector<bool> isData;            //!< list of bools specifying whether the files correspond to data
-  RooWorkspace *ws;                    //!< workspace for output
-  RooCategory* labels;                 //!< list of labels to store inside the RooWorkspace
-  bool requireCiC;                     //!< whether to require the photons to pass CiC (default: true)
-  bool tightPt;                        //!< whether to require tight pt/m cuts (default: false)
-  int selectionMap;                    //!< selection map number to use
+  std::vector<TString> fileName,label; // lists of input file names and corresponding labels
+  std::vector<bool> isData;            // list of bools specifying whether the files correspond to data
+  RooWorkspace *ws;                    // workspace for output
+  RooCategory* labels;                 // list of labels to store inside the RooWorkspace
+  bool requireCiC;                     // whether to require the photons to pass CiC (default: true)
+  bool tightPt;                        // whether to require tight pt/m cuts (default: false)
+  int selectionMap;                    // selection map number to use
 
-  int runLow,runHigh;                  //!< run range to use (default 0-999999)
+  int runLow,runHigh;                  // run range to use (default 0-999999)
 
   TFile *outputFile;                   //!< pointer to output file
 
-  bool useR9;                          //!< whether to use CiC (R9) or sigma_E/E cateogries (default: false)
+  bool useR9;                          // whether to use CiC (R9) or sigma_E/E cateogries (default: false)
   bool useUncorrMass;
 
-  void AddToWorkspace(TString inputFile,TString tag, bool isData); //!< takes a file and its labels and adds to the workspace
+  void AddToWorkspace(TString inputFile,TString tag, bool isData); // takes a file and its labels and adds to the workspace
 
   TString EfficiencyCorrectionFile;
 
-  float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); //!< returns the weight for this photon from the efficiency correction file
+  float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); // returns the weight for this photon from the efficiency correction file
 
   MixSpinDatasets *mixer;
 

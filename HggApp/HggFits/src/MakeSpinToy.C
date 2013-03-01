@@ -302,6 +302,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
 
 
     MakeSpinFits fits("","");
+    fits.setBkgFit(MakeSpinFits::kPoly);
     fits.setWorkspace(toyws);
     
     for( std::vector<TString>::const_iterator it = catLabels.begin();

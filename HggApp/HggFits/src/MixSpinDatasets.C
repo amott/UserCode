@@ -37,7 +37,12 @@ void MixSpinDatasets::internalMix(const char* mc1, const char* mc2,
   RooDataSet *mc1_d = (RooDataSet*)ws->data(Form("%s_%s",mc1,cat.Data()));
   RooDataSet *mc2_d = (RooDataSet*)ws->data(Form("%s_%s",mc2,cat.Data()));
 
-  RooDataSet *mixed = new RooDataSet(outputName+"_"+cat,"",*(mc1_d->get(0)));
+  RooRealVar *evtW = ws->var("evtWeight");
+
+  RooArgSet inputSet(*(mc1_d->get(0)),RooArgSet(*evtW));
+
+
+  RooDataSet *mixed_TMP = new RooDataSet("TMP","",inputSet); 
 
   std::cout << "Mixing " << f1 << "*" <<mc1 << "  &&  " << 1-f1 <<"*"<< mc2<<std::endl;
 
@@ -47,8 +52,10 @@ void MixSpinDatasets::internalMix(const char* mc1, const char* mc2,
   while( (set=mc1_d->get(++iEntry)) ){ //loop over first DS
     float w = mc1_d->weight();
     float we = mc1_d->weightError();
-    if(iEntry%5000==0) std::cout << "Adding Entry " << iEntry << "  weight " << w*f1 <<std::endl;
-    mixed->add( *set,w*f1,we*f1);
+    evtW->setVal(w*f1);
+    evtW->setError(we*f1);
+    if(iEntry%5000==0) std::cout << "Adding Entry " << iEntry << "  weight " << evtW->getVal() <<std::endl;
+    mixed_TMP->add( RooArgSet(*set,RooArgSet(*evtW)) );
   }
 
   iEntry=-1;
@@ -56,10 +63,28 @@ void MixSpinDatasets::internalMix(const char* mc1, const char* mc2,
     float w = mc2_d->weight();
     float we = mc2_d->weightError();
     if(iEntry%5000==0) std::cout << "Adding Entry " << iEntry << "  weight " << w*(1-f1) <<std::endl;
-    mixed->add( *set,w*(1-f1),we*(1-f1));
+    evtW->setVal(w*(1-f1));
+    evtW->setError(we*(1-f1));
+    mixed_TMP->add( RooArgSet(*set,RooArgSet(*evtW)) );
   }
-  
+
+  RooDataSet *mixed = new RooDataSet(outputName+"_"+cat,"",mixed_TMP,inputSet,0,"evtWeight");
+
   ws->import( *mixed);
+
+  RooRealVar * tot_EB_1 = ws->var( Form("%s_EB_totalEvents",mc1) );
+  RooRealVar * tot_EB_2 = ws->var( Form("%s_EB_totalEvents",mc2) );
+  RooRealVar * tot_EE_1 = ws->var( Form("%s_EE_totalEvents",mc1) );
+  RooRealVar * tot_EE_2 = ws->var( Form("%s_EE_totalEvents",mc2) );
+  
+  RooRealVar * tot_EB_mix = new RooRealVar( Form("%s_EB_totalEvents",outputName.Data()), "", tot_EB_1->getVal()*f1 + tot_EB_2->getVal()*(1-f1) );
+  RooRealVar * tot_EE_mix = new RooRealVar( Form("%s_EE_totalEvents",outputName.Data()), "", tot_EE_1->getVal()*f1 + tot_EE_2->getVal()*(1-f1) );
+
+  ws->import(*tot_EB_mix);
+  ws->import(*tot_EE_mix);
   
   delete mixed;
+  delete mixed_TMP;
+  delete tot_EB_mix;
+  delete tot_EE_mix;
 }
