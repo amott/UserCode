@@ -88,18 +88,26 @@ public:
   void setKFactorFile(TString s){filenameKFactor = s;} //!< specify the file containing the KFactor weights for the higgs signal
   void setRescaleFile(TString s){filenameRescaleFactor = s;} //!< specify the file containing the data/MC weights for the signal MC
 
+  void setMassRange(float min, float max){mMin=min; mMax=max;}
+  void setPtCuts(float c1, float c2){pt1Min=c1; pt2Min=c2;}
+  void setPt1Cut(float c){pt1Min=c;}
+  void setPt2Cut(float c){pt2Min=c;}
 protected:
   std::vector<TString> fileName,label; // lists of input file names and corresponding labels
   std::vector<bool> isData;            // list of bools specifying whether the files correspond to data
   RooWorkspace *ws;                    // workspace for output
   RooCategory* labels;                 // list of labels to store inside the RooWorkspace
+  TFile *outputFile;                   //!< pointer to output file
+
+  //selections
   bool requireCiC;                     // whether to require the photons to pass CiC (default: true)
   bool tightPt;                        // whether to require tight pt/m cuts (default: false)
   int selectionMap;                    // selection map number to use
 
   int runLow,runHigh;                  // run range to use (default 0-999999)
 
-  TFile *outputFile;                   //!< pointer to output file
+  float mMin, mMax;
+  float pt1Min, pt2Min;
 
   bool useR9;                          // whether to use CiC (R9) or sigma_E/E cateogries (default: false)
   bool useUncorrMass;
@@ -123,6 +131,7 @@ protected:
   float getRescaleFactor(HggOutputReader2 &h);
 
   float getEffFromTGraph(TGraphAsymmErrors* e,float pt);
+
 
 };
 

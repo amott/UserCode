@@ -73,7 +73,10 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)HggMCWeight.o \
 	$(OUTLIB)HggSelector.o \
-	$(OUTLIB)HggScaling.o
+	$(OUTLIB)HggScaling.o \
+	$(OUTLIB)ArgParser.o 
+
+
 # analysis functions
 HggApp: $(SRCDIR)HggApp.C \
 	$(OUTLIBCOMMON)Conditions.o \
@@ -95,7 +98,8 @@ HggApp: $(SRCDIR)HggApp.C \
 	$(OUTLIB)HggReducer.o \
 	$(OUTLIB)HggMakePhotonTree.o \
 	$(OUTLIB)GBRTree.o \
-	$(OUTLIB)GBRForest.o
+	$(OUTLIB)GBRForest.o \
+	$(OUTLIB)ArgParser.o
 	$(CXX) $(CXXFLAGS) -o HggApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
 HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
@@ -115,7 +119,8 @@ HggSelectorApp: $(SRCDIR)HggSelectorApp.C \
 	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)HggMCWeight.o \
-	$(OUTLIB)HggSelector.o
+	$(OUTLIB)HggSelector.o \
+	$(OUTLIB)ArgParser.o
 	$(CXX) $(CXXFLAGS) -o HggSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	
 
 HggEfficiencyMapApp: $(SRCDIR)HggEfficiencyMapApp.C \
@@ -368,6 +373,9 @@ $(OUTLIBEGAMMA)ElectronLikelihood.o: $(INCLUDEDIRCOMMON)/EgammaAnalysisTools/src
 
 $(OUTLIB)VecbosBase.o: $(SRCDIR)VecbosBase.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosBase.o $<
+
+$(OUTLIB)ArgParser.o: $(SRCDIR)ArgParser.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)ArgParser.o $<
 
 
 $(OUTLIB)Vecbos.o: $(SRCDIR)Vecbos.cc \

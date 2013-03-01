@@ -19,6 +19,9 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
 
   useR9=false;
 
+  setMassRange(100.,180.);
+  setPtCuts(32.,24.);
+
   EfficiencyCorrectionFile="";
   filenameKFactor="";
   filenameRescaleFactor="";
@@ -72,10 +75,10 @@ int MakeSpinWorkspace::passSelection(float r9){
 bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass){
   if(h->nPhoton < 2
      || h->diPhotonMVA<-1
-     || mass < 100
-     || mass > 180
-     || h->Photon_pt[minI] < 24
-     || h->Photon_pt[maxI] < 32) return false;
+     || mass < mMin
+     || mass > mMax
+     || h->Photon_pt[minI] < pt2Min
+     || h->Photon_pt[maxI] < pt1Min) return false;
   return true;
 }
 

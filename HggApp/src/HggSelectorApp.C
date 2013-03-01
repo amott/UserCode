@@ -26,52 +26,37 @@
 #include <CommonTools/include/TriggerMask.hh>
 #include <include/Vecbos.hh>
 
+#include "ArgParser.hh"
 #include <include/HggSelector.hh>
 #include <map>
+#include <string>
 using namespace std;
 
 /// Main function that runs the analysis algorithm on the
 /// specified input files
 int main(int argc, char* argv[]) {
 
-  /// Gets the list of input files and chains
-  /// them into a single TChain
-  char inputFileName[400];
-  char outFileName[400];
-  char cfg[400];
-  if ( argc < 3 ){
-    cout << "Error at Input: please specify an input file including the list of input ROOT files" << endl; 
-    cout << "Example:        ./VecbosApp list.txt output.root cfg" << endl;
-    cout << "Example:        ./VecbosApp list.root output.root cfg" << endl;
+  ArgParser a(argc,argv);
 
-    return 1;
+  a.addArgument("InputFile",ArgParser::required, "the input root file or list of input root files to process");
+  a.addArgument("OutputFile",ArgParser::required, "the name of the file to write the output to");
+  a.addArgument("ConfigFile",ArgParser::required, "the name of the configuration file");
+
+  a.addLongOption("isData",ArgParser::noArg,"specify that this is real data");
+  a.addLongOption("doMuMuGamma",ArgParser::noArg,"Write mu mu gamma output");
+  a.addLongOption("suppressElectronVeto",ArgParser::noArg,"don't veto photons matched to electrons (for Zee)");
+
+  string ret;
+  if(a.process(ret) !=0){
+    cout << "Invalid Options:  " << ret <<endl;
+    a.printOptions(argv[0]);
+    return 0;
   }
-
-  std::map<std::string,bool> Commands;
-  Commands["doMuMuGamma"] = false;
-  Commands["suppressElectronVeto"] = false;
-  Commands["forceVtxZero"] = false;
-  Commands["--isData"] = false;
-
-  for(int arg=3; arg<argc; arg++){
-    for(std::map<std::string,bool>::iterator it=Commands.begin(); it!=Commands.end(); it++){
-      if(it->first.compare(argv[arg])==0) it->second=true;
-    }
-  }
-
-  for(std::map<std::string,bool>::iterator it=Commands.begin(); it!=Commands.end(); it++){
-    if(it->second) cout << "Doing " << it->first << endl;
-  }  
-  // rad running options
-  strcpy(inputFileName,argv[1]);
-  strcpy(outFileName,argv[2]);
-  strcpy(cfg,argv[3]);
-
 
   vector<string> fileNames;
   char Buffer[500];
   char MyRootFile[2000];  
-  ifstream *inputFile = new ifstream(inputFileName);
+  ifstream *inputFile = new ifstream(a.getArgument("InputFile").c_str());
   // get the tree with the conditions from the first file
   //  TTree *treeCond = new TTree();
   //  int nfiles=1;
@@ -105,19 +90,16 @@ int main(int argc, char* argv[]) {
 
   inputFile->close();
   delete inputFile;
-  // get additional input options
-  HggSelector sel(fileNames,"HggReduce", string(outFileName));
+
+
+  HggSelector sel(fileNames,"HggReduce", a.getArgument("OutputFile"));
   //sel.addTrigger("HLT_Photon26_R9Id85_OR_CaloId10_Iso50_Photon18_R9Id85_OR_CaloId10_Iso50_Mass60_v4");
-  sel.setConfig(cfg);
-  if(argc == 4){
-    //sel.suppressElectronVeto();
-    //cout << "Suppressing Electron Veto!" << endl;
-  }
-  if(Commands["doMuMuGamma"]) sel.setDoMuMuGamma();
-  if(Commands["forceVtxZero"]) sel.setForceVertexZero();
-  if(Commands["--isData"]) sel.setIsData(true);
+  sel.setConfig(a.getArgument("ConfigFile"));
+  if(a.longFlagPres("doMuMuGamma")) sel.setDoMuMuGamma();
+  if(a.longFlagPres("isData")) sel.setIsData(true);
   else sel.setIsData(false);
-  //if(Commands["suppressElectronVeto"]) sel.suppressElectronVeto();
+  if(a.longFlagPres("suppressElectronVeto")) sel.suppressElectronVeto();
+
   sel.Loop();
   
   cout << "DONE" <<endl;

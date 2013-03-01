@@ -141,6 +141,7 @@ private:
   float mPairRes_;
   float mPairResWrongVtx_;
   float diPhoMVA_;
+  float diPhoMVAShift_[9];
   int diPhoVtx_;
   float vtxProb_;
   float diPhoVtxX_;

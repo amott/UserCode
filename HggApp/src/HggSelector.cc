@@ -349,6 +349,18 @@ void HggSelector::Loop(){
 
       cat_ = getCategory();
 
+
+      float mva1 = PhotonID->getIdMVA(&pho1_,nVtx,rho,selectedVertex);
+      float mva2 = PhotonID->getIdMVA(&pho2_,nVtx,rho,selectedVertex);
+
+      for(int i1=0;i1<3;i1++){ for(int i2=0;i2<3;i2++){
+	  float offset1 = 0.01*(i1-1);
+	  float offset2 = 0.01*(i2-1);
+	  diPhoMVAShift_[3*i1+i2] =  getDiPhoMVA(index1,index2,mva1+offset1,mva2+offset2,false);
+	} }
+
+
+
     }else{
       mPair_=-1;      
       cat_=-1;
@@ -839,6 +851,7 @@ void HggSelector::setupOutputTree(){
   outTree->Branch("mPairRes",&mPairRes_,"mPairRes/F");
   outTree->Branch("mPairResWrongVtx",&mPairResWrongVtx_,"mPairResWrongVtx/F");
   outTree->Branch("diPhotonMVA",&diPhoMVA_,"diPhotonMVA/F");
+  outTree->Branch("diPhotonMVAShift",diPhoMVAShift_,"diPhotonMVAShift[9]/F");
   outTree->Branch("diPhotonVtx",&diPhoVtx_,"diPhotonVtx/I");
   outTree->Branch("diPhotonVtxX",&diPhoVtxX_,"diPhotonVtxX/F");
   outTree->Branch("diPhotonVtxY",&diPhoVtxY_,"diPhotonVtxY/F");

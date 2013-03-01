@@ -18,6 +18,10 @@ int main(int argc, char** argv){
   a.addLongOption("mixMC",ArgParser::required,"Specify two MC samples to mix, comma-separated (e.g.: --mixMC=Hgg125,RSG125)");
   a.addLongOption("fractions",ArgParser::required,"Specify the fractions of the MC samples specified in --mixMC, comma-separated (e.g.: --fractions=0.1,0.2,0.8)");
   a.addLongOption("useUncorrectedMass",ArgParser::noArg,"Use the uncorrected (no regression, scale or smear) mass");
+  a.addLongOption("setMassRange",ArgParser::reqArg,"set the mass range to include (default 100-180)");
+  a.addLongOption("setLeadPtCut",ArgParser::reqArg,"set the pT cut of the leading photon (default: 32)");
+  a.addLongOption("setTrailingPtCut",ArgParser::reqArg,"set the pT cut of the trailing photon (default: 24)");
+  
 
   string ret;
   if(a.process(ret) !=0){
@@ -98,6 +102,16 @@ int main(int argc, char** argv){
   msw.setTightPt(tightPt);
   msw.setKFactorFile(KFactorFile.c_str());
   msw.setRescaleFile(RescaleFile.c_str());
+
+  if(a.longFragPres("setMassRange")){
+    std::vector<string> range = ReadConfig::tokenizeString(a.getLongFlag("setMassRange"),"-");
+    if(range.size() != 2){
+      cout << "\n\n Invalid argument to flag --setMassRange" <<endl;
+      a.printOptions(argv[0]);
+      return -1;      
+    }
+    msw.setMassRange( atof(range.at(0).c_str()),atof(range.at(0).c_str()) );
+  }
 
   msw.MakeWorkspace();
 
