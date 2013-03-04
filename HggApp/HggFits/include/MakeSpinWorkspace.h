@@ -49,9 +49,9 @@ public:
   MakeSpinWorkspace(TString outputFileName); //!< Constructor requires the name of the file to which the output fill be written
   ~MakeSpinWorkspace();
   static TH2F* getSelectionMap(int map, bool isData); //!< takes the index of the map required and returns a TH2F* map of the selection cut as a function of pT and eta
-  static int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
-  static int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
-  static bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
+  int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
+  int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
+  bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
   
   const static int nCat=2; //!< currently define only two categories (for both CiC and R9 categorization)
 

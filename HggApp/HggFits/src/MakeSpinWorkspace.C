@@ -111,7 +111,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   }
 
   //define the variables for the workspace
-  RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", 100., 180.);
+  RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", mMin, mMax);
   RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", -1, 1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
   RooRealVar* sige2  = new RooRealVar("sigEoE2","#sigma_{E}/E SubLead Photon",0,0.1);
@@ -189,7 +189,10 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   //begin main loop over tree
   while(h.GetEntry(++iEntry)){
 
-    if( !(iEntry%10000) ) cout << "Processing " << iEntry << "\t\t" << h.evtWeight << endl;
+    if( !(iEntry%10000) ){
+      cout << "Processing " << iEntry << "\t\t" << h.evtWeight << endl;
+
+    }
     //determine  the leading and trailing photons
     int maxI = (h.Photon_pt[1] > h.Photon_pt[0] ? 1:0);
     int minI = (h.Photon_pt[1] > h.Photon_pt[0] ? 0:1);
@@ -352,8 +355,11 @@ float MakeSpinWorkspace::getEffWeight(TFile *effFile, float eta, float pt, float
     return 2./(up+down); //return 1/avg
   }
 
+  float returnVal = 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
 
-  return 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
+  delete effMap;
+  delete keyList;
+  return returnVal;
 }
 
 void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
@@ -374,13 +380,15 @@ void MakeSpinWorkspace::MakeWorkspace(){
   idIt = isData.begin();
   for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++){
     AddToWorkspace(*fnIt,*lIt,*idIt);
+    outputFile->cd();
+    ws->Write(ws->GetName(),TObject::kWriteDelete);
   }
   ws->import(*labels);
 
   if(mixer) mixer->mixAll();
   
   outputFile->cd();
-  ws->Write();
+  ws->Write(ws->GetName(),TObject::kWriteDelete);
   outputFile->Close();
 }
 

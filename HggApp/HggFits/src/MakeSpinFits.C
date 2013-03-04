@@ -3,14 +3,16 @@
 using namespace std;
 //default constructor
 MakeSpinFits::MakeSpinFits():
-  addSWeight(true)
+  addSWeight(true),
+  useCB(false)
 {
   ws=0;
   setBkgFit(MakeSpinFits::kExp);
 }
 
 MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
-  addSWeight(true)
+  addSWeight(true),
+  useCB(false)
 {
   if(inputFileName != ""){
     //opens the input file and gets the input workspace
@@ -64,6 +66,17 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
 		   ws->var( Form("%s_FIT_%s_f1",mcName.Data(),tag.Data()))->getVal());
   RooRealVar f2( Form("Data_%s_FIT_%s_f2",mcName.Data(),tag.Data()), "", 
 		   ws->var( Form("%s_FIT_%s_f2",mcName.Data(),tag.Data()))->getVal());
+
+  RooRealVar sigCB(Form("Data_%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()),"",
+		   ws->var(Form("%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()))->getVal());
+  
+  RooRealVar alphaCB(Form("Data_%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()),"",
+		     ws->var(Form("%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()))->getVal());
+  RooRealVar nCB(Form("Data_%s_FIT_%s_nCB",mcName.Data(),tag.Data()),"",
+		 ws->var(Form("%s_FIT_%s_nCB",mcName.Data(),tag.Data()))->getVal());
+  RooRealVar fCB(Form("Data_%s_FIT_%s_fCB",mcName.Data(),tag.Data()),"",
+		 ws->var(Form("%s_FIT_%s_fCB",mcName.Data(),tag.Data()))->getVal());
+
   mean.setConstant(kTRUE);
   sig1.setConstant(kTRUE);
   sig2.setConstant(kTRUE);
@@ -71,14 +84,29 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
   f1.setConstant(kTRUE);
   f2.setConstant(kTRUE);
 
+  sigCB.setConstant(kTRUE);
+  alphaCB.setConstant(kTRUE);
+  nCB.setConstant(kTRUE);
+  fCB.setConstant(kTRUE);
+
   //triple gaussian
   RooGaussian g1( Form("Data_%s_FIT_%s_g1",mcName.Data(),tag.Data()), "",mass,mean,sig1); 
   RooGaussian g2( Form("Data_%s_FIT_%s_g2",mcName.Data(),tag.Data()), "",mass,mean,sig2); 
   RooGaussian g3( Form("Data_%s_FIT_%s_g3",mcName.Data(),tag.Data()), "",mass,mean,sig3); 
-
-  RooAddPdf SignalModel( Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
   
-  ws->import(SignalModel);
+  RooCBShape cb(Form("Data_%s_FIT_%s_cb",mcName.Data(),tag.Data()),"",mass,mean,sigCB,alphaCB,nCB);
+
+  RooAddPdf *SignalModel=0;
+  if(useCB){
+    SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3,cb),RooArgList(f1,f2,fCB));
+  }else{
+    SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
+  }
+
+  //RooAddPdf SignalModel( Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
+  
+  ws->import(*SignalModel);
+  delete SignalModel;
 }
 
 void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
@@ -91,7 +119,7 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   cosT.setBins(10);
 
   //signal fit parameters -- Triple Gaussian
-  RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,100,180);
+  RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,80,180);
   RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,20);
   RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),1,0.1,20);
   RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),1,0.1,20);
@@ -100,22 +128,24 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   RooGaussian g1(Form("%s_g1",outputTag.Data()),Form("%s_g1",outputTag.Data()),mass,mean,sig1);
   RooGaussian g2(Form("%s_g2",outputTag.Data()),Form("%s_g2",outputTag.Data()),mass,mean,sig2);
   RooGaussian g3(Form("%s_g3",outputTag.Data()),Form("%s_g3",outputTag.Data()),mass,mean,sig3);
-  RooAddPdf SignalModel(outputTag.Data(),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
+  //RooAddPdf SignalModel(outputTag.Data(),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
 
-  //signal fit parameters -- Double Crystal Ball (not used)
-  RooRealVar meanCB(Form("%s_meanCB",outputTag.Data()),Form("%s_meanCB",outputTag.Data()),125,100,180);
-  RooRealVar sig1CB(Form("%s_sigma1CB",outputTag.Data()),Form("%s_sigma1CB",outputTag.Data()),1,0.2,10);
-  RooRealVar sig2CB(Form("%s_sigma2CB",outputTag.Data()),Form("%s_sigma2CB",outputTag.Data()),1,0.2,10);
-  RooRealVar alpha1CB(Form("%s_alpha1CB",outputTag.Data()),Form("%s_alpha1CB",outputTag.Data()),1,0.,1000);
-  RooRealVar alpha2CB(Form("%s_alpha2CB",outputTag.Data()),Form("%s_alpha2CB",outputTag.Data()),1,0.,1000);
-  RooRealVar n1CB(Form("%s_n1CB",outputTag.Data()),Form("%s_n1CB",outputTag.Data()),1,0.,1000);
-  RooRealVar n2CB(Form("%s_n2CB",outputTag.Data()),Form("%s_n2CB",outputTag.Data()),1,0.,1000);
+  //signal fit parameters -- CB times triple gaussian
+  RooRealVar sigCB(Form("%s_sigmaCB",outputTag.Data()),Form("%s_sigmaCB",outputTag.Data()),1,0.2,10);
+  RooRealVar alphaCB(Form("%s_alphaCB",outputTag.Data()),Form("%s_alphaCB",outputTag.Data()),1,0.,1000);
+  RooRealVar nCB(Form("%s_nCB",outputTag.Data()),Form("%s_nCB",outputTag.Data()),1,0.,1000);
   RooRealVar fCB(Form("%s_fCB",outputTag.Data()),Form("%s_fCB",outputTag.Data()),0.1,0,1);
   
-  RooCBShape cb1(Form("%s_cb1",outputTag.Data()),Form("%s_cb1",outputTag.Data()),mass,meanCB,sig1CB,alpha1CB,n1CB);
-  RooCBShape cb2(Form("%s_cb2",outputTag.Data()),Form("%s_cb2",outputTag.Data()),mass,meanCB,sig2CB,alpha2CB,n2CB);
+  RooCBShape cb(Form("%s_cb",outputTag.Data()),Form("%s_cb",outputTag.Data()),mass,mean,sigCB,alphaCB,nCB);
 
-  //RooAddPdf SignalModelCB(outputTag.Data(),"Signal Model",RooArgList(cb1,cb2),fCB);
+  RooAddPdf *SignalModel=0;
+  if(useCB){
+    SignalModel = new RooAddPdf(outputTag.Data(),"Signal Model",RooArgList(g1,g2,g3,cb),RooArgList(f1,f2,fCB));
+  }else{
+    SignalModel = new RooAddPdf(outputTag.Data(),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
+  }
+
+   
   
   //signal MC data
   RooDataSet *ds=0;
@@ -125,8 +155,8 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   RooDataHist hist(Form("%s_cosThist",outputTag.Data()),"Data Hist for cos(theta)",RooArgSet(cosT),*ds);
   RooHistPdf cosTkde(Form("%s_cosTpdf",outputTag.Data()),"Hist PDF for cos(theta)",RooArgSet(cosT),hist);
 
-  SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
-  RooFitResult *res = SignalModel.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
+  SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
+  RooFitResult *res = SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
   //SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
   //RooFitResult *resCB = SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
   std::cout << res <<std::endl;
@@ -144,19 +174,20 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   f2.setConstant(kTRUE);
 
   //compute the full width at half maximum and the sigma effective
-  float FWHM = computeFWHM(&SignalModel,mean.getVal(),&mass);
-  float sige = computeSigEff(&SignalModel,mean.getVal(),&mass);
+  float FWHM = computeFWHM(SignalModel,mean.getVal(),&mass);
+  float sige = computeSigEff(SignalModel,mean.getVal(),&mass);
   RooRealVar rvFWHM(Form("%s_FWHM",outputTag.Data()),"",FWHM);
 
 
   RooRealVar rvSE(Form("%s_sigmaEff",outputTag.Data()),"",sige);
   
-  ws->import(SignalModel);
-  //ws->import(SignalModelCB);
+  ws->import(*SignalModel);
   ws->import(cosTkde);
   ws->import(rvFWHM);
   ws->import(rvSE);
   ws->import(*res);
+
+  delete SignalModel;
 }
 
 float MakeSpinFits::computeFWHM(RooAbsPdf* pdf, float mean,RooRealVar *var){

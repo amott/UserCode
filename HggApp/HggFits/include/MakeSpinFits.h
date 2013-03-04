@@ -128,6 +128,7 @@ public:
   enum BkgFitType{kExp,kPoly}; //<! allowed types for background fit
 
   void setBkgFit(BkgFitType t){fitType=t;} //<! specify which type of background fit to use
+  void setUseCrystalBall(){useCB=true;}
 
   void AddCombinedBkgOnlySWeight(TString mcName); //<! add the SWeighted datasets from the combined fit
 
@@ -142,7 +143,7 @@ protected:
   std::vector<TString> catLabels;
 
   bool addSWeight;
-			 
+  bool useCB;
   TFile *inputFile;
   TFile *outputFile;
 

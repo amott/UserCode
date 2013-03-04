@@ -13,6 +13,7 @@ int main(int argc, char** argv){
   a.addArgument("OutputWorkspace",ArgParser::required,"output workspace");
   a.addLongOption("BkgFit",ArgParser::reqArg,"Background Fit Type [poly,exp] (default: exp)");
   a.addLongOption("MCSamples",ArgParser::reqArg,"Specify the MC sample to process (comma separated) or none (default: all)");
+  a.addLongOption("CrystalBall",ArgParser::noArg,"convolute a crystal ball with the signal model");
 
   string ret;
   if(a.process(ret) != 0){
@@ -42,7 +43,7 @@ int main(int argc, char** argv){
 	}
     }
 
-
+  if(a.longFlagPres("CrystalBall")) msf.setUseCrystalBall();
   msf.setAddSWeight(true);
   msf.run();
   msf.save();

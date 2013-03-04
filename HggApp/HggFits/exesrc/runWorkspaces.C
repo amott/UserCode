@@ -103,14 +103,14 @@ int main(int argc, char** argv){
   msw.setKFactorFile(KFactorFile.c_str());
   msw.setRescaleFile(RescaleFile.c_str());
 
-  if(a.longFragPres("setMassRange")){
+  if(a.longFlagPres("setMassRange")){
     std::vector<string> range = ReadConfig::tokenizeString(a.getLongFlag("setMassRange"),"-");
     if(range.size() != 2){
       cout << "\n\n Invalid argument to flag --setMassRange" <<endl;
       a.printOptions(argv[0]);
       return -1;      
     }
-    msw.setMassRange( atof(range.at(0).c_str()),atof(range.at(0).c_str()) );
+    msw.setMassRange( atof(range.at(0).c_str()),atof(range.at(1).c_str()) );
   }
 
   msw.MakeWorkspace();
