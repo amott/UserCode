@@ -11,7 +11,8 @@ int main(int argc, char** argv){
   a.addArgument("ConfigFile",  ArgParser::required,"path to the config file giving the data and MC options");
   a.addArgument("ConfigOption",ArgParser::required,"which heading in the config file");
   a.addLongOption("SelectionMap",ArgParser::reqArg,"Which selection map to use");
-  a.addLongOption("EfficiencyMap",ArgParser::reqArg,"Which map to use for efficiency correction (default: no efficiency correction)");
+  a.addLongOption("DataEfficiencyMap",ArgParser::reqArg,"Which map to use for efficiency correction for data (default: no efficiency correction)");
+  a.addLongOption("MCEfficiencyMap",ArgParser::reqArg,"Which map to use for efficiency correction for MC (default: no efficiency correction)");
   a.addLongOption("noCiC",ArgParser::noArg,"specify to disable CiC selection (default: on)");
   a.addLongOption("useR9",ArgParser::noArg,"use r9 categories (default: off)");
   a.addLongOption("tightPt",ArgParser::noArg,"use tight pt/m cuts (default: off)");
@@ -54,8 +55,10 @@ int main(int argc, char** argv){
   if(a.longFlagPres("noCiC")) requireCiC=false;
   bool useR9 = a.longFlagPres("useR9");
   bool tightPt = a.longFlagPres("tightPt");
-  TString effMap="";
-  if(a.longFlagPres("EfficiencyMap")) effMap = a.getLongFlag("EfficiencyMap").c_str();
+  TString effMap_data="";
+  TString effMap_mc="";
+  if(a.longFlagPres("DataEfficiencyMap")) effMap_data = a.getLongFlag("DataEfficiencyMap").c_str();
+  if(a.longFlagPres("MCEfficiencyMap")) effMap_mc = a.getLongFlag("MCEfficiencyMap").c_str();
 
 
   MakeSpinWorkspace msw(wsFile);
@@ -97,7 +100,9 @@ int main(int argc, char** argv){
   msw.setRequireCiC(requireCiC);
   msw.setSelectionMap(selectionMap);
   msw.setRunRange(runMin,runMax);
-  msw.setEfficiencyCorrectionFile(effMap);
+  std::cout << "Data Efficiency Correction: " << effMap_data << std::endl
+	    << "MC   Efficiency Correction: " << effMap_mc   << std::endl;
+  msw.setEfficiencyCorrectionFile(effMap_data,effMap_mc);
   msw.setUseR9(useR9);
   msw.setTightPt(tightPt);
   msw.setKFactorFile(KFactorFile.c_str());

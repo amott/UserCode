@@ -50,6 +50,7 @@ void MakeSpinFits::getLabels(const char *varName, std::vector<TString> *lblVec,R
 }
 
 void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
+  std::cout << "MakeSpinFits::MakeSignalFitForFit" << std::endl;
   if(ws==0) return;
 
   RooRealVar mass = *(ws->var("mass"));
@@ -110,6 +111,7 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
 }
 
 void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
+  std::cout << "MakeSpinFits::MakeSignalFit" << std::endl;
   if(ws==0) return;
   TString inputTag = Form("%s_%s",mcName.Data(),tag.Data());
   TString outputTag = Form("%s_FIT_%s",mcName.Data(),tag.Data());
@@ -191,6 +193,7 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
 }
 
 float MakeSpinFits::computeFWHM(RooAbsPdf* pdf, float mean,RooRealVar *var){
+  std::cout << "MakeSpinFits::computeFWHM" << std::endl;
   //computes the FWHM for a PDF
   //ONLY VALID FOR SYMMETRIC PDFS!!!
   //need to fix to make more general
@@ -221,6 +224,7 @@ float MakeSpinFits::computeFWHM(RooAbsPdf* pdf, float mean,RooRealVar *var){
 }
 
 float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
+  std::cout << "MakeSpinFits::computeSigEff" << std::endl;
   // compute the sigma_eff for the pdf
   //only valid for symmetric pdfs
 
@@ -248,6 +252,7 @@ float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
 }
 
 void MakeSpinFits::MakeCombinedSignalSpin(TString mcName){
+  std::cout << "MakeSpinFits::MakeCombinedSignalSpin" <<std::endl;
   RooRealVar cosT = *(ws->var("cosT"));
 
   RooDataSet *data = (RooDataSet*)ws->data( Form("%s_Combined",mcName.Data()) );
@@ -258,6 +263,7 @@ void MakeSpinFits::MakeCombinedSignalSpin(TString mcName){
 }
 
 void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
+  std::cout << "MakeSpinFits::AddCombinedBkgOnlySWeight" <<std::endl;
   if(ws==0) return;
 
   RooRealVar *mass = (RooRealVar*)ws->var("mass");
@@ -314,6 +320,7 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
 }
 
 void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
+  std::cout << "MakeSpinFits::AddCombinedBkgOnlySWeight" <<std::endl;
   if(ws==0) return;
 
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
@@ -368,6 +375,7 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
 }
 
 void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
+  std::cout << "MakeSpinFits::MakeFloatingSignalTest" <<std::endl;
   if(ws==0) return;
 
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
@@ -410,6 +418,7 @@ void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
 }
 
 void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcName){
+  std::cout << "MakeSpinFits::Make2DCombinedSignalTest" <<std::endl;
   if(ws==0) return;
 
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
@@ -485,6 +494,7 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
 
 
 void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcName){
+  std::cout << "MakeSpinFits::Make2DFloatingSignalTest" <<std::endl;
   if(ws==0) return;
 
   RooCategory *cat = ((RooCategory*)ws->obj("evtcat"));
@@ -548,6 +558,7 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
 }
 
 void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
+  std::cout << "MakeSpinFits::MakeBackgroundOnlyFit" <<std::endl;
   if(ws==0) return;
   RooRealVar mass = *(ws->var("mass"));
   cout << "1" <<endl;
@@ -638,6 +649,7 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
 }
 
 void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
+  std::cout << "MakeSpinFits::getSimpleBkgSubtraction" <<std::endl;
   RooDataSet *data = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag);
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
@@ -676,6 +688,7 @@ void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
 }
 
 void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){
+  std::cout << "MakeSpinFits::getSimpleTotalBkgSubtraction" <<std::endl;
   RooDataSet *data = (RooDataSet*)ws->data( "Data_Combined" );
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
@@ -706,6 +719,7 @@ void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){
 }
 
 void MakeSpinFits::run(){
+  std::cout << "MakeSpinFits::run" <<std::endl;
   if(ws==0) return;
 
 

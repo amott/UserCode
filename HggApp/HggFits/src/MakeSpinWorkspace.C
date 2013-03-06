@@ -22,7 +22,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   setMassRange(100.,180.);
   setPtCuts(32.,24.);
 
-  EfficiencyCorrectionFile="";
+  EfficiencyCorrectionFile_Data="";
+  EfficiencyCorrectionFile_MC="";
   filenameKFactor="";
   filenameRescaleFactor="";
 
@@ -84,7 +85,7 @@ bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int mi
 
 void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData){
   //adds the data/MC to the workspace with the given tag
-  cout << "saveDataSet" <<endl;
+  std::cout << "Processing " <<tag << " : " << inputFile <<std::endl;
   TFile *f = TFile::Open(inputFile);
   TTree *tree = (TTree*)f->Get("HggOutput");
 
@@ -96,11 +97,24 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   std::cout << map->GetBinContent(1,1) << std::endl;
 
   TFile *efficiencyCorrection=0;
-  if(EfficiencyCorrectionFile!=""){ //Use MC derived correction weights for the photons
+  if(isData && EfficiencyCorrectionFile_Data!=""){ //Use MC derived correction weights for the photons
     //as a function of eta/R9/phi
-    efficiencyCorrection = new TFile(EfficiencyCorrectionFile);
+    std::cout << "Using Efficiency Correction " << EfficiencyCorrectionFile_Data <<std::endl;
+    efficiencyCorrection = new TFile(EfficiencyCorrectionFile_Data);
   }
+  if(!isData && EfficiencyCorrectionFile_MC!=""){ //Use MC derived correction weights for the photons
+    //as a function of eta/R9/phi
+    std::cout << "Using Efficiency Correction " << EfficiencyCorrectionFile_MC <<std::endl;
+    efficiencyCorrection = new TFile(EfficiencyCorrectionFile_MC);
+  }
+  effMaps.clear();
+  if(efficiencyCorrection){
+    TList *keyList =  efficiencyCorrection->GetListOfKeys();
+    for(int i=0;i<keyList->GetEntries();i++){
+      effMaps.push_back( (TH3F*)efficiencyCorrection->Get(keyList->At(i)->GetName()) );
+    }
 
+  }
   if(filenameKFactor!=""){
     if(tag=="Hgg125") fileKFactor = new TFile(filenameKFactor);
     else fileKFactor=0;
@@ -115,7 +129,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", -1, 1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
   RooRealVar* sige2  = new RooRealVar("sigEoE2","#sigma_{E}/E SubLead Photon",0,0.1);
-  RooRealVar* evtW   = new RooRealVar("evtWeight","Event Weight",1,0,1e6);
+  RooRealVar* evtW   = new RooRealVar("evtWeight","Event Weight",1,0,20);
 
   RooRealVar* eta1 = new RooRealVar("eta1","#eta Lead Photon",0,-3,3);
   RooRealVar* eta2 = new RooRealVar("eta2","#eta SubLead Photon",0,-3,3);
@@ -254,8 +268,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     
     diPhotonMVA->setVal(h.diPhotonMVA);
     //efficiencyCorrection=0
-    float pho1EffWeight = getEffWeight(efficiencyCorrection,eta1->getVal(),pt1->getVal(),phi1->getVal(),r91->getVal());
-    float pho2EffWeight = getEffWeight(efficiencyCorrection,eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
+    float pho1EffWeight = getEffWeight(eta1->getVal(),pt1->getVal(),phi1->getVal(),r91->getVal());
+    float pho2EffWeight = getEffWeight(eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
 
     //set the event weight
     if(!isData) evtW->setVal(h.evtWeight*pho1EffWeight*pho2EffWeight*getEfficiency(h,125));
@@ -316,50 +330,58 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   ws->import(*evtW);
   cout << "Done" <<endl;
 
-  if(efficiencyCorrection) delete efficiencyCorrection;
+  if(efficiencyCorrection) efficiencyCorrection->Close();
   if(fileKFactor) fileKFactor->Close();
   if(fileRescaleFactor) fileRescaleFactor->Close();
 }
 
-float MakeSpinWorkspace::getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9){
+float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){
 
-  if(effFile==0) return 1;
+  if(effMaps.size()==0) return 1;
 
   TH3F* effMap=0;
-  TList *keyList = effFile->GetListOfKeys();
   const char* prefix = (requireCiC ? "cic" : "pre");
-  for(int i=0;i<keyList->GetSize(); i++){
-    TObjArray *o = TString(keyList->At(i)->GetName()).Tokenize("_");
+  for(int i=0;i<effMaps.size(); i++){
+    //std::cout << i <<std::endl;
+    TObjArray *o = TString(effMaps.at(i)->GetName()).Tokenize("_");
     //the keys have names of the form <effType>_minPt_maxPt
-    if( strcmp(prefix,o->At(0)->GetName()) != 0) continue;
-    if( atof(o->At(1)->GetName()) > pt) continue; //if the min pt is above the photon pt
-    if( atof(o->At(2)->GetName()) <= pt) continue; // if the max pt is below the photon pt
-    effMap = (TH3F*)effFile->Get(keyList->At(i)->GetName());
-    break;
-  }
-  if(effMap==0) return 1;
-  if(effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9))==0){ // try to interpolate the above and below in phi
-    int ix,iy,iz;
-    int index = effMap->FindFixBin(eta,phi,r9); // global coordinate
-    effMap->GetBinXYZ(index,ix,iy,iz);
-    int indexYup   = (iy == effMap->GetNbinsY() ? 1 : iy+1); //wrap around if we are at the top edge of the map
-    int indexYdown = (iy == 1 ? effMap->GetNbinsY() : iy-1); //wrap around if we are at the bottom edge of the map
-    
-    float up = effMap->GetBinContent(ix,indexYup,iz);
-    float down = effMap->GetBinContent(ix,indexYdown,iz);
-    if(up==0){
-      if(down!=0) return 1./down;
-      else return 1;
+    if( strcmp(prefix,o->At(0)->GetName()) == 0 //name match
+	&& atof(o->At(1)->GetName()) <= pt  //if the min pt is below the photon pt
+	&& atof(o->At(2)->GetName()) > pt){ // if the max pt is above the photon pt
+      effMap = (TH3F*)effMaps.at(i);
+      delete o;
+      break;
     }
-    if(down==0) return 1./up;
-    return 2./(up+down); //return 1/avg
+    delete o;
   }
-
-  float returnVal = 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
-
-  delete effMap;
-  delete keyList;
+  //std::cout << "found map " << effMap <<std::endl;
+  float returnVal=1;
+  if(effMap!=0){
+    if(effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9))==0){ // try to interpolate the above and below in phi
+      //  std::cout << "Interpolating" <<std::endl;
+      int ix,iy,iz;
+      int index = effMap->FindFixBin(eta,phi,r9); // global coordinate
+      effMap->GetBinXYZ(index,ix,iy,iz);
+      int indexYup   = (iy == effMap->GetNbinsY() ? 1 : iy+1); //wrap around if we are at the top edge of the map
+      int indexYdown = (iy == 1 ? effMap->GetNbinsY() : iy-1); //wrap around if we are at the bottom edge of the map
+      
+      float up = effMap->GetBinContent(ix,indexYup,iz);
+      float down = effMap->GetBinContent(ix,indexYdown,iz);
+      if(up==0){
+	if(down!=0) returnVal= 1./down;
+	else returnVal= 1;
+      }
+      if(down==0) returnVal= 1./up;
+      returnVal= 2./(up+down); //return 1/avg
+    }else{
+      returnVal = 1./effMap->GetBinContent(effMap->FindFixBin(eta,phi,r9));
+    }
+  }
+  //std::cout << "returning: " <<returnVal;
+  //delete effMap;
+  //delete keyList;
   return returnVal;
+
 }
 
 void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){

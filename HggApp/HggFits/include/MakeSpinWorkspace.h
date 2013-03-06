@@ -80,7 +80,11 @@ public:
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
   void setUseUncorrMass(bool b=true){useUncorrMass=b;} //!< selected whether to use the default photon energies (no cluster corrections or scaling/smearing) for the mass
-  void setEfficiencyCorrectionFile(TString f){EfficiencyCorrectionFile = f;} //!< specify the file to do MC-based data efficiency corrections
+  void setEfficiencyCorrectionFile(TString f_data,TString f_MC) //!< specify the file to do MC-based data efficiency corrections
+  {
+    EfficiencyCorrectionFile_Data = f_data;
+    EfficiencyCorrectionFile_MC = f_MC;    
+  } 
 
   void setMixDatasets(){mixer = new MixSpinDatasets(ws);} //!< specify that we will be mixing MC datasets
   MixSpinDatasets* getMixer(){return mixer;} //!< return the mixing module for customization
@@ -114,9 +118,11 @@ protected:
 
   void AddToWorkspace(TString inputFile,TString tag, bool isData); // takes a file and its labels and adds to the workspace
 
-  TString EfficiencyCorrectionFile;
+  TString EfficiencyCorrectionFile_Data;
+  TString EfficiencyCorrectionFile_MC;
 
-  float getEffWeight(TFile *effFile, float eta, float pt, float phi, float r9); // returns the weight for this photon from the efficiency correction file
+  std::vector<TH3F*> effMaps;
+  float getEffWeight(float eta, float pt, float phi, float r9); // returns the weight for this photon from the efficiency correction file
 
   MixSpinDatasets *mixer;
 
