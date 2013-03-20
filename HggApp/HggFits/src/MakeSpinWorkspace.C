@@ -126,7 +126,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   //define the variables for the workspace
   RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", mMin, mMax);
-  RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", -1, 1);
+  RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", 0,1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
   RooRealVar* sige2  = new RooRealVar("sigEoE2","#sigma_{E}/E SubLead Photon",0,0.1);
   RooRealVar* evtW   = new RooRealVar("evtWeight","Event Weight",1,0,20);
@@ -244,7 +244,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       
     //set all the variables
     mass->setVal(m);
-    cosT->setVal(h.cosThetaLead);
+    cosT->setVal(calculateCosThetaCS(&h));
+    //cosT->setVal(h.cosThetaLead);
     sige1->setVal(se1);
     sige2->setVal(se2);
 
@@ -496,4 +497,31 @@ float MakeSpinWorkspace::getEffFromTGraph(TGraphAsymmErrors* e,float pt){
     return weight;
   }
   return 1;
+}
+
+float MakeSpinWorkspace::calculateCosThetaCS(HggOutputReader2 *h){
+  TLorentzVector p4_1; p4_1.SetPtEtaPhiM(h->Photon_pt[0],h->Photon_eta[0],h->Photon_phi[0],0);
+  TLorentzVector p4_2; p4_2.SetPtEtaPhiM(h->Photon_pt[1],h->Photon_eta[1],h->Photon_phi[1],0);
+
+  TLorentzVector f = p4_1+p4_2;
+  TVector3 fBoost = -1*f.BoostVector();
+
+  TLorentzVector b1; b1.SetPxPyPzE(0,0,4000,4000);
+  TLorentzVector b2; b2.SetPxPyPzE(0,0,-4000,4000);
+  //b1.Print();
+  b1.Boost(fBoost);
+  b2.Boost(fBoost);
+  p4_1.Boost(fBoost);
+  p4_2.Boost(fBoost);
+  //b1.Print();
+  //return TMath::Sqrt(1 - f.Pt()*f.Pt()/( f.Pt()*f.Pt() + f.M2() ));
+
+  TVector3 g1_unit = p4_1.Vect().Unit();
+  TVector3 b1_unit = b1.Vect().Unit();
+  TVector3 b2_unit = b2.Vect().Unit();
+  TVector3 direction_cs = (b1_unit - b2_unit).Unit();
+  
+  return TMath::Abs(TMath::Cos(direction_cs.Angle(g1_unit)));
+
+  //return TMath::Cos((TMath::Pi()- b1.Angle(b2.Vect()))/2);
 }

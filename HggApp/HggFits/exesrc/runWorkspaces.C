@@ -41,7 +41,7 @@ int main(int argc, char** argv){
   string data = cfgReader.getParameter("data",cfgOption);
   string mcList = cfgReader.getParameter("mcList",cfgOption);
   cout << mcList <<endl;
-  vector<string> mcListVec = cfgReader.tokenizeString(mcList,",");
+  vector<string> mcListVec= cfgReader.tokenizeString(mcList,",");
   cout << mcListVec.size() <<endl;
   int runMin = atoi(cfgReader.getParameter("runMin",cfgOption).c_str());
   int runMax = atoi(cfgReader.getParameter("runMax",cfgOption).c_str());

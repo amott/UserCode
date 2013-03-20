@@ -76,7 +76,7 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   RooAbsPdf * bkgPdf = ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()));
   std::cout << bkgPdf <<std::endl;
   RooRealVar range("range","",mean-sigEff,mean+sigEff);
-  RooRealVar all("all","",110,180);
+  RooRealVar all("all","",ws->var("mass")->getMin(),ws->var("mass")->getMax());
   double BkgInRange  = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkg*fbkg;
   double BkgInRangeE = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkge*fbkg;
   
@@ -97,10 +97,10 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
 
   
   RooRealVar* mass = ws->var("mass");
-  RooPlot* frame  = mass->frame(110,170,40);
+  RooPlot* frame  = mass->frame();
   double Nb = ws->var(Form("Data_BKGFIT_%s_Nbkg",tag.Data()))->getVal();
   cout << Nb << endl;
-  RooDataSet *blind = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>110 && mass<119) || (mass>135.5 && mass<170)) && evtcat==evtcat::")+tag);
+  RooDataSet *blind = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass<119) || (mass>135.5)) && evtcat==evtcat::")+tag);
   blind->plotOn(frame);
 
   tPair lbl(mcName,tag);
@@ -153,7 +153,7 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
   
   RooRealVar* mass = ws->var("mass");
-  RooPlot* frame  = mass->frame(110,170,40);
+  RooPlot* frame  = mass->frame();
 
   tPair lbl(mcName,tag);
 
@@ -221,7 +221,7 @@ void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
   
   RooRealVar* mass = ws->var("mass");
-  RooPlot* frame  = mass->frame(110,170,40);
+  RooPlot* frame  = mass->frame();
 
   tPair lbl(mcName,tag);
 

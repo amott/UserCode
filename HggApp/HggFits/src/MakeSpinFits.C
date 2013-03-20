@@ -1,5 +1,7 @@
 #include "MakeSpinFits.h"
 #include "subtract.cc"
+
+#define NUM_CPU 1
 using namespace std;
 //default constructor
 MakeSpinFits::MakeSpinFits():
@@ -8,6 +10,7 @@ MakeSpinFits::MakeSpinFits():
 {
   ws=0;
   setBkgFit(MakeSpinFits::kExp);
+  setMeanRange(123,136,125);
 }
 
 MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
@@ -32,6 +35,7 @@ MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
   }
   //default fit type
   setBkgFit(MakeSpinFits::kExp);
+  setMeanRange(123,136,125);
 }
 
 MakeSpinFits::~MakeSpinFits(){
@@ -56,7 +60,7 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
   RooRealVar mass = *(ws->var("mass"));
 
   //instantiate parameters copy from original signal fits
-  RooRealVar mean( Form("Data_%s_FIT_mean",mcName.Data()), "", 125,123,136);
+  RooRealVar mean( Form("Data_%s_FIT_mean",mcName.Data()), "", meanStart,meanLow,meanHigh);
   RooRealVar sig1( Form("Data_%s_FIT_%s_sigma1",mcName.Data(),tag.Data()), "", 
 		   ws->var( Form("%s_FIT_%s_sigma1",mcName.Data(),tag.Data()))->getVal());
   RooRealVar sig2( Form("Data_%s_FIT_%s_sigma2",mcName.Data(),tag.Data()), "", 
@@ -68,16 +72,22 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
   RooRealVar f2( Form("Data_%s_FIT_%s_f2",mcName.Data(),tag.Data()), "", 
 		   ws->var( Form("%s_FIT_%s_f2",mcName.Data(),tag.Data()))->getVal());
 
-  RooRealVar sigCB(Form("Data_%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()),"",
-		   ws->var(Form("%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()))->getVal());
-  
-  RooRealVar alphaCB(Form("Data_%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()),"",
-		     ws->var(Form("%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()))->getVal());
-  RooRealVar nCB(Form("Data_%s_FIT_%s_nCB",mcName.Data(),tag.Data()),"",
-		 ws->var(Form("%s_FIT_%s_nCB",mcName.Data(),tag.Data()))->getVal());
-  RooRealVar fCB(Form("Data_%s_FIT_%s_fCB",mcName.Data(),tag.Data()),"",
-		 ws->var(Form("%s_FIT_%s_fCB",mcName.Data(),tag.Data()))->getVal());
+  RooRealVar *sigCB=0, *alphaCB=0, *nCB=0, *fCB=0;
+  if(useCB){
+    sigCB = new RooRealVar(Form("Data_%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()),"",
+			   ws->var(Form("%s_FIT_%s_sigmaCB",mcName.Data(),tag.Data()))->getVal());
 
+    alphaCB = new RooRealVar(Form("Data_%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()),"",
+			     ws->var(Form("%s_FIT_%s_alphaCB",mcName.Data(),tag.Data()))->getVal());
+    nCB = new RooRealVar(Form("Data_%s_FIT_%s_nCB",mcName.Data(),tag.Data()),"",
+			 ws->var(Form("%s_FIT_%s_nCB",mcName.Data(),tag.Data()))->getVal());
+    fCB = new RooRealVar(Form("Data_%s_FIT_%s_fCB",mcName.Data(),tag.Data()),"",
+		     ws->var(Form("%s_FIT_%s_fCB",mcName.Data(),tag.Data()))->getVal());
+    sigCB->setConstant(kTRUE);
+    alphaCB->setConstant(kTRUE);
+    nCB->setConstant(kTRUE);
+    fCB->setConstant(kTRUE);
+  }
   mean.setConstant(kTRUE);
   sig1.setConstant(kTRUE);
   sig2.setConstant(kTRUE);
@@ -85,21 +95,18 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
   f1.setConstant(kTRUE);
   f2.setConstant(kTRUE);
 
-  sigCB.setConstant(kTRUE);
-  alphaCB.setConstant(kTRUE);
-  nCB.setConstant(kTRUE);
-  fCB.setConstant(kTRUE);
 
   //triple gaussian
   RooGaussian g1( Form("Data_%s_FIT_%s_g1",mcName.Data(),tag.Data()), "",mass,mean,sig1); 
   RooGaussian g2( Form("Data_%s_FIT_%s_g2",mcName.Data(),tag.Data()), "",mass,mean,sig2); 
   RooGaussian g3( Form("Data_%s_FIT_%s_g3",mcName.Data(),tag.Data()), "",mass,mean,sig3); 
   
-  RooCBShape cb(Form("Data_%s_FIT_%s_cb",mcName.Data(),tag.Data()),"",mass,mean,sigCB,alphaCB,nCB);
+  RooCBShape *cb=0;
+  if(useCB) cb = new RooCBShape(Form("Data_%s_FIT_%s_cb",mcName.Data(),tag.Data()),"",mass,mean,*sigCB,*alphaCB,*nCB);
 
   RooAddPdf *SignalModel=0;
   if(useCB){
-    SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3,cb),RooArgList(f1,f2,fCB));
+    SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3,*cb),RooArgList(f1,f2,*fCB));
   }else{
     SignalModel = new RooAddPdf(Form("Data_%s_FIT_%s",mcName.Data(),tag.Data()),"Signal Model",RooArgList(g1,g2,g3),RooArgList(f1,f2));
   }
@@ -108,9 +115,16 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
   
   ws->import(*SignalModel);
   delete SignalModel;
+  if(useCB){
+    delete sigCB;
+    delete alphaCB;
+    delete nCB;
+    delete fCB;
+    delete cb;
+  }
 }
 
-void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
+void MakeSpinFits::MakeSignalFit(TString tag, TString mcName,float cosTlow, float cosThigh){
   std::cout << "MakeSpinFits::MakeSignalFit" << std::endl;
   if(ws==0) return;
   TString inputTag = Form("%s_%s",mcName.Data(),tag.Data());
@@ -120,8 +134,12 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   RooRealVar cosT = *(ws->var("cosT"));
   cosT.setBins(10);
 
+  if(cosTlow > -1 || cosThigh < 1){
+    outputTag+=Form("_cosT_%0.2f_%0.2f",cosTlow,cosThigh);
+  }
+
   //signal fit parameters -- Triple Gaussian
-  RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),125,80,180);
+  RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),meanStart,meanLow,meanHigh);
   RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,20);
   RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),1,0.1,20);
   RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),1,0.1,20);
@@ -154,13 +172,17 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName){
   if(tag!="Combined") ds = (RooDataSet*)ws->data( Form("%s_Combined",mcName.Data()) )->reduce(TString("evtcat==evtcat::")+tag.Data());
   else ds = (RooDataSet*)ws->data( Form("%s_Combined",mcName.Data()) );
 
+  if(cosTlow > -1 || cosThigh < 1){
+    ds = (RooDataSet*)ds->reduce( Form("cosT >= %0.3f && cosT < %0.3f",cosTlow,cosThigh) );
+  }
+
   RooDataHist hist(Form("%s_cosThist",outputTag.Data()),"Data Hist for cos(theta)",RooArgSet(cosT),*ds);
   RooHistPdf cosTkde(Form("%s_cosTpdf",outputTag.Data()),"Hist PDF for cos(theta)",RooArgSet(cosT),hist);
 
-  SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
-  RooFitResult *res = SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
-  //SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(4));
-  //RooFitResult *resCB = SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4));
+  SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU));
+  RooFitResult *res = SignalModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU));
+  //SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU));
+  //RooFitResult *resCB = SignalModelCB.fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU));
   std::cout << res <<std::endl;
   res->SetName(Form("%s_FitResult",outputTag.Data()));
   //resCB->SetName(Form("%s_FitResultCB",outputTag.Data()));
@@ -365,8 +387,8 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName){
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_%s_FULLFIT_fitResult",mcName.Data()) );
   
   ws->import(*combFit);
@@ -408,8 +430,8 @@ void MakeSpinFits::MakeFloatingSignalTest(TString mcName){
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_%s_INDFIT_fitResult",mcName.Data()) );
   
   ws->import(*combFit);
@@ -483,8 +505,8 @@ void MakeSpinFits::Make2DCombinedSignalTest(TString massMcName,TString costMcNam
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",massMcName.Data(),costMcName.Data()) );
   
   ws->import(*combFit);
@@ -548,8 +570,8 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
 
-  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  combFit->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_m_%s_c_%s_IND2DFIT_fitResult",massMcName.Data(),costMcName.Data()) );
   
   ws->import(*combFit);
@@ -621,8 +643,8 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   //  mass.setRange("fitLow", 100,120.5);
   //mass.setRange("fitHigh",127.5,180);
 
-  BkgModel->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
-  RooFitResult *res=BkgModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(4),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  BkgModel->fitTo(*ds,RooFit::Strategy(0),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
+  RooFitResult *res=BkgModel->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_BKGFIT_%s_fitResult",catTag.Data()) );
 
   //set all parameters of the background fit as constant after the fit
@@ -723,14 +745,19 @@ void MakeSpinFits::run(){
   if(ws==0) return;
 
 
+  const int NcosTbins = 4;
+  float cosTbinEdges[NcosTbins+1] = {0, 0.2, 0.4, 0.6, 1};
+
   //run fits in the correct order for each MC type
   std::vector<TString>::const_iterator mcIt = mcLabel.begin();
   for(; mcIt != mcLabel.end(); mcIt++){
     std::vector<TString>::const_iterator catIt = catLabels.begin();
     MakeSignalFit("Combined",*mcIt);
+    for(int i=0;i<NcosTbins;i++) MakeSignalFit("Combined",*mcIt,cosTbinEdges[i],cosTbinEdges[i+1]);
     MakeSignalFitForFit("Combined",*mcIt);
     for(; catIt != catLabels.end(); catIt++){
       MakeSignalFit(*catIt,*mcIt);
+      for(int i=0;i<NcosTbins;i++) MakeSignalFit(*catIt,*mcIt,cosTbinEdges[i],cosTbinEdges[i+1]);
       MakeSignalFitForFit(*catIt,*mcIt);
       if(mcIt == mcLabel.begin()) MakeBackgroundOnlyFit(*catIt);
     }

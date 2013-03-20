@@ -52,6 +52,8 @@ public:
   int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
   int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
   bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
+
+  float calculateCosThetaCS(HggOutputReader2 *h); //!< calculates the cos theta in the collin soper frame
   
   const static int nCat=2; //!< currently define only two categories (for both CiC and R9 categorization)
 

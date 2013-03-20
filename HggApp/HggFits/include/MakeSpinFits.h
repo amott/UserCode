@@ -77,7 +77,7 @@ public:
     getLabels("evtcat",&catLabels,ws);
   }
 
-  void MakeSignalFit(TString tag,TString mcName); //<! used to make the signal fits
+  void MakeSignalFit(TString tag,TString mcName,float cosTlow=-2,float cosThigh=2); //<! used to make the signal fits
   void MakeSignalFitForFit(TString tag, TString mcName); //<! Copies the signal fits to knew pdfs whose parameters can be floated in a fit to data without distrubing the original fits
 
   void MakeCombinedSignalSpin(TString mcName); //<! Make RooHistPdfs of the cos(theta) distribution for inclusive signal samples
@@ -135,6 +135,12 @@ public:
   static void getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace *w);
 
   int specifySamples(std::vector<std::string> samples);
+
+  void setMeanRange(float low, float high, float start){ //<! specify the range to try to float the signal mean
+    meanLow=low;
+    meanHigh=high;
+    meanStart=start;
+  }
 protected:
   RooWorkspace *ws;
 
@@ -148,6 +154,8 @@ protected:
   TFile *outputFile;
 
   float mean0,meanE0;
+
+  float meanLow, meanHigh, meanStart;
 
   BkgFitType fitType;
 };
