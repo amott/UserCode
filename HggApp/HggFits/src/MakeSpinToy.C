@@ -218,7 +218,7 @@ double MakeSpinToy::computeLL(RooAbsPdf* pdf, RooAbsData* data,RooRealVar* var, 
 }
 
 TH1F* MakeSpinToy::getHistogram(RooAbsData* data, TString title, int rebin){
-  TH1F* out = new TH1F(title,"",cosT->getBins()/rebin,-1,1);
+  TH1F* out = new TH1F(title,"",cosT->getBins()/rebin,0,1);
 
   int i=0;
   while(data->get(i)){

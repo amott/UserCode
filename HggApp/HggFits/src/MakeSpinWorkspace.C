@@ -127,6 +127,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   //define the variables for the workspace
   RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", mMin, mMax);
   RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", 0,1);
+  RooRealVar* cosT_HX   = new RooRealVar("cosT_HX",  "cos(theta)", 0,1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
   RooRealVar* sige2  = new RooRealVar("sigEoE2","#sigma_{E}/E SubLead Photon",0,0.1);
   RooRealVar* evtW   = new RooRealVar("evtWeight","Event Weight",1,0,20);
@@ -157,6 +158,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooArgSet set;
   set.add(*mass);
   set.add(*cosT);
+  set.add(*cosT_HX);
   set.add(*evtW);
   /*
   set.add(*sige1);
@@ -245,7 +247,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     //set all the variables
     mass->setVal(m);
     cosT->setVal(calculateCosThetaCS(&h));
-    //cosT->setVal(h.cosThetaLead);
+    cosT_HX->setVal(fabs(h.cosThetaLead));
     sige1->setVal(se1);
     sige2->setVal(se2);
 

@@ -39,6 +39,7 @@ Date: Jan 2013
 #include "RooExtendPdf.h"
 #include "RooProdPdf.h"
 #include "RooCategory.h"
+#include "RooIntegralMorph.h"
 
 #include <HggOutputReader2.h>
 
