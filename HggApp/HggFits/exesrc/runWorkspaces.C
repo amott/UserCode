@@ -36,8 +36,11 @@ int main(int argc, char** argv){
   string cfgFile = a.getArgument("ConfigFile");
   string cfgOption = a.getArgument("ConfigOption");
 
-  ReadConfig cfgReader(cfgFile,ReadConfig::kSection);
 
+  //
+  // READ CONFIGURATION FILE
+  //
+  ReadConfig cfgReader(cfgFile,ReadConfig::kSection);
   string data = cfgReader.getParameter("data",cfgOption);
   string mcList = cfgReader.getParameter("mcList",cfgOption);
   cout << mcList <<endl;
@@ -48,6 +51,16 @@ int main(int argc, char** argv){
 
   string KFactorFile = cfgReader.getParameter("KFactorFile",cfgOption);
   string RescaleFile = cfgReader.getParameter("RescaleFile",cfgOption);
+
+  bool isGlobe = (cfgReader.getParameter("isGlobe",cfgOption).compare("yes")==0);
+
+  if(isGlobe){
+    std::cout << "\n\n RUNNING ON GLOBE NTUPLES\n\n" << std::endl;
+  }
+  //
+  // ------
+  //
+
 
   int selectionMap=7;
   if(a.longFlagPres("SelectionMap")) selectionMap = atoi(a.getLongFlag("SelectionMap").c_str());
@@ -87,16 +100,18 @@ int main(int argc, char** argv){
 
   cout << "Data:    " << data <<endl;
 
-  msw.addFile(data,"Data",true);
+  msw.addFile(data,"Data",true,isGlobe);
   for(vector<string>::const_iterator mcIt = mcListVec.begin();
       mcIt != mcListVec.end();
       mcIt++){
     string mcName = *mcIt;
     string filePath = cfgReader.getParameter(mcName,cfgOption);
     cout << mcName << ":    " << filePath <<endl;
-    msw.addFile(filePath,mcName,false);
+    msw.addFile(filePath,mcName,false,isGlobe);
   }
   
+  msw.setIsGlobe(isGlobe);
+
   msw.setRequireCiC(requireCiC);
   msw.setSelectionMap(selectionMap);
   msw.setRunRange(runMin,runMax);

@@ -1,4 +1,5 @@
 #include "MakeSpinWorkspace.h"
+#include <fstream>
 
 using namespace std;
 #include "selectionMaps.C"
@@ -6,7 +7,8 @@ using namespace std;
 MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   mixer(0),
   fileKFactor(0),
-  fileRescaleFactor(0)
+  fileRescaleFactor(0),
+  isGlobe(0)
 {
   //setup the defaults
 
@@ -83,14 +85,26 @@ bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int mi
   return true;
 }
 
-void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData){
+void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData, bool isList){
   //adds the data/MC to the workspace with the given tag
   std::cout << "Processing " <<tag << " : " << inputFile <<std::endl;
-  TFile *f = TFile::Open(inputFile);
-  TTree *tree = (TTree*)f->Get("HggOutput");
+  TFile *f=0;
+  TChain *tree;
+  TString treeName = (isGlobe ? Form("spin_trees/%s",tag.Data()) : "HggOutput");
+  if(isList){
+    tree = getChainFromList(inputFile,treeName);
+  }else{
+    f = TFile::Open(inputFile);
+    tree = (TChain*)f->Get(treeName);
+  }
+
 
   //define a reader class for the input tree
-  HggOutputReader2 h(tree);
+  HggOutputReader2 *h=0;
+  GlobeReader *g=0;
+  if(isGlobe) g = new GlobeReader(tree);
+  else h = new HggOutputReader2(tree);
+    
   
   std::cout << "Get Selection Map" << std::endl;
   TH2F* map = getSelectionMap(selectionMap,isData);
@@ -203,79 +217,132 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   double nEB=0,nEE=0; // store the total number of events before any cuts or selection
 
   //begin main loop over tree
-  while(h.GetEntry(++iEntry)){
+  while(true){
+    int val=1;
+    if(isGlobe) val=g->GetEntry(++iEntry);
+    else val=h->GetEntry(++iEntry);
+    
+    if(val==0) break;
+      
 
     if( !(iEntry%10000) ){
-      cout << "Processing " << iEntry << "\t\t" << h.evtWeight << endl;
+      cout << "Processing " << iEntry << endl;
 
     }
     //determine  the leading and trailing photons
-    int maxI = (h.Photon_pt[1] > h.Photon_pt[0] ? 1:0);
-    int minI = (h.Photon_pt[1] > h.Photon_pt[0] ? 0:1);
-    if(isData && (h.runNumber < runLow || h.runNumber > runHigh) ) continue;
+    int maxI,minI;
+    if(isGlobe){
+      maxI=0; minI=1;
+    }else{
+      maxI = (h->Photon_pt[1] > h->Photon_pt[0] ? 1:0);
+      minI = (h->Photon_pt[1] > h->Photon_pt[0] ? 0:1);
+    }
 
-    if(fabs(h.Photon_etaSC[1]) < 1.48 && fabs(h.Photon_etaSC[0]) < 1.48) nEB+=h.evtWeight;
-    else nEE+=h.evtWeight;
+    if(!isGlobe){ // globe trees don't have run number ...
+      int run = h->runNumber;
+      if(isData && (run < runLow || run > runHigh) ) continue;
+    }
+    float pho1_etaSC, pho2_etaSC;
+    if(isGlobe){
+      pho1_etaSC = g->lead_calo_eta;
+      pho2_etaSC = g->sublead_calo_eta;
+    }else{
+      pho1_etaSC = h->Photon_etaSC[maxI];
+      pho2_etaSC = h->Photon_etaSC[minI];
+    }
 
-    float m = (useUncorrMass ? h.mPairNoCorr : h.mPair);
+    float weight = (isGlobe ? g->evweight : h->evtWeight*getEfficiency(*h,125));
+
+    if(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) nEB+=weight;
+    else nEE+=weight;
+
+    
+    float m;
+    if(isGlobe) m = g->higgs_mass;
+    else m = (useUncorrMass ? h->mPairNoCorr : h->mPair);
 
     // apply selections
-    if(!getBaselineSelection(&h,maxI,minI,m)) continue;
-    if(tightPt && (h.Photon_pt[maxI]/m < 1./3. || h.Photon_pt[minI]/m < 1./4.) ) continue;
-
-
-    if(requireCiC){
-      if(h.Photon_passPFCiC[1]==false || h.Photon_passPFCiC[0]==false) continue;
+    if(!isGlobe){ // globe ntuples already have selections
+      if(!getBaselineSelection(h,maxI,minI,m)) continue;
+      if(tightPt && (h->Photon_pt[maxI]/m < 1./3. || h->Photon_pt[minI]/m < 1./4.) ) continue;
+      if(requireCiC){
+	if(h->Photon_passPFCiC[1]==false || h->Photon_passPFCiC[0]==false) continue;
+      }
+    }
+    float se1,se2;
+    float r91_f,r92_f;
+    float pt1_f,pt2_f;
+    if(isGlobe){
+      se1 = g->lead_sigmaE/g->lead_E;
+      se2 = g->sublead_sigmaE/g->sublead_E;
+      r91_f = g->lead_r9;
+      r92_f = g->sublead_r9;
+      pt1_f = TMath::Sqrt(TMath::Power(g->lead_px,2)+TMath::Power(g->lead_py,2));
+      pt2_f = TMath::Sqrt(TMath::Power(g->sublead_px,2)+TMath::Power(g->sublead_py,2));
+    }else{
+      se1 = h->Photon_EError[maxI]/h->Photon_E[maxI];
+      se2 = h->Photon_EError[minI]/h->Photon_E[minI];
+      r91_f = h->Photon_r9[maxI];
+      r92_f = h->Photon_r9[minI];
+      pt1_f = h->Photon_pt[maxI];
+      pt2_f = h->Photon_pt[minI];
     }
 
-    float se1 = h.Photon_EError[maxI]/h.Photon_E[maxI];
-    float se2 = h.Photon_EError[minI]/h.Photon_E[minI];
 
     int p1,p2;
+
     //determine the photon categories
     if(useR9){
-      p1 = passSelection(h.Photon_r9[maxI]);
-      p2 = passSelection(h.Photon_r9[minI]);
+      p1 = passSelection(r91_f);
+      p2 = passSelection(r92_f);
     }else{
-      p1 = passSelection(map,se1,h.Photon_etaSC[maxI],h.Photon_pt[maxI]);
-      p2 = passSelection(map,se2,h.Photon_etaSC[minI],h.Photon_pt[minI]);
+      p1 = passSelection(map,se1,pho1_etaSC,pt1_f);
+      p2 = passSelection(map,se2,pho2_etaSC,pt2_f);
     }
     if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
-    datamap = ((fabs(h.Photon_etaSC[maxI]) < 1.48 && fabs(h.Photon_etaSC[minI]) < 1.48) ?
+    datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho1_etaSC) < 1.48) ?
 	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
-      
+    
     //set all the variables
     mass->setVal(m);
-    cosT->setVal(calculateCosThetaCS(&h));
-    cosT_HX->setVal(fabs(h.cosThetaLead));
     sige1->setVal(se1);
     sige2->setVal(se2);
 
-    eta1->setVal(h.Photon_eta[maxI]);
-    eta2->setVal(h.Photon_eta[minI]);
+    if(isGlobe){
+      cosT->setVal(g->costheta_cs);
+      cosT_HX->setVal(g->costheta_hx);
+    }else{
+      cosT->setVal(calculateCosThetaCS(h));
+      cosT_HX->setVal(fabs(h->cosThetaLead));
+    }
+
+    /*
+    eta1->setVal(h->Photon_eta[maxI]);
+    eta2->setVal(h->Photon_eta[minI]);
     
-    etaSC1->setVal(h.Photon_etaSC[maxI]);
-    etaSC2->setVal(h.Photon_etaSC[minI]);
+    etaSC1->setVal(h->Photon_etaSC[maxI]);
+    etaSC2->setVal(h->Photon_etaSC[minI]);
     
-    phi1->setVal(h.Photon_phi[maxI]);
-    phi2->setVal(h.Photon_phi[minI]);
+    phi1->setVal(h->Photon_phi[maxI]);
+    phi2->setVal(h->Photon_phi[minI]);
     
-    pt1->setVal(h.Photon_pt[maxI]);
-    pt2->setVal(h.Photon_pt[minI]);
+    pt1->setVal(h->Photon_pt[maxI]);
+    pt2->setVal(h->Photon_pt[minI]);
     
-    r91->setVal(h.Photon_r9[maxI]);
-    r92->setVal(h.Photon_r9[minI]);
+    r91->setVal(h->Photon_r9[maxI]);
+    r92->setVal(h->Photon_r9[minI]);
     
-    idMVA1->setVal(h.Photon_idMVA[maxI]);
-    idMVA2->setVal(h.Photon_idMVA[minI]);
+    idMVA1->setVal(h->Photon_idMVA[maxI]);
+    idMVA2->setVal(h->Photon_idMVA[minI]);
     
-    diPhotonMVA->setVal(h.diPhotonMVA);
+    diPhotonMVA->setVal(h->diPhotonMVA);
+    */
     //efficiencyCorrection=0
     float pho1EffWeight = getEffWeight(eta1->getVal(),pt1->getVal(),phi1->getVal(),r91->getVal());
     float pho2EffWeight = getEffWeight(eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
 
     //set the event weight
-    if(!isData) evtW->setVal(h.evtWeight*pho1EffWeight*pho2EffWeight*getEfficiency(h,125));
+    if(!isData) evtW->setVal(weight*pho1EffWeight*pho2EffWeight);
     else evtW->setVal(1*pho1EffWeight*pho2EffWeight);
     if( !(iEntry%1000) ) cout <<  "\t\t\t" << evtW->getVal() << endl;
 
@@ -336,6 +403,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   if(efficiencyCorrection) efficiencyCorrection->Close();
   if(fileKFactor) fileKFactor->Close();
   if(fileRescaleFactor) fileRescaleFactor->Close();
+
+  if(f) f->Close();
+  delete tree;
+
+  if(h) delete h;
+  if(g) delete g;
 }
 
 float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){
@@ -387,10 +460,11 @@ float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){
 
 }
 
-void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
+void MakeSpinWorkspace::addFile(TString fName,TString l,bool is,bool list){
   fileName.push_back(fName);
   label.push_back(l);
   isData.push_back(is);
+  isList.push_back(list);
   if(!is) labels->defineType(l,labels->numBins(""));
 }
 
@@ -398,13 +472,14 @@ void MakeSpinWorkspace::addFile(TString fName,TString l,bool is){
 void MakeSpinWorkspace::MakeWorkspace(){
   //run AddToWorkspace(...) on all the input files
   std::vector<TString>::const_iterator fnIt,lIt;
-  std::vector<bool>::const_iterator idIt;
+  std::vector<bool>::const_iterator idIt,ilIt;
 
   fnIt = fileName.begin();
   lIt  = label.begin();
   idIt = isData.begin();
-  for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++){
-    AddToWorkspace(*fnIt,*lIt,*idIt);
+  ilIt = isList.begin();
+  for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++, ilIt++){
+    AddToWorkspace(*fnIt,*lIt,*idIt,*ilIt);
     outputFile->cd();
     ws->Write(ws->GetName(),TObject::kWriteDelete);
   }
@@ -526,4 +601,18 @@ float MakeSpinWorkspace::calculateCosThetaCS(HggOutputReader2 *h){
   return TMath::Abs(TMath::Cos(direction_cs.Angle(g1_unit)));
 
   //return TMath::Cos((TMath::Pi()- b1.Angle(b2.Vect()))/2);
+}
+
+
+TChain* MakeSpinWorkspace::getChainFromList(TString inputFileList, TString treeName){
+  TChain *chain = new TChain(treeName,treeName);
+
+  std::ifstream listFile(inputFileList.Data());
+
+  std::string line;
+  while(std::getline(listFile,line)){
+    if(line.size() < 2) continue;
+    chain->AddFile(line.c_str());
+  }
+  return chain;
 }

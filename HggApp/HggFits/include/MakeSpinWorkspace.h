@@ -17,6 +17,7 @@ Date: Jan 2013
 */
 
 #include <TTree.h>
+#include <TChain.h>
 #include <TFile.h>
 #include <TH2F.h>
 #include <TCanvas.h>
@@ -37,6 +38,7 @@ Date: Jan 2013
 #include "RooCategory.h"
 
 #include <HggOutputReader2.h>
+#include <GlobeReader.h>
 #include <MixSpinDatasets.h>
 
 #include <iostream>
@@ -62,7 +64,7 @@ public:
     \param l the label associated with this file
     \param is true = data, false = MC
   */
-  void addFile(TString fName,TString l,bool is); //!< takes a file name, label, and a bool specifying whether this corresponds to data and adds this to the list of files to process
+  void addFile(TString fName,TString l,bool is,bool list=false); //!< takes a file name, label, and a bool specifying whether this corresponds to data and adds this to the list of files to process
   void setRequireCiC(bool b){requireCiC=b;} //!< specify whether to require the photons to have passed the CiC selection
   bool getRequireCiC(){return requireCiC;}  //!< returns whether CiC will be required 
   
@@ -98,9 +100,10 @@ public:
   void setPtCuts(float c1, float c2){pt1Min=c1; pt2Min=c2;}
   void setPt1Cut(float c){pt1Min=c;}
   void setPt2Cut(float c){pt2Min=c;}
+  void setIsGlobe(bool b=true){isGlobe=b;} //!< set to run on globe trees
 protected:
   std::vector<TString> fileName,label; // lists of input file names and corresponding labels
-  std::vector<bool> isData;            // list of bools specifying whether the files correspond to data
+  std::vector<bool> isData,isList;     // list of bools specifying whether the files correspond to data
   RooWorkspace *ws;                    // workspace for output
   RooCategory* labels;                 // list of labels to store inside the RooWorkspace
   TFile *outputFile;                   //!< pointer to output file
@@ -117,8 +120,9 @@ protected:
 
   bool useR9;                          // whether to use CiC (R9) or sigma_E/E cateogries (default: false)
   bool useUncorrMass;
+  bool isGlobe;
 
-  void AddToWorkspace(TString inputFile,TString tag, bool isData); // takes a file and its labels and adds to the workspace
+  void AddToWorkspace(TString inputFile,TString tag, bool isData, bool isList); // takes a file and its labels and adds to the workspace
 
   TString EfficiencyCorrectionFile_Data;
   TString EfficiencyCorrectionFile_MC;
@@ -140,7 +144,7 @@ protected:
 
   float getEffFromTGraph(TGraphAsymmErrors* e,float pt);
 
-
+  TChain* getChainFromList(TString inputFileList, TString treeName);
 };
 
 #endif

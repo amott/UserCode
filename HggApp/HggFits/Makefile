@@ -56,6 +56,10 @@ clean:
 	rm -f runPlots
 	rm -f runToyWorkspaces
 
+threadTest: $(EXESRCDIR)threadTest.C
+	$(CXX) $(CXXFLAGS) -o threadTest $(GLIBS) $ $<	
+
+
 runWorkspaces:		$(EXESRCDIR)runWorkspaces.C \
 			$(OUTLIB)MakeSpinWorkspace.o \
 			$(OUTLIB)MakeSpinFits.o \
@@ -91,9 +95,13 @@ $(OUTLIB)ArgParser.o:		$(SRCDIR)ArgParser.cc
 $(OUTLIB)HggOutputReader2.o:	$(SRCDIR)HggOutputReader2.C
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)HggOutputReader2.o $<
 
+$(OUTLIB)GlobeReader.o:	$(SRCDIR)GlobeReader.C
+		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)GlobeReader.o $<
+
 $(OUTLIB)MakeSpinWorkspace.o:	$(SRCDIR)MakeSpinWorkspace.C \
 				$(OUTLIB)MixSpinDatasets.o \
-				$(OUTLIB)HggOutputReader2.o
+				$(OUTLIB)HggOutputReader2.o \
+				$(OUTLIB)GlobeReader.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinWorkspace.o $<
 
 $(OUTLIB)MakeSpinFits.o:	$(SRCDIR)MakeSpinFits.C \
