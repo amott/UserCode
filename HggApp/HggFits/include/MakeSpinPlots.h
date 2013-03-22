@@ -57,7 +57,7 @@ public:
   void DrawSpinBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) SPlots
   void DrawSpinSubBackground(TString tag,TString mcName,bool signal); //!< Draw cos(theta) background-subtracted plots
   void DrawSpinSubTotBackground(TString mcName,bool signal); //!< Draw inclusive cos(theta) background-subtracted plots
-  void PlotSignalFits(TString tag,TString mcName); //!< Draw the signal fits
+  void PlotSignalFits(TString tag,TString mcName,TString cosThetaBin=""); //!< Draw the signal fits
 
 
   void runAll(TString tag,TString mcName); //!< make all plots for given category and MC type (for the signal fits)
@@ -82,6 +82,7 @@ protected:
   TString outputTag;
   std::vector<TString> mcNames;
   std::vector<TString> catNames;
+  std::vector<TString> cosThetaBins;
 
   void getFitValues(TString tag,TString mcName); //!< fill the maps with fitted yields from the signal
 

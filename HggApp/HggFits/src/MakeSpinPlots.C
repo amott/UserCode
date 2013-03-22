@@ -11,7 +11,7 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
 
   if(mcNames.size()==0) MakeSpinFits::getLabels("labels",&mcNames,ws);
   MakeSpinFits::getLabels("evtcat",&catNames,ws);
-  
+  MakeSpinFits::getLabels("CosThetaBins",&cosThetaBins,ws);
 
   basePath = "figs/";
   outputTag=outTag;
@@ -47,6 +47,10 @@ void MakeSpinPlots::runAll(TString tag, TString mcName){
   DrawFit(tag,mcName);
   DrawIndFit(tag,mcName);
   PlotSignalFits(tag,mcName);
+  for(std::vector<TString>::const_iterator csBinIt = cosThetaBins.begin();
+      csBinIt != cosThetaBins.end(); csBinIt++){
+    PlotSignalFits(tag,mcName,*csBinIt);    
+  }
   DrawSpinBackground(tag,mcName,false);
   DrawSpinBackground(tag,mcName,true);
   DrawSpinSubBackground(tag,mcName,false);
@@ -416,18 +420,30 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
 }
 
 
-void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName){
+void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName,TString cosThetaBin){
   TCanvas cv;
+  TString cat=tag;
+  if(cosThetaBin!="") tag = tag+"_"+cosThetaBin;
+
   float mean = ws->var(Form("%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
   RooPlot *frame = ws->var("mass")->frame(105,140,70);//mean-10,mean+10,40);
-  ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame); //data
+  RooAbsData *d = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag);
+  if(cosThetaBin!=""){
+    TObjArray *arr = cosThetaBin.Tokenize("_");
+    float low  = atof(arr->At(1)->GetName());
+    float high = atof(arr->At(2)->GetName());
+    d = d->reduce( Form("cosT < %0.2f && cosT >= %0.2f",high,low) );
+    delete arr;
+  }
+
+  d->plotOn(frame);
   RooFitResult *res = (RooFitResult*)ws->obj(Form("%s_FIT_%s_fitResult",mcName.Data(),tag.Data()));
   RooAbsPdf * pdf = ws->pdf(Form("%s_FIT_%s",mcName.Data(),tag.Data())); //signal model
   std::cout << pdf << "\t" << res << std::endl;
   pdf->plotOn(frame,RooFit::FillColor(kGreen),RooFit::VisualizeError(*res,2.0));
   pdf->plotOn(frame,RooFit::FillColor(kYellow),RooFit::VisualizeError(*res,1.0));
   pdf->plotOn(frame,RooFit::LineColor(kRed));
-  ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame); //data
+  d->plotOn(frame); //data
   
   tPair lbl(mcName,tag);
 

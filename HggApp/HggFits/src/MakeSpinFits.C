@@ -1,7 +1,7 @@
 #include "MakeSpinFits.h"
 #include "subtract.cc"
 
-#define NUM_CPU 1
+#define NUM_CPU 4
 using namespace std;
 //default constructor
 MakeSpinFits::MakeSpinFits():
@@ -747,6 +747,11 @@ void MakeSpinFits::run(){
 
   const int NcosTbins = 4;
   float cosTbinEdges[NcosTbins+1] = {0, 0.2, 0.4, 0.6, 1};
+  RooCategory cosThetaBins("CosThetaBins","CosThetaBins");
+  for(int i=0;i<NcosTbins;i++){
+    cosThetaBins.defineType(Form("cosT_%0.2f_%0.2f",cosTbinEdges[i],cosTbinEdges[i+1]),cosThetaBins.numBins(""));
+  }
+  ws->import(cosThetaBins);
 
   //run fits in the correct order for each MC type
   std::vector<TString>::const_iterator mcIt = mcLabel.begin();
