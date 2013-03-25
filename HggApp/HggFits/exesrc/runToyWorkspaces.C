@@ -16,6 +16,7 @@ int main(int argc, char** argv){
 
   a.addLongOption("SaveToyWorkspaces",ArgParser::noArg,"save the generated toy workspaces (for debugging!) (default: off)");
   a.addLongOption("RunData",ArgParser::noArg,"determine the S value for data");
+  a.addLongOption("Standard",ArgParser::reqArg,"Specify the standard hypothesis");
   a.addLongOption("Alternate",ArgParser::reqArg,"Specify the alternate hypothesis");
 
   string ret;
@@ -38,6 +39,9 @@ int main(int argc, char** argv){
 
   if(a.longFlagPres("Alternate")){
     mst.setMCComparison(a.getLongFlag("Alternate"));
+  }
+  if(a.longFlagPres("Standard")){
+    mst.setMCStandard(a.getLongFlag("Standard"));
   }
   mst.setTargetLumi(tlumi);
   mst.setNominalLumi(nlumi);

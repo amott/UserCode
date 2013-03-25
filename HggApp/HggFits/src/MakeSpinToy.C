@@ -57,7 +57,7 @@ void MakeSpinToy::setDoData(bool b){
   }
 }
 
-void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,genType gen){
+void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,genType gen){
   RooCategory *cat = new RooCategory("evtcat","evtcat");
   int i=0;
   for( std::vector<TString>::const_iterator it = catLabels.begin();
@@ -68,45 +68,58 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,genType gen){
   RooDataSet* dataComb = new RooDataSet("Data_Combined","",RooArgSet(*mass,*cosT,*cat) );
 
   TRandom3 rng(0);
-  float Nsig = rng.Poisson( targetLumi/12.*607 );
+  float Nsig = rng.Poisson( ws->data(mcLabels[1]+"_Combined")->sumEntries()*targetLumi/nominalLumi); 
   for( std::vector<TString>::const_iterator it = catLabels.begin();
        it != catLabels.end(); it++,i++){
+    std::cout << *it <<std::endl;
     generateToyWorkspace(toyws,it->Data(),gen,Nsig);
-    RooDataSet* d = (RooDataSet*)toyws.data( Form("Data_%s",it->Data()) );
+    RooDataSet* d = (RooDataSet*)toyws->data( Form("Data_%s",it->Data()) );
     RooDataSet* tmp = new RooDataSet("DataCat+"+*it,"",RooArgSet(*mass,*cosT),RooFit::Index(*cat),RooFit::Import(*it,*d) );
     dataComb->append(*tmp);
-    toyws.import(*(ws->var(Form("Hgg125_FIT_%s_sigmaEff",it->Data()) )));
-    toyws.import(*(ws->var(Form("%s_FIT_%s_sigmaEff",mcLabels[2].Data(),it->Data()) )));
+    toyws->import(*(ws->var(Form("%s_FIT_%s_sigmaEff",mcLabels[1].Data(),it->Data()) )));
+    toyws->import(*(ws->var(Form("%s_FIT_%s_sigmaEff",mcLabels[2].Data(),it->Data()) )));
   }
-  toyws.import(*cat);
-  toyws.import(*dataComb);
-  toyws.import(*(ws->data("Hgg125_Combined")));
-  toyws.import(*(ws->data(mcLabels[2]+"_Combined")));
-  toyws.import(*(ws->var("Hgg125_FIT_Combined_sigmaEff")));
-  toyws.import(*(ws->var(mcLabels[2]+"_FIT_Combined_sigmaEff")));
-  toyws.import(*((RooCategory*)ws->obj("labels")));
+  toyws->import(*cat);
+  toyws->import(*dataComb);
+  toyws->import(*(ws->data(mcLabels[1]+"_Combined")));
+  toyws->import(*(ws->data(mcLabels[2]+"_Combined")));
+  toyws->import(*(ws->var(mcLabels[1]+"_FIT_Combined_sigmaEff")));
+  toyws->import(*(ws->var(mcLabels[2]+"_FIT_Combined_sigmaEff")));
+  toyws->import(*((RooCategory*)ws->obj("labels")));
 }
 
-void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genType gen,float nSigTot){
+void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genType gen,float nSigTot){
+  std::cout << "generateToyWorkspace per cat" <<std::endl;
   //get the generation PDFs
 
   //mass
-  RooAbsPdf* hggMassPdf = ws->pdf( Form("Hgg125_FIT_%s",cat) );
+  RooAbsPdf* hggMassPdf = ws->pdf( Form("%s_FIT_%s",mcLabels[1].Data(),cat) );
   RooAbsPdf* altMassPdf = ws->pdf( Form("%s_FIT_%s",mcLabels[2].Data(),cat) );
 
-  ws->var(Form("Hgg125_FIT_%s_mean",cat))->setVal(125.);
+  ws->var(Form("%s_FIT_%s_mean",mcLabels[1].Data(),cat))->setVal(125.);
   ws->var(Form("%s_FIT_%s_mean",mcLabels[2].Data(),cat))->setVal(125.);
 
   RooAbsPdf* bkgMassPdf = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",cat) );
-
+  
+  cosT->setBins(50,"generate");
   //cosT
   RooDataSet *tmp  = (RooDataSet*)(ws->data("Data_Combined")->reduce(Form("evtcat==evtcat::%s && ((mass>110 && mass<120) || (mass>130 && mass<140))",cat)));
   RooDataSet *tmpH = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[1].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
   RooDataSet *tmpR = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[2].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
 
+  RooDataHist histBkg ("bkgDataHist","",*cosT,"generate"); histBkg.add(*tmp);
+  RooDataHist histHgg ("hggDataHist","",*cosT,"generate"); histHgg.add(*tmpH);
+  RooDataHist histAlt ("altDataHist","",*cosT,"generate"); histAlt.add(*tmpR);
+
+  RooHistPdf bkgGenPdf("bkgGenPdf","",*cosT,histBkg);
+  RooHistPdf hggGenPdf("hggGenPdf","",*cosT,histHgg);
+  RooHistPdf altGenPdf("altGenPdf","",*cosT,histAlt);
+
+  /*
   RooKeysPdf* bkgGenPdf = new RooKeysPdf("bkgGenPdf","",*cosT,*tmp);
   RooKeysPdf* hggGenPdf = new RooKeysPdf("hggGenPdf","",*cosT,*tmpH);
   RooKeysPdf* altGenPdf = new RooKeysPdf("altGenPdf","",*cosT,*tmpR);
+  */
   /*
   tmp->SetName(Form("OriginalData_%s",cat));
   RooDataHist tmpHist("bkgGenHist","",*cosT,*tmp);
@@ -117,13 +130,13 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genTy
   RooHistPdf* hggGenPdf = (RooHistPdf*)ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",cat));
   RooHistPdf* altGenPdf = (RooHistPdf*)ws->pdf(Form("ALT125_FIT_%s_cosTpdf",cat));
   */
-  std::cout <<hggGenPdf <<std::endl;
+  std::cout << &hggGenPdf <<std::endl;
 
 
   //get the expected number of events in this categoy
   //Data_Hgg125_FULAALFIT_EB_0_Nbkg
   int Nbkg = ((RooFormulaVar*)ws->obj(Form("Data_%s_FULLFIT_%s_Nbkg",mcLabels[gen].Data(),cat)))->getVal()*targetLumi/nominalLumi;
-  int Nsig = nSigTot * ws->var(Form("Data_%s_FULLFIT_%s_fsig",mcLabels[gen].Data(),cat))->getVal()*targetLumi/nominalLumi;
+  int Nsig = nSigTot * ws->var(Form("Data_%s_FULLFIT_%s_fsig",mcLabels[gen].Data(),cat))->getVal();
 
   TRandom3 rng(0);
   int thisNbkg = (int)rng.Poisson(Nbkg);
@@ -135,7 +148,7 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genTy
   RooRealVar nBkgGen(Form("N_gen_bkg_%s",cat),"",thisNbkg);
 
   RooDataSet *M = bkgMassPdf->generate(*mass,thisNbkg);
-  RooDataSet *C = bkgGenPdf->generate(*cosT,thisNbkg,RooFit::AutoBinned(kFALSE));
+  RooDataSet *C = bkgGenPdf.generate(*cosT,thisNbkg,RooFit::AutoBinned(kFALSE));
 
 
   RooDataSet *mcM, *mcC;
@@ -143,13 +156,13 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genTy
   case Hgg125:
     std::cout << "GENERATING HIGGS SPIN DISTRIBUTION" <<std::endl;
     mcM = hggMassPdf->generate(*mass,thisNsig);
-    mcC = hggGenPdf->generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
+    mcC = hggGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
     break;
     
   case ALT125:
     std::cout << "GENERATING ALTERNATE SPIN DISTRIBUTION" <<std::endl;
     mcM = hggMassPdf->generate(*mass,thisNsig); // still generate the peak according to the higgs line shape
-    mcC = altGenPdf->generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
+    mcC = altGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
     break;
     
   default:
@@ -170,14 +183,14 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace &toyws,const char* cat,genTy
   mcM->SetName(Form("ToySigData_%s",cat));
   M->SetName(Form("Data_%s",cat));
   
-  toyws.import(*M);
-  toyws.import(*mcM);
-  toyws.import(*hggMassPdf);
-  toyws.import(*altMassPdf);
-  toyws.import(nSigGen);
-  toyws.import(nBkgGen);
+  toyws->import(*M);
+  toyws->import(*mcM);
+  toyws->import(*hggMassPdf);
+  toyws->import(*altMassPdf);
+  toyws->import(nSigGen);
+  toyws->import(nBkgGen);
 
-  delete bkgGenPdf;
+  std::cout << "Done Generating Category " << cat << std::endl;
 }
  
 double MakeSpinToy::computeLL(RooAbsPdf* pdf, RooAbsData* data,RooRealVar* var, int rebin){
@@ -298,7 +311,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   RooWorkspace *toyws=0;
   if(gen!=Data){
     toyws = new RooWorkspace(Form("toyws_%s",mcType.Data()),"toyws");
-    generateToyWorkspace(*toyws,gen);
+    generateToyWorkspace(toyws,gen);
 
 
     MakeSpinFits fits("","");
@@ -310,28 +323,28 @@ double* MakeSpinToy::run1(genType gen, int& N){
       //toyws->import(*ws->data(Form("Hgg125_%s",it->Data())));
       //toyws->import(*ws->data(mcLabels[2]+"_"+*it));
       
-      toyws->import(*ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",it->Data())));
+      toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[1].Data(),it->Data())));
       toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data())));
       
-      fits.MakeSignalFitForFit(*it,"Hgg125");
+      fits.MakeSignalFitForFit(*it,mcLabels[1]);
       fits.MakeSignalFitForFit(*it,mcLabels[2]);
       fits.MakeBackgroundOnlyFit(*it);    
     }
-    fits.MakeCombinedSignalTest("Hgg125");
+    fits.MakeCombinedSignalTest(mcLabels[1]);
     fits.MakeCombinedSignalTest(mcLabels[2]);
-    fits.AddCombinedBkgOnlySWeight("Hgg125");
+    fits.AddCombinedBkgOnlySWeight(mcLabels[1]);
     fits.AddCombinedBkgOnlySWeight(mcLabels[2]);
 
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
-      fits.getSimpleBkgSubtraction("Hgg125",*it);
+      fits.getSimpleBkgSubtraction(mcLabels[1],*it);
       fits.getSimpleBkgSubtraction(mcLabels[2],*it);
     }
     
-    fits.Make2DCombinedSignalTest("Hgg125","Hgg125");
-    fits.Make2DCombinedSignalTest("Hgg125",mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
 
-    fits.getSimpleTotalBkgSubtraction("Hgg125");
+    fits.getSimpleTotalBkgSubtraction(mcLabels[1]);
     fits.getSimpleTotalBkgSubtraction(mcLabels[2]);
 
   }
@@ -339,8 +352,8 @@ double* MakeSpinToy::run1(genType gen, int& N){
     toyws = ws;
     MakeSpinFits fits("","");
     fits.setWorkspace(toyws);
-    fits.Make2DCombinedSignalTest("Hgg125","Hgg125");
-    fits.Make2DCombinedSignalTest("Hgg125",mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
   }
   toyws->Print();
 
@@ -351,14 +364,14 @@ double* MakeSpinToy::run1(genType gen, int& N){
        it != catLabels.end(); it++){
     //fits.MakeBackgroundFit("Hgg125",*it,125,2,false);
 
-    RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data( Form("Data_Hgg125_%s_bkgSub_cosT",it->Data()));
+    RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data( Form("Data_%s_%s_bkgSub_cosT",mcLabels[1].Data(),it->Data()));
     RooDataHist *thisBkgALT = (RooDataHist*)toyws->data( Form("Data_%s_%s_bkgSub_cosT",mcLabels[2].Data(),it->Data()));
-    RooDataSet *thisSdataHgg = (RooDataSet*)toyws->data( Form("Data_%s_Hgg125_sigWeight",it->Data()));
+    RooDataSet *thisSdataHgg = (RooDataSet*)toyws->data( Form("Data_%s_%s_sigWeight",it->Data(),mcLabels[1].Data()));
     RooDataSet *thisSdataALT = (RooDataSet*)toyws->data( Form("Data_%s_%s_sigWeight",it->Data(),mcLabels[2].Data()));
     RooDataHist *thisShistHgg = new RooDataHist("tmpHgg","",*cosT,*thisSdataHgg);
     RooDataHist *thisShistALT = new RooDataHist("tmpALT","",*cosT,*thisSdataALT);
 
-    hggPdf = (RooHistPdf*)ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",it->Data()));
+    hggPdf = (RooHistPdf*)ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[1].Data(),it->Data()));
     altPdf = (RooHistPdf*)ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data()));
 
 
@@ -395,9 +408,9 @@ double* MakeSpinToy::run1(genType gen, int& N){
     delete thisShistHgg;
     delete thisShistALT;
   }
-  RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data(Form("Data_Hgg125_Combined_bkgSub_cosT"));
+  RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcLabels[1].Data()));
   RooDataHist *thisBkgALT = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcLabels[2].Data()));
-  hggPdf = (RooHistPdf*)ws->pdf("Hgg125_FIT_cosTpdf");
+  hggPdf = (RooHistPdf*)ws->pdf(mcLabels[1]+"_FIT_cosTpdf");
   altPdf = (RooHistPdf*)ws->pdf(mcLabels[2]+"_FIT_cosTpdf");
 
   double totHggLL = computeLL(hggPdf,thisBkgHgg,cosT);
@@ -405,9 +418,9 @@ double* MakeSpinToy::run1(genType gen, int& N){
   double totALTLL = computeLL(altPdf,thisBkgHgg,cosT);
 
   //use 2D fit to test compatibility
-  RooRealVar *yield1D   = toyws->var("Data_Hgg125_FULLFIT_Nsig");
-  RooRealVar *yieldHgg  = toyws->var("Data_m_Hgg125_c_Hgg125_FULL2DFIT_Nsig");
-  RooRealVar *yieldALT  = toyws->var(Form("Data_m_Hgg125_c_%s_FULL2DFIT_Nsig",mcLabels[2].Data())); // yield fitting hgg mass and alt cosT distributions
+  RooRealVar *yield1D   = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[1].Data()));
+  RooRealVar *yieldHgg  = toyws->var(Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",mcLabels[1].Data(),mcLabels[1].Data())); // yield fitting hgg mass and hgg cosT distributions
+  RooRealVar *yieldALT  = toyws->var(Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",mcLabels[1].Data(),mcLabels[2].Data())); // yield fitting hgg mass and alt cosT distributions
   
   double errHgg = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldHgg->getError(),2));
   double errALT = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldALT->getError(),2));
@@ -415,8 +428,8 @@ double* MakeSpinToy::run1(genType gen, int& N){
   double hgg2Dll  = TMath::Log(TMath::Prob( pow(yield1D->getVal()-yieldHgg->getVal(),2)/pow(errHgg,2),1));
   double alt2Dll  = TMath::Log(TMath::Prob( pow(yield1D->getVal()-yieldALT->getVal(),2)/pow(errALT,2),1));
 
-  RooFitResult *fitHgg = (RooFitResult*)toyws->obj("Data_m_Hgg125_c_Hgg125_FULL2DFIT_fitResult");
-  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_Hgg125_c_%s_FULL2DFIT_fitResult",mcLabels[2].Data()));
+  RooFitResult *fitHgg = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[1].Data(),mcLabels[1].Data())); 
+  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[1].Data(),mcLabels[2].Data()));
 
 
   std::cout << "FIT NLL: " << endl

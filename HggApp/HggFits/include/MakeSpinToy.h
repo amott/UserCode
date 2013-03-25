@@ -68,6 +68,7 @@ public:
 
   void setDoData(bool b);
 
+  void setMCStandard(TString s){mcLabels[1]=s;}
   void setMCComparison(TString s){mcLabels[2]=s;}
 
   const static int nBins = 9;
@@ -77,8 +78,8 @@ public:
 protected:
   float targetLumi;
   float nominalLumi;
-  void generateToyWorkspace(RooWorkspace& toyws, const char* cat,genType gen,float nSigTot);
-  void generateToyWorkspace(RooWorkspace& toyws,genType gen);
+  void generateToyWorkspace(RooWorkspace* toyws, const char* cat,genType gen,float nSigTot);
+  void generateToyWorkspace(RooWorkspace* toyws,genType gen);
   
   bool useR9;
   bool saveWorkspaces;

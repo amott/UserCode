@@ -15,6 +15,7 @@ int main(int argc, char** argv){
   a.addLongOption("MCSamples",ArgParser::reqArg,"Specify the MC sample to process (comma separated) or none (default: all)");
   a.addLongOption("CrystalBall",ArgParser::noArg,"convolute a crystal ball with the signal model");
   a.addLongOption("DY",ArgParser::noArg,"Specify that we are fitting the Zee peak");
+  a.addLongOption("FixPeak",ArgParser::noArg,"fix the peak position of the signal model at the generated mass");
 
   string ret;
   if(a.process(ret) != 0){
@@ -46,6 +47,12 @@ int main(int argc, char** argv){
 
   if(a.longFlagPres("CrystalBall")) msf.setUseCrystalBall();
   if(a.longFlagPres("DY")) msf.setMeanRange(88,94,91);
+
+  if(a.longFlagPres("FixPeak")){
+    if(a.longFlagPres("DY")) msf.setMeanRange(91,91,91);
+    else msf.setMeanRange(125,125,125);
+  }
+
   msf.setAddSWeight(true);
   msf.run();
   msf.save();

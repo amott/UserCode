@@ -298,10 +298,10 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
 
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->sumEntries();
-  float norm = 607*lumi/12.*thisN/(totEB+totEE);
+  float norm = thisN; //607*lumi/12.*thisN/(totEB+totEE);
   cout << norm <<endl;
   if(signal) norm = ws->data(Form("Data_%s_%s_sigWeight",tag.Data(),mcName.Data()))->sumEntries();
-  RooPlot *frame = ws->var("cosT")->frame(-1,1,3);
+  RooPlot *frame = ws->var("cosT")->frame(0,1,5);
 
   RooDataSet* bkgWeight = (RooDataSet*)ws->data(Form("Data_%s_%s_bkgWeight",tag.Data(),mcName.Data()));
   RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
@@ -344,12 +344,12 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
 
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->sumEntries();
-  float norm = 607*lumi/12.*thisN/(totEB+totEE);
+  float norm = thisN; //607*lumi/12.*thisN/(totEB+totEE);
   tPair lbl(mcName,tag);
 
 
   if(signal) norm = nSignal[lbl].first;   //((RooFormulaVar*)ws->obj(Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data())) )->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(-0.8,1,3);
+  RooPlot *frame = ws->var("cosT")->frame(0,1,5);
 
   RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
@@ -362,7 +362,7 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
     std::cout << "Nsig: " << h->sumEntries() << std::endl;
   }
   
-  frame->SetMaximum(frame->GetMaximum()*(signal?10.:1.2)*norm/tmp->sumEntries());
+  frame->SetMaximum(frame->GetMaximum()*(signal?3.:1.2)*norm/tmp->sumEntries());
   frame->SetMinimum(-1*frame->GetMaximum());
   TLegend l(0.6,0.2,0.95,0.45);
   l.SetFillColor(0);
@@ -389,7 +389,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
 
 
   if(signal) norm = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(-0.8,1,9);
+  RooPlot *frame = ws->var("cosT")->frame(0,1,9);
 
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_Combined"))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
@@ -411,7 +411,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
   l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
   //l.AddEntry(frame->getObject(1),"SM Higgs","l");
   l.AddEntry(frame->getObject(1),mcName,"l");
-  if(signal) l.AddEntry(frame->getObject(3),"bkg-subtracted Data","p");
+  if(signal) l.AddEntry(frame->getObject(2),"bkg-subtracted Data","p");
   
   frame->Draw();
   l.Draw("SAME");
@@ -566,7 +566,7 @@ void MakeSpinPlots::printYields(const char* mcType){
 
   float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
 
-  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries()/total * 607*lumi/12.;
+  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries();///total * 607*lumi/12.;
   cout << endl << "Expected Events:  "  << exp << endl;
   cout << "Expected Yields Per Category: " <<endl;
   for(int i=0;i<catNames.size();i++){ 
@@ -591,7 +591,7 @@ void MakeSpinPlots::MakeChannelComp(const char* mcType){
   RooRealVar mu("mu","",-50,50);
 
   float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
-  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries()/total * 607*lumi/12.;
+  float exp = ws->data(Form("%s_Combined",mcType))->sumEntries();///total * 607*lumi/12.;
 
   TH1F frame("frame","",catNames.size(),0,catNames.size());
 

@@ -140,9 +140,9 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName,float cosTlow, floa
 
   //signal fit parameters -- Triple Gaussian
   RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),meanStart,meanLow,meanHigh);
-  RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,20);
-  RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),1,0.1,20);
-  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),1,0.1,20);
+  RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,6);
+  RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),4,2,10);
+  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),7,5,20);
   RooRealVar f1(Form("%s_f1",outputTag.Data()),Form("%s_f1",outputTag.Data()),0.1,0.01,1);
   RooRealVar f2(Form("%s_f2",outputTag.Data()),Form("%s_f2",outputTag.Data()),0.1,0.01,1);
   RooGaussian g1(Form("%s_g1",outputTag.Data()),Form("%s_g1",outputTag.Data()),mass,mean,sig1);
@@ -269,7 +269,7 @@ float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
     }
   }
 
-  return (above*aboveCov+below*belowCov)/(aboveCov+belowCov)/2.; //weighted average
+  return (above*(aboveCov-0.683)+below*(0.683-belowCov))/(aboveCov-belowCov)/2.; //weighted average
 
 }
 
