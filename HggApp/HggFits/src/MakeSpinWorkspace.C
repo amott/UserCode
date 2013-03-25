@@ -309,8 +309,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     sige2->setVal(se2);
 
     if(isGlobe){
-      cosT->setVal(g->costheta_cs);
-      cosT_HX->setVal(g->costheta_hx);
+      cosT->setVal(fabs(g->costheta_cs));
+      cosT_HX->setVal(fabs(g->costheta_hx));
     }else{
       cosT->setVal(calculateCosThetaCS(h));
       cosT_HX->setVal(fabs(h->cosThetaLead));
