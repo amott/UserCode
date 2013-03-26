@@ -158,6 +158,7 @@ ZeeSelectorApp: $(SRCDIR)ZeeSelectorApp.C \
 	$(OUTLIBEGAMMA)LikelihoodPdfProduct.o \
 	$(OUTLIBEGAMMA)ElectronLikelihood.o \
 	$(OUTLIBCOMMON)EfficiencyEvaluator.o \
+	$(OUTLIB)HggEGEnergyCorrector.o \
 	$(OUTLIB)VecbosEGObject.o \
 	$(OUTLIB)ZeeSelector.o
 	$(CXX) $(CXXFLAGS) -o ZeeSelectorApp $(OUTLIB)/*.o $(OUTLIBCOMMON)/*o $(OUTLIBEGAMMA)/*o $(GLIBS) $ $<	

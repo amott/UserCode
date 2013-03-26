@@ -68,12 +68,17 @@ void ArgParser::printOptions(std::string appName){
     printf("\t%-60s%s\n",unlimitedArg.c_str(),unlimitedArgDesc.c_str());
   }
   std::cout << "Options: " << std::endl;
-  std::map<char,std::string>::const_iterator cmapIt;
+  std::map<char,std::string>::iterator cmapIt;
   for(cmapIt = shortFlagDesc.begin(); cmapIt != shortFlagDesc.end(); cmapIt++){
-    printf("\t-%-59c%s\n",cmapIt->first,cmapIt->second.c_str());
+    std::string opt;
+    opt[0] = cmapIt->first;
+    if(shortFlagReqArgMap[cmapIt->first]) opt += "=<>";
+    printf("\t-%-59s%s\n",opt.c_str(),cmapIt->second.c_str());
   }
   for(smapIt = longFlagDesc.begin(); smapIt !=longFlagDesc.end(); smapIt++){
-    printf("\t--%-58s%s\n",smapIt->first.c_str(),smapIt->second.c_str());
+    std::string opt = smapIt->first;
+    if(longFlagReqArgMap[opt]) opt+="=<>";
+    printf("\t--%-58s%s\n",opt.c_str(),smapIt->second.c_str());
   }
   
 }

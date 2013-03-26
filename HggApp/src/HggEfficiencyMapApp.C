@@ -49,6 +49,8 @@ int main(int argc, char* argv[]) {
 
   std::map<std::string,bool> Commands;
   Commands["--mmg"]=false;
+  Commands["--zeeMC"]=false;
+  Commands["--zee"]=false;
 
   for(int arg=3; arg<argc; arg++){
     for(std::map<std::string,bool>::iterator it=Commands.begin(); it!=Commands.end(); it++){
@@ -80,7 +82,7 @@ int main(int argc, char* argv[]) {
       {
 	sscanf(Buffer,"%s",MyRootFile);
 	if(string(MyRootFile).find("eos") != std::string::npos) {
-	  fileNames.push_back("root:/"+string(MyRootFile));
+	  fileNames.push_back(string(MyRootFile));
         } else if(string(MyRootFile).find("castor") != std::string::npos) {
 	  fileNames.push_back("rfio:"+string(MyRootFile));
 	} else{
@@ -107,6 +109,8 @@ int main(int argc, char* argv[]) {
   //sel.addTrigger("HLT_Photon26_R9Id85_OR_CaloId10_Iso50_Photon18_R9Id85_OR_CaloId10_Iso50_Mass60_v4");
   sel.setConfigFile(cfg);
   if(Commands["--mmg"]) sel.setMuMuGamma();
+  if(Commands["--zeeMC"]) sel.setZeeMC();
+  if(Commands["--zee"]) sel.setZeeData();
   sel.Loop();
   
   cout << "DONE" <<endl;

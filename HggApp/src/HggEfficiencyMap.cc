@@ -1,5 +1,6 @@
 #include <HggEfficiencyMap.hh>
 #include "ReadConfig.hh"
+#include "CommonTools/include/Utils.hh"
 
 //includes for the TMVA ID
 #include "TMVA/Tools.h"
@@ -20,6 +21,7 @@ HggEfficiencyMap::HggEfficiencyMap():
   Jets_(0),
   GenHiggs(0),
   GenPhotons(0),
+  GenElectrons(0),
   mode(kMC)
 {
 }
@@ -32,6 +34,7 @@ HggEfficiencyMap::HggEfficiencyMap(vector<string> fNames, string treeName,string
   Jets_(0),
   GenHiggs(0),
   GenPhotons(0),
+  GenElectrons(0),
   mode(kMC)
 {
   this->loadChain(fNames,treeName);
@@ -115,6 +118,14 @@ void HggEfficiencyMap::Loop(){
 
     case kMMG:
       runMMG();
+      break;
+
+    case kZeeMC:
+      runZeeMC();
+      break;
+
+    case kZee:
+      runZee();
       break;
     }
     
@@ -214,6 +225,59 @@ void HggEfficiencyMap::runGen(){
     }
 }
 
+void HggEfficiencyMap::runZeeMC(){
+  //run the MC-based selection
+    //DO
+    for(int iGen=0; iGen<nGenEle;iGen++){
+      VecbosGen& gen = GenElectrons->at(iGen);
+      this->clear();
+      if(gen.status!=1) continue;
+      outPt = gen.pt;
+      outEta = gen.eta;
+      outPhi = gen.phi;
+      //compute the detector eta
+      TVector3 vtxPos(vtxX[0],vtxY[0],vtxZ[0]); //gen.Vx,gen.Vy,gen.Vz); // Something is broken with the gen vtx
+      TVector3 physVec;
+      physVec.SetPtEtaPhi(outPt,outEta,outPhi);
+      TVector3 caloVec = (physVec+vtxPos).Unit()*gen.energy;
+      TLorentzVector caloP4;
+      caloP4.SetVectM(caloVec,0);
+      outEtaSC = caloP4.Eta();
+
+      outRecoPt=-1;
+      outRecoEta=-99;
+      outRecoEtaSC=-99;
+      outR9=0;
+      VecbosPho* matched = findGenMatchElectron(&gen);
+      if(matched == 0){
+	outputTree->Fill(); continue;
+      }
+      passMatch=true;
+      outRecoEta = matched->eta;
+      outRecoPt = matched->p4FromVtx(vtxPos,matched->finalEnergy).Pt();
+      outRecoEtaSC = matched->SC.eta;
+      outR9 = matched->SC.r9;
+
+      if(!etaSelectPhoton(matched)){
+	outputTree->Fill(); continue;
+      }
+      passEta=true;
+      
+      if(!PhotonID->getPreSelection(matched,nVtx,rho,0)){
+	outputTree->Fill(); continue;
+      }
+      passPreselection=true;
+
+      if(!PhotonID->getIdCiCPF(matched,nVtx,rho,0)){
+	outputTree->Fill(); continue;
+      }
+      passCiC=true;
+      
+      outputTree->Fill();
+    }
+
+}
+
 void HggEfficiencyMap::runMMG(){
   TVector3 vtxPos(vtxX[0],vtxY[0],vtxZ[0]); 
   
@@ -268,6 +332,54 @@ void HggEfficiencyMap::runMMG(){
       }
     }
   }
+}
+
+void HggEfficiencyMap::runZee(){
+  TVector3 vtxPos(vtxX[0],vtxY[0],vtxZ[0]); 
+  for(int i=0;i<nPho_;i++){
+    VecbosPho& pho1 = Photons_->at(i);
+    //tag electron
+    if(!PhotonID->getIdCiCPF(&pho1,nVtx,rho,0)) continue;
+    TLorentzVector p4ele1 = pho1.p4FromVtx(vtxPos,pho1.finalEnergy);
+    if(p4ele1.Pt() < 30) continue;
+    for(int j=0;j<nPho_;j++){
+      if(j==i) continue; //find another photon consistent with the Z peak
+      VecbosPho& pho2 = Photons_->at(j);
+      TLorentzVector p4ele2 = pho2.p4FromVtx(vtxPos,pho2.finalEnergy);
+      float M = (p4ele1+p4ele2).M();
+
+      if(M<88 || M > 94) continue;
+
+      //OK, photon j is consistent with the Z peak
+      this->clear();
+
+	outPt = -1;
+	outEta = 0;
+	outEtaSC = 0;
+	
+	outRecoPt=p4ele2.Pt();
+	outRecoEta=p4ele2.Eta();;
+	outRecoEtaSC=pho2.SC.eta;
+	outPhi = pho2.SC.phi;
+	outR9=pho2.SC.r9;
+	if(!etaSelectPhoton(&pho2)){
+	  outputTree->Fill(); continue;
+	}
+	passEta=true;
+	
+	if(!PhotonID->getPreSelection(&pho2,nVtx,rho,0)){
+	  outputTree->Fill(); continue;
+	}
+	passPreselection=true;
+	
+	if(!PhotonID->getIdCiCPF(&pho2,nVtx,rho,0)){
+	  outputTree->Fill(); continue;
+	}
+	passCiC=true;
+	
+	outputTree->Fill();	
+    }
+  }  
 }
 
 bool HggEfficiencyMap::etaSelectPhoton(VecbosPho* pho){
@@ -349,11 +461,14 @@ void HggEfficiencyMap::setBranchAddresses(){
 
  fChain->SetBranchAddress("nGenHiggs",&nGenHiggs);
  fChain->SetBranchAddress("GenHiggs",&GenHiggs);
-
+ 
  fChain->SetBranchAddress("nGenPho",&nGenPho);
  fChain->SetBranchAddress("GenPhotons",&GenPhotons);
 
- fChain->SetBranchAddress("nPU",&inPU);
+ fChain->SetBranchAddress("nGenEle",&nGenEle);
+ fChain->SetBranchAddress("GenElectrons",&GenElectrons);
+
+fChain->SetBranchAddress("nPU",&inPU);
 
  fChain->SetBranchAddress("PFMET",&pfMet);
  fChain->SetBranchAddress("PFMETPhi",&pfMetPhi);
@@ -369,4 +484,25 @@ VecbosPho* HggEfficiencyMap::findGenMatchPhoton(VecbosGen* gen){
     if(pho->genMatch.index == index) return pho;
   }
   return 0;
+}
+
+VecbosPho* HggEfficiencyMap::findGenMatchElectron(VecbosGen* gen){
+  //need to match a RECO photon to the gen level electron
+  const float maxDR = 0.2;
+  float dEoEBest = 9999;
+  int indexPho = -1;
+
+  for(int iPho=0;iPho<nPho_;iPho++){
+    VecbosPho* pho = &(Photons_->at(iPho));
+    if(DeltaR(pho->SC.eta,gen->eta,pho->SC.phi,gen->phi) > maxDR) continue;
+    
+    float dEoE = fabs(pho->finalEnergy-gen->energy)/gen->energy;
+    if(dEoE > 1.) continue;
+    if(dEoE < dEoEBest){
+      dEoEBest = dEoE;
+      indexPho = iPho;
+    }
+  }  
+  if(indexPho==-1) return 0;
+  return &(Photons_->at(indexPho));
 }

@@ -27,6 +27,8 @@ public:
   void setConfigFile(string s){configFile = s;}
   void setMuMuGamma(){mode=kMMG;}
   void setMC(){mode=kMC;}
+  void setZeeMC(){mode=kZeeMC;}
+  void setZeeData(){mode=kZee;}
 
   void Loop();
 protected:
@@ -58,13 +60,16 @@ protected:
   bool etaSelectPhoton(VecbosPho* pho);
   void smearPhoton(VecbosPho* pho, int smearShift);
 
-  enum runMode{kMC,kMMG};
+  enum runMode{kMC,kMMG,kZeeMC,kZee};
   runMode mode; //!< This flag will identify photons using MuMuGamma Selection in data
 
   void runGen();
   void runMMG();
+  void runZeeMC();
+  void runZee();
 
   VecbosPho* findGenMatchPhoton(VecbosGen* gen); //find the reco photon matched to a gen photon
+  VecbosPho* findGenMatchElectron(VecbosGen* gen); //find the reco photon matched to a gen photon
 
   //*****************
   //output tree
@@ -131,6 +136,10 @@ protected:
 
   int nGenPho;
   std::vector<VecbosGen> *GenPhotons;
+
+  int nGenEle;
+  std::vector<VecbosGen> *GenElectrons;
+  
 
   float pfMet;
   float pfMetPhi;

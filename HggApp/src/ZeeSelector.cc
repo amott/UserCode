@@ -46,6 +46,30 @@ int ZeeSelector::init(){
   
   this->setBranchAddresses();
   this->setupOutputTree();
+
+  ReadConfig cfg;
+  int retcode = cfg.read(config);
+  if(retcode != 0){
+    cout << "Error reading configuration file!" <<std::endl
+	 << "Error Code: " << retcode << std::endl;
+    valid = false;
+    return -1;
+  }
+
+  doScale      = cfg.getParameter("redoScale").compare("yes")==0;
+  doSmear      = cfg.getParameter("redoSmear").compare("yes")==0;
+  
+  if(doScale){
+    std::string scaleCFG = cfg.getParameter("EnergyScaleCFG");
+    scale = new HggEnergyScale(scaleCFG);
+  }
+  if(doSmear){
+    std::string smearCFG = cfg.getParameter("EnergySmearCFG");
+    smear = new HggEnergyScale(smearCFG);    
+    applyScaleSmear = atoi(cfg.getParameter("ScaleSmear").c_str());
+    std::cout << "Doing smearing.  Config: " << smearCFG << "  ScaleSmear: " << applyScaleSmear <<std::endl;
+  }
+
 }
 
 void swap(VecbosEle& e1, VecbosEle &e2){
@@ -71,6 +95,26 @@ void ZeeSelector::Loop(){
     isZmass = false;
     // Require the event to have at least two electrons
     if (nEle > 1) {   
+
+      //apply scale and smear to the electrons
+      for(int i=0;i<nEle;i++){
+	VecbosEle ele = Electrons->at(i);
+	if(doScale){
+	  std::pair<float,float> dE = scale->getDEoE(ele,runNumber);
+	  ele.dEoE    = dE.first;
+	  ele.dEoEErr = 0;
+	  ele.scaledEnergy = ele.correctedEnergy*(ele.dEoE);
+	  ele.scaledEnergyError = ele.correctedEnergyError*((ele.dEoE+ele.dEoEErr));
+	}
+	if(doSmear){
+	  ele.scaledEnergy = ele.correctedEnergy;
+	  ele.scaledEnergyError = ele.correctedEnergyError;
+	  std::pair<float,float> dE = smear->getDEoE(*pho,applyScaleSmear);
+	  ele.dEoE    = dE.first;
+	  ele.dEoEErr = dE.second;
+	}
+      }
+
 
       // Choose First Electron
       for (int k=0; k<nEle-1;k++) { 
@@ -133,6 +177,8 @@ void ZeeSelector::Loop(){
 	    DZmass = fabs(Zeemass - 91.2);
 	    // Compare the proximity of uncut Z mass to real Z mass with other electron pairs in event
 	    if (DZmass < DZmassref && (lpass + mvapass + tpass)>=0) {
+	      elecorr->setEventInfo(rho,nVtx);
+
 	      std::pair<double,double> ele1corr = elecorr->electronEnergyCorrector_May2012(ele1,false);
 	      std::pair<double,double> ele2corr = elecorr->electronEnergyCorrector_May2012(ele2,false);
 	      std::pair<double,double> ele1corrScale = elecorr->electronEnergyCorrector_May2012(ele1,true);

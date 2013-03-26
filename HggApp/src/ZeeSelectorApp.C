@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
       {
 	sscanf(Buffer,"%s",MyRootFile);
 	if(string(MyRootFile).find("eos") != std::string::npos) {
-	  fileNames.push_back("root:/"+string(MyRootFile));
+	  fileNames.push_back(string(MyRootFile));
         } else if(string(MyRootFile).find("castor") != std::string::npos) {
 	  fileNames.push_back("rfio:"+string(MyRootFile));
 	} else{

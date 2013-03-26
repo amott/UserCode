@@ -623,7 +623,7 @@ void HggSelector::smearPhoton(VecbosPho* pho,int smearShift){
   if(rand < -1) rand=-1;
   if(rand > 1E3) rand = 1E3;
   pho->finalEnergy = pho->scaledEnergy*(1+rand);
-  pho->finalEnergyError = pho->scaledEnergyError*(1+rand);
+  pho->finalEnergyError = pho->scaledEnergyError;//*(1+rand);
 }
 
 void HggSelector::setDefaults(){
