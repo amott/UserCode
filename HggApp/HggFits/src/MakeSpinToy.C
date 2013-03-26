@@ -10,8 +10,8 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName):
 
   mass = ws->var("mass");
   cosT = ws->var("cosT");
-  cosT->setRange(-0.8,1);
-  cosT->setBins(9);
+  cosT->setRange(0,1);
+  cosT->setBins(10);
   S = new RooRealVar("S","",0,-1e6,1e6);
 
   GenMinusFit = new RooRealVar("NgenMinusNfit","",0,-1e6,1e6);
