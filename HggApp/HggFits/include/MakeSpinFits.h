@@ -114,6 +114,9 @@ public:
   /*! 
     Builds a background-sbutracted RooDataHist for data in the category specified by tag and using the yields and line-shape specified by mcName
   */
+  RooAbsPdf* Make2DSignalModel(TString massMcName,TString costMcName,TString catTag,TString inset);
+  RooAbsPdf* Make2DBkgModel(TString massMcName,TString costMcName,TString catTtag,TString inset);
+
   void getSimpleBkgSubtraction(TString mcName,TString tag); //<! makes the background-subtracted cos(theta) distribution from data in the specified category
 
   void getSimpleTotalBkgSubtraction(TString mcName); //<! builds the background-subtracted cos(theta) distribution for the inclusive dataset
@@ -142,6 +145,8 @@ public:
     meanHigh=high;
     meanStart=start;
   }
+  void setUse2DIntegralMorph(bool b=true){use2DIntegralMorph=b;}
+
 protected:
   RooWorkspace *ws;
 
@@ -159,6 +164,8 @@ protected:
   float meanLow, meanHigh, meanStart;
 
   BkgFitType fitType;
+
+  bool use2DIntegralMorph;
 };
 
 #endif

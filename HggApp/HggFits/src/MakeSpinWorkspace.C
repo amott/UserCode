@@ -8,7 +8,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   mixer(0),
   fileKFactor(0),
   fileRescaleFactor(0),
-  isGlobe(0)
+  isGlobe(0),
+  lumi(-1)
 {
   //setup the defaults
 
@@ -89,7 +90,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   //adds the data/MC to the workspace with the given tag
   std::cout << "Processing " <<tag << " : " << inputFile <<std::endl;
   TFile *f=0;
-  TChain *tree;
+  TChain *tree=0;
   TString treeName = (isGlobe ? Form("spin_trees/%s",tag.Data()) : "HggOutput");
   if(isList){
     tree = getChainFromList(inputFile,treeName);
@@ -97,7 +98,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     f = TFile::Open(inputFile);
     tree = (TChain*)f->Get(treeName);
   }
-
+  if(tree==0) return;
 
   //define a reader class for the input tree
   HggOutputReader2 *h=0;
@@ -367,6 +368,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooArgSet setCat(set);
   setCat.add(*cat);
   RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat);
+
+  float lumiRescaleFactor = lumi * 50.58/(nEB+nEE);  //50.58 Higgs/fb
   
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
@@ -377,7 +380,14 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     else cattag = Form("EB_%d_%d", (dIt->first).first, (dIt->first).second );
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
-    dataComb->append(*tmp);
+
+    Long64_t iEntry=-1;
+    const RooArgSet *set;
+    while( (set = tmp->get(++iEntry)) ){
+      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor );
+      dataComb->add(*set);
+    }
+    //dataComb->append(*tmp);
     //ws->import(*(dIt->second));
   }
   for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
@@ -388,7 +398,14 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     else cattag = Form("EE_%d_%d", (dIt->first).first, (dIt->first).second );
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
-    dataComb->append(*tmp);    
+
+    Long64_t iEntry=-1;
+    const RooArgSet *set;
+    while( (set = tmp->get(++iEntry)) ){
+      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor );
+      dataComb->add(*set);
+    }
+    //dataComb->append(*tmp);    
     //ws->import(*(dIt->second));
   }
 
@@ -403,12 +420,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   if(efficiencyCorrection) efficiencyCorrection->Close();
   if(fileKFactor) fileKFactor->Close();
   if(fileRescaleFactor) fileRescaleFactor->Close();
-
-  if(f) f->Close();
-  delete tree;
-
   if(h) delete h;
   if(g) delete g;
+
+  //if(f) f->Close();
+
 }
 
 float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){

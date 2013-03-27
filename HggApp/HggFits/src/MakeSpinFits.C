@@ -6,7 +6,8 @@ using namespace std;
 //default constructor
 MakeSpinFits::MakeSpinFits():
   addSWeight(true),
-  useCB(false)
+  useCB(false),
+  use2DIntegralMorph(false)
 {
   ws=0;
   setBkgFit(MakeSpinFits::kExp);
@@ -15,7 +16,8 @@ MakeSpinFits::MakeSpinFits():
 
 MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
   addSWeight(true),
-  useCB(false)
+  useCB(false),
+  use2DIntegralMorph(false)
 {
   if(inputFileName != ""){
     //opens the input file and gets the input workspace
@@ -532,11 +534,12 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
   std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
+
+    RooAbsPdf *signalMassModel = ws->pdf( Form("Data_%s_FIT_%s",massMcName.Data(),catIt->Data()));
+    RooAbsPdf *signalCosModel = ws->pdf(Form("%s_FIT_%s_cosTpdf",costMcName.Data(),catIt->Data()));
     
-    RooAbsPdf *signalMassModel = ws->pdf( Form("Data_%s_FIT_%s",massMcName.Data(),catIt->Data()) );
     RooAbsPdf *bkgMassModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgShape",catIt->Data() ) );
 
-    RooAbsPdf *signalCosModel = ws->pdf(Form("%s_FIT_%s_cosTpdf",costMcName.Data(),catIt->Data()));
     RooAbsPdf *bkgCosModel    = ws->pdf(Form("Data_BKGFIT_%s_cosTpdf",catIt->Data()));
 
     double totalEventsB = ws->data("Data_Combined")->sumEntries();
@@ -554,11 +557,12 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
     std::cout << "sig model COST integral: " << signalCosModel->createIntegral(*cosT)->getVal() <<std::endl;
     std::cout << "bkg model COST integral: " << bkgCosModel->createIntegral(*cosT)->getVal() <<std::endl;
 
-    RooProdPdf *signalModel = new RooProdPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s_signalModel",massMcName.Data(),costMcName.Data(),catIt->Data()),"",
-					     RooArgList(*signalMassModel,*signalCosModel));
     RooProdPdf *bkgModel = new RooProdPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s_bkgModel",massMcName.Data(),costMcName.Data(),catIt->Data()),"",
 					     RooArgList(*bkgMassModel,*bkgCosModel));
     
+    RooProdPdf *signalModel = new RooProdPdf(Form("Data_m_%s_c_%s_IND2DFIT_%s_signalModel",massMcName.Data(),costMcName.Data(),catIt->Data()),"",
+					     RooArgList(*signalMassModel,*signalCosModel));
+
     std::cout << "sig model integral: " << signalModel->createIntegral(RooArgList(*mass,*cosT))->getVal() <<std::endl;
     std::cout << "bkg model integral: " << bkgModel->createIntegral(RooArgList(*mass,*cosT))->getVal() <<std::endl;
 
@@ -578,6 +582,38 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
   ws->import(*res);
 
 }
+RooAbsPdf* MakeSpinFits::Make2DSignalModel(TString massMcName,TString costMcName,TString catTag,TString inset){
+  return 0;
+  /*
+  RooAbsPdf *signalMassModel = ws->pdf( Form("Data_%s_FIT_%s",massMcName.Data(),catTag.Data()));
+  RooAbsPdf *signalCosModel = ws->pdf(Form("%s_FIT_%s_cosTpdf",costMcName.Data(),catTag.Data()));
+    TString name = TString("Data_m_")+massMcName+"_c_"+costMcName+"_"+inset+"_"+catTag+"_signalModel";
+    if(!use2DIntegralMorph) return new RooProdPdf(name,"",RooArgList(*signalMassModel,*signalCosModel));
+    
+    RooCategory *cosThetaBins = (RooCategory*)ws->obj("CosThetaBins");
+    
+    cosThetaBins->setIndex(0);
+    TString low = cosThetaBins->getLabel();
+    cosThetaBins->setIndex(cosThetaBins->numBins("")-1);
+    TString high = cosThetaBins->getLabel();
+    
+
+    RooAbsPdf *signalMassModel_low = ws->pdf( TString("Data_")+massMcName+"_FIT_"+catTag+"_"+low );
+    RooAbsPdf *signalMassModel_high = ws->pdf( TString("Data_")+massMcName+"_FIT_"+catTag+"_"+high );
+
+    RooRealVar *mass = ws->var("mass");
+    RooRealVar *cosT = ws->var("cosT");
+
+    mass->setBins(400,"cache");
+    cosT->setBins(100,"cache");
+
+    RooIntegralMorph *morph = new RooIntegralMorph(name,"",*mass,*cosT);
+    morph->setCacheAlpha(kTRUE);
+    return morph;
+  */
+}
+
+RooAbsPdf* MakeSpinFits::Make2DBkgModel(TString massMcName,TString costMcName,TString catTag,TString inset){return 0;}
 
 void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   std::cout << "MakeSpinFits::MakeBackgroundOnlyFit" <<std::endl;

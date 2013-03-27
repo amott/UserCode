@@ -69,6 +69,7 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,genType gen){
 
   TRandom3 rng(0);
   float Nsig = rng.Poisson( ws->data(mcLabels[1]+"_Combined")->sumEntries()*targetLumi/nominalLumi); 
+  //float Nsig = rng.Poisson( 607.*targetLumi/12.);
   for( std::vector<TString>::const_iterator it = catLabels.begin();
        it != catLabels.end(); it++,i++){
     std::cout << *it <<std::endl;

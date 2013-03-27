@@ -54,6 +54,14 @@ int main(int argc, char** argv){
 
   bool isGlobe = (cfgReader.getParameter("isGlobe",cfgOption).compare("yes")==0);
 
+  float lumi = atof(cfgReader.getParameter("lumi",cfgOption).c_str());
+
+  if(lumi<=0){
+    std::cout << "LUMI NOT SPECIFIED FOR " << cfgOption << std::endl
+	      << "ABORTING" <<std::endl;
+    return 1;
+  }
+
   if(isGlobe){
     std::cout << "\n\n RUNNING ON GLOBE NTUPLES\n\n" << std::endl;
   }
@@ -111,6 +119,8 @@ int main(int argc, char** argv){
   }
   
   msw.setIsGlobe(isGlobe);
+
+  msw.setLumi(lumi);
 
   msw.setRequireCiC(requireCiC);
   msw.setSelectionMap(selectionMap);

@@ -101,6 +101,7 @@ public:
   void setPt1Cut(float c){pt1Min=c;}
   void setPt2Cut(float c){pt2Min=c;}
   void setIsGlobe(bool b=true){isGlobe=b;} //!< set to run on globe trees
+  void setLumi(float f){lumi=f;}
 protected:
   std::vector<TString> fileName,label; // lists of input file names and corresponding labels
   std::vector<bool> isData,isList;     // list of bools specifying whether the files correspond to data
@@ -121,6 +122,8 @@ protected:
   bool useR9;                          // whether to use CiC (R9) or sigma_E/E cateogries (default: false)
   bool useUncorrMass;
   bool isGlobe;
+
+  float lumi;                          // luminosity to which to normalize the MC
 
   void AddToWorkspace(TString inputFile,TString tag, bool isData, bool isList); // takes a file and its labels and adds to the workspace
 
