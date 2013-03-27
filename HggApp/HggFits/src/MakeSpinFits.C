@@ -582,6 +582,7 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
   ws->import(*res);
 
 }
+/*
 RooAbsPdf* MakeSpinFits::Make2DSignalModel(TString massMcName,TString costMcName,TString catTag,TString inset){
   return 0;
   /*
@@ -610,11 +611,11 @@ RooAbsPdf* MakeSpinFits::Make2DSignalModel(TString massMcName,TString costMcName
     RooIntegralMorph *morph = new RooIntegralMorph(name,"",*mass,*cosT);
     morph->setCacheAlpha(kTRUE);
     return morph;
-  */
+
 }
 
 RooAbsPdf* MakeSpinFits::Make2DBkgModel(TString massMcName,TString costMcName,TString catTag,TString inset){return 0;}
-
+*/
 void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
   std::cout << "MakeSpinFits::MakeBackgroundOnlyFit" <<std::endl;
   if(ws==0) return;

@@ -67,9 +67,9 @@ public:
   void setLumi(float l){lumi = l;} //!< set the lumi for the plots to display
   void setBasePath(TString s){basePath = s;} //!< set the base path to which to save the figures
 
-  void printAll();
-  void printYields(const char* mcType);
-  void MakeChannelComp(const char* mcType);
+  void printAll(); //!< Print to stdout the yields for all MC that have been fit
+  void printYields(const char* mcType); //!< print to stdout the yield for the specified MC
+  void MakeChannelComp(const char* mcType); //!< Make a channel compatibility plot for the specified MC sample
 protected:
   TFile *inputFile;
   RooWorkspace *ws;

@@ -1,8 +1,9 @@
 #include "MakeSpinToy.h"
 #include <iostream>
 
-MakeSpinToy::MakeSpinToy(TString fileName,TString wsName):
-  nCat(MakeSpinWorkspace::nCat){
+MakeSpinToy::MakeSpinToy(TString fileName,TString wsName)
+  //nCat(2);
+{
   TFile *f = new TFile(fileName);
   ws = (RooWorkspace*)f->Get(wsName);
 
@@ -10,7 +11,7 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName):
 
   mass = ws->var("mass");
   cosT = ws->var("cosT");
-  cosT->setRange(0,1);
+  //cosT->setRange(0,1);
   cosT->setBins(10);
   S = new RooRealVar("S","",0,-1e6,1e6);
 
@@ -200,7 +201,7 @@ double MakeSpinToy::computeLL(RooAbsPdf* pdf, RooAbsData* data,RooRealVar* var, 
   //data->fillHistogram(&dataHist,*var);
 
   TH1F* dataHist = getHistogram(data,"dataHist",rebin);
-  TH1F* pdfHist = (TH1F*)pdf->createHistogram("cosT",nBins/rebin);
+  TH1F* pdfHist = (TH1F*)pdf->createHistogram("cosT",var->getBins()/rebin);
 
   std::cout << dataHist->Integral() << std::endl;
   pdfHist->Scale(dataHist->Integral()/pdfHist->Integral());
@@ -232,7 +233,7 @@ double MakeSpinToy::computeLL(RooAbsPdf* pdf, RooAbsData* data,RooRealVar* var, 
 }
 
 TH1F* MakeSpinToy::getHistogram(RooAbsData* data, TString title, int rebin){
-  TH1F* out = new TH1F(title,"",cosT->getBins()/rebin,0,1);
+  TH1F* out = new TH1F(title,"",cosT->getBins()/rebin,cosT->getMin(),1);
 
   int i=0;
   while(data->get(i)){
@@ -387,16 +388,16 @@ double* MakeSpinToy::run1(genType gen, int& N){
     }
     
     std::cout << "hgg" <<std::endl;
-    hggll += computeLL(hggPdf,thisBkgHgg,cosT,3);
+    hggll += computeLL(hggPdf,thisBkgHgg,cosT,2);
     std::cout << "alt" <<std::endl;
     //altll += computeLL(altPdf,thisBkgALT,cosT,3);
-    altll += computeLL(altPdf,thisBkgHgg,cosT,3);
+    altll += computeLL(altPdf,thisBkgHgg,cosT,2);
     
     std::cout << "hgg splot" <<std::endl;
-    shggll += computeLL(hggPdf,thisShistHgg,cosT,3);
+    shggll += computeLL(hggPdf,thisShistHgg,cosT,2);
     std::cout << "alt splot" <<std::endl;
     //saltll += computeLL(altPdf,thisShistALT,cosT,3);
-    saltll += computeLL(altPdf,thisShistHgg,cosT,3);
+    saltll += computeLL(altPdf,thisShistHgg,cosT,2);
 
     std::cout << "Bkg-sub:" << std::endl;
     std::cout << "Hgg: " << hggll << std::endl;

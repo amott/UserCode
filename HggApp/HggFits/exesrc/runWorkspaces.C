@@ -22,7 +22,8 @@ int main(int argc, char** argv){
   a.addLongOption("setMassRange",ArgParser::reqArg,"set the mass range to include (default 100-180)");
   a.addLongOption("setLeadPtCut",ArgParser::reqArg,"set the pT cut of the leading photon (default: 32)");
   a.addLongOption("setTrailingPtCut",ArgParser::reqArg,"set the pT cut of the trailing photon (default: 24)");
-  
+  a.addLongOption("useHelicityFrame",ArgParser::noArg,"use the helicity frame to measure cos(theta) (default: collins-sopper frame)");
+  a.addLongOption("useAsymmCosTheta",ArgParser::noArg,"use the asymmetric (non-absolute value) cos(theta)");
 
   string ret;
   if(a.process(ret) !=0){
@@ -142,6 +143,9 @@ int main(int argc, char** argv){
     }
     msw.setMassRange( atof(range.at(0).c_str()),atof(range.at(1).c_str()) );
   }
+
+  msw.setUseHelicityFrame(a.longFlagPres("useHelicityFrame"));
+  msw.setUseAbsCosTheta(!a.longFlagPres("useAsymmCosTheta"));
 
   msw.MakeWorkspace();
 

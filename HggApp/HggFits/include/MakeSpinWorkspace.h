@@ -63,6 +63,7 @@ public:
     \param fName the path to the input file
     \param l the label associated with this file
     \param is true = data, false = MC
+    \param list if true, the fName points to a list of nTuples rather than a single file
   */
   void addFile(TString fName,TString l,bool is,bool list=false); //!< takes a file name, label, and a bool specifying whether this corresponds to data and adds this to the list of files to process
   void setRequireCiC(bool b){requireCiC=b;} //!< specify whether to require the photons to have passed the CiC selection
@@ -96,12 +97,17 @@ public:
   void setKFactorFile(TString s){filenameKFactor = s;} //!< specify the file containing the KFactor weights for the higgs signal
   void setRescaleFile(TString s){filenameRescaleFactor = s;} //!< specify the file containing the data/MC weights for the signal MC
 
-  void setMassRange(float min, float max){mMin=min; mMax=max;}
-  void setPtCuts(float c1, float c2){pt1Min=c1; pt2Min=c2;}
-  void setPt1Cut(float c){pt1Min=c;}
-  void setPt2Cut(float c){pt2Min=c;}
+  void setMassRange(float min, float max){mMin=min; mMax=max;} //!< specify the range of the mass variable to save
+  void setPtCuts(float c1, float c2){pt1Min=c1; pt2Min=c2;}    //!< specify the lower pT cuts for the leading and subleading photons
+  void setPt1Cut(float c){pt1Min=c;}                           //!< specify the lower pT cut for the leading photon
+  void setPt2Cut(float c){pt2Min=c;}                           //!< specify the lower pT cut for the subleading photon
   void setIsGlobe(bool b=true){isGlobe=b;} //!< set to run on globe trees
+
+  void setUseHelicityFrame(bool b=true){useHelicityFrame=b;} //!< use the helicity frame rather than collin-sopper
+  void setUseAbsCosTheta(bool b=true){useAbsCosTheta=b;}     //!< use the absolute value of cos(theta)
+
   void setLumi(float f){lumi=f;}
+
 protected:
   std::vector<TString> fileName,label; // lists of input file names and corresponding labels
   std::vector<bool> isData,isList;     // list of bools specifying whether the files correspond to data
@@ -122,6 +128,9 @@ protected:
   bool useR9;                          // whether to use CiC (R9) or sigma_E/E cateogries (default: false)
   bool useUncorrMass;
   bool isGlobe;
+
+  bool useHelicityFrame;
+  bool useAbsCosTheta;
 
   float lumi;                          // luminosity to which to normalize the MC
 

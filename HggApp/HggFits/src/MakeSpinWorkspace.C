@@ -25,6 +25,9 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   setMassRange(100.,180.);
   setPtCuts(32.,24.);
 
+  setUseHelicityFrame(false);
+  setUseAbsCosTheta(false);
+
   EfficiencyCorrectionFile_Data="";
   EfficiencyCorrectionFile_MC="";
   filenameKFactor="";
@@ -141,8 +144,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   //define the variables for the workspace
   RooRealVar* mass   = new RooRealVar("mass",  "Mass [GeV]", mMin, mMax);
-  RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", 0,1);
-  RooRealVar* cosT_HX   = new RooRealVar("cosT_HX",  "cos(theta)", 0,1);
+  RooRealVar* cosT   = new RooRealVar("cosT",  "cos(theta)", (useAbsCosTheta ? 0 : -1),1);
   RooRealVar* sige1  = new RooRealVar("sigEoE1","#sigma_{E}/E Lead Photon",0,0.1);
   RooRealVar* sige2  = new RooRealVar("sigEoE2","#sigma_{E}/E SubLead Photon",0,0.1);
   RooRealVar* evtW   = new RooRealVar("evtWeight","Event Weight",1,0,20);
@@ -173,7 +175,6 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooArgSet set;
   set.add(*mass);
   set.add(*cosT);
-  set.add(*cosT_HX);
   set.add(*evtW);
   /*
   set.add(*sige1);
@@ -309,14 +310,19 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     sige1->setVal(se1);
     sige2->setVal(se2);
 
-    if(isGlobe){
-      cosT->setVal(fabs(g->costheta_cs));
-      cosT_HX->setVal(fabs(g->costheta_hx));
-    }else{
-      cosT->setVal(calculateCosThetaCS(h));
-      cosT_HX->setVal(fabs(h->cosThetaLead));
-    }
+    float cosTheta;
 
+    
+
+    if(isGlobe){
+      if(useHelicityFrame) cosTheta = g->costheta_hx;
+      else                 cosTheta = g->costheta_cs;
+    }else{ // not glob
+      if(useHelicityFrame) cosTheta = calculateCosThetaCS(h);
+      else                 cosTheta = h->cosThetaLead;
+    }
+    if(useAbsCosTheta) cosTheta = fabs(cosTheta);
+    cosT->setVal(cosTheta);
     /*
     eta1->setVal(h->Photon_eta[maxI]);
     eta2->setVal(h->Photon_eta[minI]);

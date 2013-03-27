@@ -70,26 +70,26 @@ public:
 
   ~MakeSpinFits();
 
-  RooWorkspace *getWorkspace(){return ws;} //<! returns the working RooWorkspace
+  RooWorkspace *getWorkspace(){return ws;} //!< returns the working RooWorkspace
 
-  void setWorkspace(RooWorkspace *inputWs){ //<! set the input workspace 
+  void setWorkspace(RooWorkspace *inputWs){ //!< set the input workspace 
     ws = inputWs;
     getLabels("labels",&mcLabel,ws);
     getLabels("evtcat",&catLabels,ws);
   }
 
-  void MakeSignalFit(TString tag,TString mcName,float cosTlow=-2,float cosThigh=2); //<! used to make the signal fits
-  void MakeSignalFitForFit(TString tag, TString mcName); //<! Copies the signal fits to knew pdfs whose parameters can be floated in a fit to data without distrubing the original fits
+  void MakeSignalFit(TString tag,TString mcName,float cosTlow=-2,float cosThigh=2); //!< used to make the signal fits
+  void MakeSignalFitForFit(TString tag, TString mcName); //!< Copies the signal fits to knew pdfs whose parameters can be floated in a fit to data without distrubing the original fits
 
-  void MakeCombinedSignalSpin(TString mcName); //<! Make RooHistPdfs of the cos(theta) distribution for inclusive signal samples
+  void MakeCombinedSignalSpin(TString mcName); //!< Make RooHistPdfs of the cos(theta) distribution for inclusive signal samples
 
-  void MakeBackgroundOnlyFit(TString catTag); //<! Make a background only fit to data in single category the type of fit is controlled by the fitType member
+  void MakeBackgroundOnlyFit(TString catTag); //!< Make a background only fit to data in single category the type of fit is controlled by the fitType member
 
   /*!
     Performs a simultaneous signal hypothesis test and extracts a total number of signal events.
     The fraction of signal in the different categories is fixed in the fit (by the signal MC sample) and only the total yield is allowed to float
   */
-  void MakeCombinedSignalTest(TString mcName); //<! Make a combined simultaneous fit to S+B
+  void MakeCombinedSignalTest(TString mcName); //!< Make a combined simultaneous fit to S+B
   /*!
     Performs a simultaneous signal hypothesis test in using 2D pdfs of mass X cos(theta).  The cos(theta) pdfs are RooHistPdfs taken from the signal MC and data sidebands.
     As with MakeCombinedSignalTest() the fraction of events in each category is fixed.
@@ -98,49 +98,53 @@ public:
     \param massMcName the name of the signal model to use for the Mass dimension of the fitting model.
     \param costMcName the name of the signal model to use for the cos(theta) dimension of the fitting model.
   */
-  void Make2DCombinedSignalTest(TString massMcName,TString costMcName); //<! Make a 2D S+B fit in the mass X cos(theta) plane
+  void Make2DCombinedSignalTest(TString massMcName,TString costMcName); //!< Make a 2D S+B fit in the mass X cos(theta) plane
 
   /*!
     Prforms a S+B fit with the individual category signal yields unconstrained.  Useful for channel compatibility measurement
     \sa MakeCombinedSignalTest()
   */
-  void MakeFloatingSignalTest(TString mcName); //<! Make a S+B signal fit with the category yields floated independently
+  void MakeFloatingSignalTest(TString mcName); //!< Make a S+B signal fit with the category yields floated independently
   /*!
-    Peorms a 2D S+B fit with the individual category signal yields unconstrained.  Useful for channel compatibility measurement
+    Peforms a 2D S+B fit with the individual category signal yields unconstrained.  Useful for channel compatibility measurement
     \sa Make2DCombinedSignalTest()
   */
-  void Make2DFloatingSignalTest(TString massMcName,TString costMcName); //<! Make a 2D S+B test with category yields floated independently
+  void Make2DFloatingSignalTest(TString massMcName,TString costMcName); //!< Make a 2D S+B test with category yields floated independently
 
   /*! 
     Builds a background-sbutracted RooDataHist for data in the category specified by tag and using the yields and line-shape specified by mcName
   */
-  RooAbsPdf* Make2DSignalModel(TString massMcName,TString costMcName,TString catTag,TString inset);
-  RooAbsPdf* Make2DBkgModel(TString massMcName,TString costMcName,TString catTtag,TString inset);
+  void getSimpleBkgSubtraction(TString mcName,TString tag); //!< makes the background-subtracted cos(theta) distribution from data in the specified category
 
-  void getSimpleBkgSubtraction(TString mcName,TString tag); //<! makes the background-subtracted cos(theta) distribution from data in the specified category
+  void getSimpleTotalBkgSubtraction(TString mcName); //!< builds the background-subtracted cos(theta) distribution for the inclusive dataset
+  void setAddSWeight(bool b){addSWeight=b;} //!< specify whether to add the SWeighted dataset to the output workspace
 
-  void getSimpleTotalBkgSubtraction(TString mcName); //<! builds the background-subtracted cos(theta) distribution for the inclusive dataset
-  void setAddSWeight(bool b){addSWeight=b;} //<! specify whether to add the SWeighted dataset to the output workspace
+  void run(); //!< run all fits in the correct order
 
-  void run(); //<! run all fits in the correct order
+  void save(); //!< save the output workspace
 
-  void save(); //<! save the output workspace
+  static float computeFWHM(RooAbsPdf* pdf, float mean, RooRealVar* var); //!< compute the Full Width at Half Maximum for a pdf
+  static float computeSigEff(RooAbsPdf* pdf,float mean, RooRealVar* var);//!< compute the sigma effective for a pdf
 
-  static float computeFWHM(RooAbsPdf* pdf, float mean, RooRealVar* var); //<! compute the Full Width at Half Maximum for a pdf
-  static float computeSigEff(RooAbsPdf* pdf,float mean, RooRealVar* var);
+  enum BkgFitType{kExp,kPoly}; //!< allowed types for background fit
 
-  enum BkgFitType{kExp,kPoly}; //<! allowed types for background fit
+  void setBkgFit(BkgFitType t){fitType=t;} //!< specify which type of background fit to use
+  void setUseCrystalBall(){useCB=true;}    //!< specify to use a crystal ball in the signal fit
 
-  void setBkgFit(BkgFitType t){fitType=t;} //<! specify which type of background fit to use
-  void setUseCrystalBall(){useCB=true;}
+  void AddCombinedBkgOnlySWeight(TString mcName); //!< add the SWeighted datasets from the combined fit
 
-  void AddCombinedBkgOnlySWeight(TString mcName); //<! add the SWeighted datasets from the combined fit
+  /*!
+    Takes all the labels of a RooCategory in the given workspace into a vector of TStrings
 
-  static void getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace *w);
+    \param varName the name of the RooCategory variable
+    \param lblVec  a pointer to the vector of TStrings to put the list into
+    \param w a pointer to the workspace containing the RooCategory
+  */
+  static void getLabels(const char *varName, std::vector<TString> *lblVec,RooWorkspace *w); //!< export the list of categories from a RooCategory into a list
 
-  int specifySamples(std::vector<std::string> samples);
+  int specifySamples(std::vector<std::string> samples); //!< specify the list of samples to run fits on (otherwise, all are used)
 
-  void setMeanRange(float low, float high, float start){ //<! specify the range to try to float the signal mean
+  void setMeanRange(float low, float high, float start){ //!< specify the range to try to float the signal mean
     meanLow=low;
     meanHigh=high;
     meanStart=start;
