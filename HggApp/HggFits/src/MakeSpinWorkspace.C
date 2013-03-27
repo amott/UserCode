@@ -375,7 +375,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   setCat.add(*cat);
   RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat);
 
-  float lumiRescaleFactor = lumi * 50.58/(nEB+nEE);  //50.58 Higgs/fb
+  float lumiRescaleFactor = (isGlobe ? 1 : lumi * 50.58/(nEB+nEE));  //50.58 Higgs/fb  globe already has this applied
   
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
