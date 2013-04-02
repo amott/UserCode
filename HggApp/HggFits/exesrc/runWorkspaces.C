@@ -115,8 +115,11 @@ int main(int argc, char** argv){
       mcIt++){
     string mcName = *mcIt;
     string filePath = cfgReader.getParameter(mcName,cfgOption);
+    string NgenSt   = cfgReader.getParameter(Form("N_%s",mcName.c_str()),cfgOption);
+    int Ngen = -1;
+    if(NgenSt.compare("")!=0) Ngen = atoi(NgenSt.c_str());
     cout << mcName << ":    " << filePath <<endl;
-    msw.addFile(filePath,mcName,false,isGlobe);
+    msw.addFile(filePath,mcName,false,Ngen,isGlobe);
   }
   
   msw.setIsGlobe(isGlobe);

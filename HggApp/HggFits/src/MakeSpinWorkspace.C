@@ -89,7 +89,7 @@ bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int mi
   return true;
 }
 
-void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData, bool isList){
+void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isData, int N, bool isList){
   //adds the data/MC to the workspace with the given tag
   std::cout << "Processing " <<tag << " : " << inputFile <<std::endl;
   TFile *f=0;
@@ -189,6 +189,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   */
   RooRealVar *totEB = new RooRealVar(Form("%s_EB_totalEvents",tag.Data()),"",0,0,1e9);
   RooRealVar *totEE = new RooRealVar(Form("%s_EE_totalEvents",tag.Data()),"",0,0,1e9);
+  RooRealVar *totGen = new RooRealVar(tag+"_Ngen","",N);
+
 
   std::map<std::pair<int,int>, RooDataSet*> dataMapEB, dataMapEE;
   std::map<std::pair<int,int>, RooDataSet*> *datamap;
@@ -375,7 +377,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   setCat.add(*cat);
   RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat);
 
-  float lumiRescaleFactor = (isGlobe ? 1 : lumi * 50.58/(nEB+nEE));  //50.58 Higgs/fb  globe already has this applied
+  float lumiRescaleFactor = (isGlobe ? 1 : lumi * 50.58/N);  //50.58 Higgs/fb
   
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
@@ -420,6 +422,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   ws->import(*dataComb_w);
   ws->import(*totEB);
   ws->import(*totEE);
+  ws->import(*totGen);
   ws->import(*evtW);
   cout << "Done" <<endl;
 
@@ -482,10 +485,11 @@ float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){
 
 }
 
-void MakeSpinWorkspace::addFile(TString fName,TString l,bool is,bool list){
+void MakeSpinWorkspace::addFile(TString fName,TString l,bool is,int N,bool list){
   fileName.push_back(fName);
   label.push_back(l);
   isData.push_back(is);
+  Ngen.push_back(N);
   isList.push_back(list);
   if(!is) labels->defineType(l,labels->numBins(""));
 }
@@ -495,13 +499,14 @@ void MakeSpinWorkspace::MakeWorkspace(){
   //run AddToWorkspace(...) on all the input files
   std::vector<TString>::const_iterator fnIt,lIt;
   std::vector<bool>::const_iterator idIt,ilIt;
-
+  std::vector<int>::const_iterator NgenIt;
   fnIt = fileName.begin();
   lIt  = label.begin();
   idIt = isData.begin();
+  NgenIt = Ngen.begin();
   ilIt = isList.begin();
-  for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++, ilIt++){
-    AddToWorkspace(*fnIt,*lIt,*idIt,*ilIt);
+  for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++,NgenIt++, ilIt++){
+    AddToWorkspace(*fnIt,*lIt,*idIt,*NgenIt,*ilIt);
     outputFile->cd();
     ws->Write(ws->GetName(),TObject::kWriteDelete);
   }
