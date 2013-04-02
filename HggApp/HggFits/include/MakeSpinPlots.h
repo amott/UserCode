@@ -42,6 +42,9 @@
 
 #include <map>
 
+//#include <boost/filesystem.hpp>
+#include <sys/stat.h>
+
 class MakeSpinPlots{
 public:
   MakeSpinPlots(TString inputFileName,TString outTag); //!< Constructor requires path to input workspace file and a tag which will be inserted into every output filename
@@ -88,6 +91,9 @@ protected:
 
   TStyle *vecbosStyle;
   void setStyle(); //!< setup the plot style 
+  
+  bool isSetup;
+  void setupDir();
 };
 
 #endif

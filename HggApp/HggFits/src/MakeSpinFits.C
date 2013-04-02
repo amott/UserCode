@@ -11,7 +11,7 @@ MakeSpinFits::MakeSpinFits():
 {
   ws=0;
   setBkgFit(MakeSpinFits::kExp);
-  setMeanRange(123,136,125);
+  setMeanRange(124,126,125);
 }
 
 MakeSpinFits::MakeSpinFits(TString inputFileName, TString outputFileName):
@@ -300,8 +300,8 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
     RooAbsPdf *signalModel = ws->pdf( Form("%s_FIT_%s",mcName.Data(),catIt->Data()) );
     RooAbsPdf *bkgModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",catIt->Data() ) );    
 
-    RooFormulaVar* Nsig = (RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),catIt->Data()) );
-    RooFormulaVar* Nbkg = (RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),catIt->Data()) );
+    RooFormulaVar* Nsig = (RooFormulaVar*)ws->obj( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),catIt->Data()) );
+    RooFormulaVar* Nbkg = (RooFormulaVar*)ws->obj( Form("Data_%s_INDFIT_%s_Nbkg",mcName.Data(),catIt->Data()) );
 
     cout << data << "   " << signalModel << "  " << bkgModel << "  " << Nsig << "  " << Nbkg <<endl;
 
@@ -718,7 +718,7 @@ void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
   double se  = ws->var( Form("%s_FIT_%s_sigmaEff",mcName.Data(),tag.Data()))->getVal();
   double m   = ws->var( Form("Data_%s_FIT_mean",mcName.Data()))->getVal();
 
-  double nSig = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),tag.Data()) ))->getVal()*0.682; //only take 68% of the signal, since we only do +- 1 sigma_eff
+  double nSig = ((RooFormulaVar*)ws->obj( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) ))->getVal()*0.682; //only take 68% of the signal, since we only do +- 1 sigma_eff
 
 
   /*

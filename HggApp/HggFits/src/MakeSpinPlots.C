@@ -4,6 +4,7 @@
 
 
 MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
+  isSetup=false;
   inputFile = new TFile(inputFileName);
   ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
 
@@ -25,6 +26,7 @@ MakeSpinPlots::~MakeSpinPlots(){
 }
 
 void MakeSpinPlots::runAll(){
+  if(!isSetup) setupDir();
   std::vector<TString>::const_iterator mcIt = mcNames.begin();
   for(; mcIt != mcNames.end(); mcIt++){
     runAll(*mcIt);
@@ -32,6 +34,7 @@ void MakeSpinPlots::runAll(){
 }
 
 void MakeSpinPlots::runAll(TString mcName){
+  if(!isSetup) setupDir();
   std::vector<TString>::const_iterator catIt = catNames.begin();
   for(; catIt != catNames.end(); catIt++){
     runAll(*catIt,mcName);
@@ -42,6 +45,7 @@ void MakeSpinPlots::runAll(TString mcName){
 }
 
 void MakeSpinPlots::runAll(TString tag, TString mcName){
+  if(!isSetup) setupDir();
   getFitValues(tag,mcName);
   DrawBlindFit(tag,mcName);
   DrawFit(tag,mcName);
@@ -635,4 +639,22 @@ void MakeSpinPlots::MakeChannelComp(const char* mcType){
 
   cv.SaveAs(basePath+Form("/ChannelComp_%s_%s.png",mcType,outputTag.Data()));
   cv.SaveAs(basePath+Form("/ChannelComp_%s_%s.pdf",mcType,outputTag.Data()));
+}
+
+void MakeSpinPlots::setupDir(){
+  mkdir(basePath.Data(),S_IRWXU|S_IRGRP|S_IXGRP);
+
+  basePath = basePath+"/"+outputTag+"/";
+  mkdir(basePath.Data(),S_IRWXU|S_IRGRP|S_IXGRP);    
+    
+  //signal models
+  TString path = basePath+"signalModels";
+  mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
+
+
+  // cos(theta)
+  path = basePath+"cosThetaPlots";
+  mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
+
+  isSetup = true;
 }

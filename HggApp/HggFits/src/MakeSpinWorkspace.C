@@ -22,7 +22,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
 
   useR9=false;
 
-  setMassRange(100.,180.);
+  setMassRange(110.,170.);
   setPtCuts(32.,24.);
 
   setUseHelicityFrame(false);
