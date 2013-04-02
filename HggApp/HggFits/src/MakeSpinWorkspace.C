@@ -276,6 +276,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     float se1,se2;
     float r91_f,r92_f;
     float pt1_f,pt2_f;
+    float eta1_f,eta2_f;
+    float phi1_f,phi2_f;
     if(isGlobe){
       se1 = g->lead_sigmaE/g->lead_E;
       se2 = g->sublead_sigmaE/g->sublead_E;
@@ -283,6 +285,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       r92_f = g->sublead_r9;
       pt1_f = TMath::Sqrt(TMath::Power(g->lead_px,2)+TMath::Power(g->lead_py,2));
       pt2_f = TMath::Sqrt(TMath::Power(g->sublead_px,2)+TMath::Power(g->sublead_py,2));
+      eta1_f = g->lead_calo_eta;
+      eta2_f = g->sublead_calo_eta;
+      phi1_f = g->lead_calo_phi;
+      phi2_f = g->sublead_calo_phi;
+      
     }else{
       se1 = h->Photon_EError[maxI]/h->Photon_E[maxI];
       se2 = h->Photon_EError[minI]/h->Photon_E[minI];
@@ -290,6 +297,10 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       r92_f = h->Photon_r9[minI];
       pt1_f = h->Photon_pt[maxI];
       pt2_f = h->Photon_pt[minI];
+      eta1_f = h->Photon_etaSC[maxI];
+      eta2_f = h->Photon_etaSC[minI];
+      phi1_f = h->Photon_phi[maxI];
+      phi2_f = h->Photon_phi[minI];
     }
 
 
@@ -347,8 +358,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     diPhotonMVA->setVal(h->diPhotonMVA);
     */
     //efficiencyCorrection=0
-    float pho1EffWeight = getEffWeight(eta1->getVal(),pt1->getVal(),phi1->getVal(),r91->getVal());
-    float pho2EffWeight = getEffWeight(eta2->getVal(),pt2->getVal(),phi2->getVal(),r92->getVal());
+    float pho1EffWeight = getEffWeight(eta1_f,pt1_f,phi1_f,r91_f);
+    float pho2EffWeight = getEffWeight(eta2_f,pt2_f,phi2_f,r92_f);
 
     //set the event weight
     if(!isData) evtW->setVal(weight*pho1EffWeight*pho2EffWeight);
