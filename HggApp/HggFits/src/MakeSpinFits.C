@@ -271,7 +271,7 @@ float MakeSpinFits::computeSigEff(RooAbsPdf* pdf, float mean, RooRealVar *var){
     }
   }
 
-  return (above*(aboveCov-0.683)+below*(0.683-belowCov))/(aboveCov-belowCov)/2.; //weighted average
+  return (above*(aboveCov-0.683)+below*(0.683-belowCov))/(aboveCov-belowCov); //weighted average
 
 }
 
