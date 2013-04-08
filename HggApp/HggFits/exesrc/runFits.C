@@ -49,8 +49,8 @@ int main(int argc, char** argv){
   if(a.longFlagPres("DY")) msf.setMeanRange(88,94,91);
 
   if(a.longFlagPres("FixPeak")){
-    if(a.longFlagPres("DY")) msf.setMeanRange(91,91,91);
-    else msf.setMeanRange(125,125,125);
+    if(a.longFlagPres("DY")) msf.setMeanRange(90,92,91);
+    else msf.setMeanRange(124,126,125);
   }
 
   msf.setAddSWeight(true);

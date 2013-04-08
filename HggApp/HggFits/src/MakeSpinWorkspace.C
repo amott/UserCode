@@ -1,6 +1,8 @@
 #include "MakeSpinWorkspace.h"
 #include <fstream>
 
+#include "assert.h"
+
 using namespace std;
 #include "selectionMaps.C"
 
@@ -205,20 +207,24 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set);
     }
   }else{
-    //using the sigmaE/E categories, we have nCat^2 categories
-    for(int i=0;i<nCat;i++){
-      for(int j=0;j<nCat;j++){
-	cat->defineType( Form("EB_%d_%d",i,j),4*i+2*j );
-	cat->defineType( Form("EE_%d_%d",i,j), 4*i+2*j+1 );
-	dataMapEB[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set);
-	dataMapEE[std::pair<int,int>(i,j)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set);
-      }
+    //using the sigmaE/E categories, we have nCat categories
+    for(int j=0;j<nCat;j++){
+      cat->defineType( Form("EB_%d",j),2*j );
+      cat->defineType( Form("EE_%d",j),2*j+1 );      
+      dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set);
+      dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set);
+      //dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set);
+      //dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set);
+      
     }
   }
 
   Long64_t iEntry=-1;
   cout << "Making DataSet" << endl;
   double nEB=0,nEE=0; // store the total number of events before any cuts or selection
+
+  //need to correct for overweighting the signal MC for the PU (<w> != 1)
+  long int Nentries=0;
 
   //begin main loop over tree
   while(true){
@@ -260,6 +266,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     if(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) nEB+=weight;
     else nEE+=weight;
 
+    Nentries++;
     
     float m;
     if(isGlobe) m = g->higgs_mass;
@@ -305,17 +312,30 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
 
     int p1,p2;
-
+    assert(minI != maxI);
     //determine the photon categories
     if(useR9){
       p1 = passSelection(r91_f);
       p2 = passSelection(r92_f);
     }else{
+      /*
       p1 = passSelection(map,se1,pho1_etaSC,pt1_f);
       p2 = passSelection(map,se2,pho2_etaSC,pt2_f);
+      */
+      float sm = sqrt(se1*se1+se2*se2);
+      if( fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48){
+	p1=2;
+	if(sm < 0.03) p1=1;
+	if(sm < 0.015) p1=0;
+      }else{
+	p1=2;
+	if(sm < 0.040) p1=1;
+	if(sm < 0.025) p1=0;
+      }
+      p2=p1;
     }
     if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
-    datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho1_etaSC) < 1.48) ?
+    datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ?
 	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
     
     //set all the variables
@@ -370,12 +390,15 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     //if(evtW->getVal() > 7.4) cout << iEntry << ": " << mass->getVal() << " : " << cosT->getVal() << " : " << evtW->getVal() << endl;
     //cout << pho1EffWeight << "\t" <<pho2EffWeight << "\t" << evtW->getVal()<<endl;
 
-
+    if(evtW->getVal() >10.){
+      std::cout << "Large Event Weight: " << evtW->getVal() << std::endl;
+      set.Print("V");
+    }
     if(useR9){
       int cat = (p1==0 && p2==0 ? 0 : 1);
       (*datamap)[std::pair<int,int>(cat,0)]->add(set);
     }else{
-      (*datamap)[std::pair<int,int>(p1,p2)]->add(set);
+      (*datamap)[std::pair<int,int>(p1,0)]->add(set);
     }
   }
   cout << "Processed " << iEntry << " Entries" <<endl;
@@ -389,21 +412,25 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooDataSet* dataComb = new RooDataSet(tag+"_Combined","",setCat);
 
   float lumiRescaleFactor = (isGlobe ? 1 : lumi * 50.58/N);  //50.58 Higgs/fb
+
+  float puWeightCorrection = (nEB+nEE)/Nentries;
   
+  std::cout << tag << " LUMI RESCALE: " << lumiRescaleFactor <<std::endl;
+
   std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
   for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
     //loop over the barrel datasets and add the individual data to the combined dataset
     //dIt->setWeightVar(*evtW);
     TString cattag;
     if(useR9) cattag = Form("EB_%d", (dIt->first).first );
-    else cattag = Form("EB_%d_%d", (dIt->first).first, (dIt->first).second );
+    else cattag = Form("EB_%d", (dIt->first).first );
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
-
+    tmp->Print();
     Long64_t iEntry=-1;
     const RooArgSet *set;
     while( (set = tmp->get(++iEntry)) ){
-      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor );
+      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor/puWeightCorrection );
       dataComb->add(*set);
     }
     //dataComb->append(*tmp);
@@ -414,14 +441,14 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     //dIt->setWeightVar(*evtW);
     TString cattag;
     if(useR9) cattag = Form("EE_%d", (dIt->first).first );
-    else cattag = Form("EE_%d_%d", (dIt->first).first, (dIt->first).second );
+    else cattag = Form("EE_%d", (dIt->first).first );
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
-
+    tmp->Print();
     Long64_t iEntry=-1;
     const RooArgSet *set;
     while( (set = tmp->get(++iEntry)) ){
-      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor );
+      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor/puWeightCorrection );
       dataComb->add(*set);
     }
     //dataComb->append(*tmp);    
