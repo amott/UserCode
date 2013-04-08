@@ -274,7 +274,9 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     else m = (useUncorrMass ? h->mPairNoCorr : h->mPair);
 
     // apply selections
-    if(!isGlobe){ // globe ntuples already have selections
+    if(isGlobe){ 
+      if(m <mMin || m > mMax) continue;
+    }else{// globe ntuples already have selections, just need mass cuts
       if(!getBaselineSelection(h,maxI,minI,m)) continue;
       if(tightPt && (h->Photon_pt[maxI]/m < 1./3. || h->Photon_pt[minI]/m < 1./4.) ) continue;
       if(requireCiC){
@@ -414,7 +416,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 
   float lumiRescaleFactor = (isGlobe ? 1 : lumi * 50.58/N);  //50.58 Higgs/fb
 
-  float puWeightCorrection = (nEB+nEE)/Nentries;
+  float puWeightCorrection = (isGlobe ? 1 : (nEB+nEE)/Nentries); // globe doesn't need this correction
   
   std::cout << tag << " LUMI RESCALE: " << lumiRescaleFactor <<std::endl;
 
