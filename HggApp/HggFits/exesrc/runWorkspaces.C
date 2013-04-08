@@ -109,7 +109,7 @@ int main(int argc, char** argv){
 
   cout << "Data:    " << data <<endl;
 
-  msw.addFile(data,"Data",true,isGlobe);
+  msw.addFile(data,"Data",true,-1,isGlobe);
   for(vector<string>::const_iterator mcIt = mcListVec.begin();
       mcIt != mcListVec.end();
       mcIt++){

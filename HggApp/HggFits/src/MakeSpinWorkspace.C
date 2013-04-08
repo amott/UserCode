@@ -98,6 +98,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   TChain *tree=0;
   TString treeName = (isGlobe ? Form("spin_trees/%s",tag.Data()) : "HggOutput");
   if(isList){
+    std::cout << "isList" <<std::endl;
     tree = getChainFromList(inputFile,treeName);
   }else{
     f = TFile::Open(inputFile);
@@ -286,8 +287,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     float eta1_f,eta2_f;
     float phi1_f,phi2_f;
     if(isGlobe){
-      se1 = g->lead_sigmaE/g->lead_E;
-      se2 = g->sublead_sigmaE/g->sublead_E;
+      se1 = g->lead_sigmaE_nosmear/g->lead_E;
+      se2 = g->sublead_sigmaE_nosmear/g->sublead_E;
       r91_f = g->lead_r9;
       r92_f = g->sublead_r9;
       pt1_f = TMath::Sqrt(TMath::Power(g->lead_px,2)+TMath::Power(g->lead_py,2));
