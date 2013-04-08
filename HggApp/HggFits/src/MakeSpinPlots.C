@@ -53,6 +53,9 @@ void MakeSpinPlots::runAll(TString tag, TString mcName){
   PlotSignalFits(tag,mcName);
   for(std::vector<TString>::const_iterator csBinIt = cosThetaBins.begin();
       csBinIt != cosThetaBins.end(); csBinIt++){
+    TString tmp = tag+"_"+*csBinIt;
+    double sigEff = ws->var(Form("%s_FIT_%s_sigmaEff",mcName.Data(),tmp.Data()))->getVal();
+    fitSigEff[tPair(mcName,tmp)]    = dPair(sigEff,0);
     PlotSignalFits(tag,mcName,*csBinIt);    
   }
   DrawSpinBackground(tag,mcName,false);
@@ -451,8 +454,8 @@ void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName,TString cosThetaB
   
   tPair lbl(mcName,tag);
 
-  TLatex *prelim = new TLatex(0.57,0.9,"CMS Preliminary Simulation");
-  TLatex *sigL  = new TLatex(0.67,0.6,Form("#sigma_{eff} = %0.2f GeV",fitSigEff[lbl].first,fitSigEff[lbl].second));
+  TLatex *prelim = new TLatex(0.18,0.9,"CMS Preliminary Simulation");
+  TLatex *sigL  = new TLatex(0.18,0.6,Form("#sigma_{eff} = %0.2f GeV",fitSigEff[lbl].first,fitSigEff[lbl].second));
   prelim->SetNDC();
   sigL->SetNDC();
   prelim->SetTextSize(0.05);
