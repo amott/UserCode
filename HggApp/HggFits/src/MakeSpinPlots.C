@@ -166,6 +166,8 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   RooRealVar* mass = ws->var("mass");
   RooPlot* frame  = mass->frame();
 
+  mass->setBins( (mass->getMax() - mass->getMin())/1.5 ); //enfore 1.5GeV bin width 
+
   tPair lbl(mcName,tag);
 
   double Ns = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),tag.Data()) ))->getVal();

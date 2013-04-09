@@ -289,4 +289,80 @@ TH2F* getSelectionMap7(bool isData){
   return map;
 }
 
+std::vector<TH2F*> getSelectionMap8(){
+  float etaBins[5]={0.,1.,1.48,2.,3.};
+  float ptBins[2]={-100.,100000.};
+  std::vector<TH2F*> ret;  
+  ret.push_back(new TH2F("map1","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.020); 
+  ret.back()->SetBinContent(2,1,0.025);
+  ret.back()->SetBinContent(3,1,0.020);
+  ret.back()->SetBinContent(4,1,0.025);
+
+  ret.push_back(new TH2F("map2","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.030); 
+  ret.back()->SetBinContent(2,1,0.035);
+  ret.back()->SetBinContent(3,1,0.030);
+  ret.back()->SetBinContent(4,1,0.035);
+
+  return ret;
+}
+
+std::vector<TH2F*> getSelectionMap9(){
+  float etaBins[5]={0.,1.,1.48,2.,3.};
+  float ptBins[2]={-100.,100000.};
+  std::vector<TH2F*> ret;  
+  ret.push_back(new TH2F("map0","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.010); 
+  ret.back()->SetBinContent(2,1,0.010);
+  ret.back()->SetBinContent(3,1,0.020);
+  ret.back()->SetBinContent(4,1,0.020);
+
+  ret.push_back(new TH2F("map1","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.015); 
+  ret.back()->SetBinContent(2,1,0.015);
+  ret.back()->SetBinContent(3,1,0.025);
+  ret.back()->SetBinContent(4,1,0.025);
+
+  ret.push_back(new TH2F("map2","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.020); 
+  ret.back()->SetBinContent(2,1,0.020);
+  ret.back()->SetBinContent(3,1,0.030);
+  ret.back()->SetBinContent(4,1,0.030);
+
+  ret.push_back(new TH2F("map3","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.030); 
+  ret.back()->SetBinContent(2,1,0.030);
+  ret.back()->SetBinContent(3,1,0.040);
+  ret.back()->SetBinContent(4,1,0.040);
+
+  ret.push_back(new TH2F("map4","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.040); 
+  ret.back()->SetBinContent(2,1,0.040);
+  ret.back()->SetBinContent(3,1,0.050);
+  ret.back()->SetBinContent(4,1,0.050);
+
+  return ret;
+}
+
+std::vector<TH2F*> getSelectionMap10(){
+  float etaBins[5]={0.,1.,1.48,2.,3.};
+  float ptBins[2]={-100.,100000.};
+  std::vector<TH2F*> ret;  
+  ret.push_back(new TH2F("map1","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.022); 
+  ret.back()->SetBinContent(2,1,0.027);
+  ret.back()->SetBinContent(3,1,0.037);
+  ret.back()->SetBinContent(4,1,0.055);
+
+  ret.push_back(new TH2F("map2","",4,etaBins,1,ptBins));
+  ret.back()->SetBinContent(1,1,0.032); 
+  ret.back()->SetBinContent(2,1,0.037);
+  ret.back()->SetBinContent(3,1,0.047);
+  ret.back()->SetBinContent(4,1,0.065);
+
+  return ret;
+}
+
+
 #endif

@@ -23,6 +23,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   runHigh= 9999999;
 
   useR9=false;
+  nCat=2;
 
   setMassRange(110.,170.);
   setPtCuts(32.,24.);
@@ -48,28 +49,41 @@ MakeSpinWorkspace::~MakeSpinWorkspace(){
 }
 
 
-TH2F* MakeSpinWorkspace::getSelectionMap(int map,bool isData){
+void MakeSpinWorkspace::getSelectionMap(int map,bool isData){
   // get selection map
   // needs to be cleaned up, but useful for testing atm
+
+  selectionMaps.clear();
   switch(map){
+    /* // OLD MAPS
   case 0:
-    return getSelectionMap0();
+    selectionMaps.push_back(getSelectionMap0());
   case 1:
-    return getSelectionMap1();
+    selectionMaps.push_back(getSelectionMap1());
   case 2:
-    return getSelectionMap2();
+    selectionMaps.push_back(getSelectionMap2());
   case 3:
-    return getSelectionMap3();
+    selectionMaps.push_back(getSelectionMap3());
   case 4:
-    return getSelectionMap4(isData);
+    selectionMaps.push_back(getSelectionMap4(isData));
   case 5:
-    return getSelectionMap5(isData);
+    selectionMaps.push_back(getSelectionMap5(isData));
   case 6:
-    return getSelectionMap6(isData);
+    selectionMaps.push_back(getSelectionMap6(isData));
   case 7:
-    return getSelectionMap7(isData);
+    selectionMaps.push_back(getSelectionMap7(isData));
+    */
+  case 0:
+    selectionMaps = getSelectionMap8();    
+    break;
+  case 1:
+    selectionMaps = getSelectionMap9();    
+    break;
+  case 2:
+    selectionMaps = getSelectionMap10();    
+    break;
   }
-  return 0;
+  nCat = selectionMaps.size();
 }
 
 int MakeSpinWorkspace::passSelection(TH2F* map,float sigEoE,float etaSC, float pt){
@@ -113,10 +127,6 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   else h = new HggOutputReader2(tree);
     
   
-  std::cout << "Get Selection Map" << std::endl;
-  TH2F* map = getSelectionMap(selectionMap,isData);
-  std::cout << map->GetBinContent(1,1) << std::endl;
-
   TFile *efficiencyCorrection=0;
   if(isData && EfficiencyCorrectionFile_Data!=""){ //Use MC derived correction weights for the photons
     //as a function of eta/R9/phi
@@ -314,7 +324,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     }
 
 
-    int p1,p2;
+    int p1=nCat,p2=nCat;
     assert(minI != maxI);
     //determine the photon categories
     if(useR9){
@@ -326,16 +336,13 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       p2 = passSelection(map,se2,pho2_etaSC,pt2_f);
       */
       float sm = sqrt(se1*se1+se2*se2);
-      if( fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48){
-	p1=2;
-	if(sm < 0.03) p1=1;
-	if(sm < 0.015) p1=0;
-      }else{
-	p1=2;
-	if(sm < 0.040) p1=1;
-	if(sm < 0.025) p1=0;
+      float maxEta = (fabs(eta1_f) > fabs(eta2_f) ? fabs(eta1_f) : fabs(eta2_f));
+      for(int iCut=0;iCut<nCat;iCut++){
+	if(passSelection(selectionMaps.at(iCut),sm,maxEta,0) == 0){
+	  p1=p2=iCut;
+	  break;
+	}
       }
-      p2=p1;
     }
     if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
     datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ?
@@ -546,6 +553,9 @@ void MakeSpinWorkspace::MakeWorkspace(){
   idIt = isData.begin();
   NgenIt = Ngen.begin();
   ilIt = isList.begin();
+
+  if(!useR9) getSelectionMap(selectionMap,1); // load the selection map
+
   for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++,NgenIt++, ilIt++){
     AddToWorkspace(*fnIt,*lIt,*idIt,*NgenIt,*ilIt);
     outputFile->cd();

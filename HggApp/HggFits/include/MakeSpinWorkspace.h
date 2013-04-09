@@ -50,14 +50,14 @@ class MakeSpinWorkspace{
 public:
   MakeSpinWorkspace(TString outputFileName); //!< Constructor requires the name of the file to which the output fill be written
   ~MakeSpinWorkspace();
-  static TH2F* getSelectionMap(int map, bool isData); //!< takes the index of the map required and returns a TH2F* map of the selection cut as a function of pT and eta
+  void getSelectionMap(int map, bool isData); //!< takes the index of the map required and returns a TH2F* map of the selection cut as a function of pT and eta
   int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
   int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
   bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
 
   float calculateCosThetaCS(HggOutputReader2 *h); //!< calculates the cos theta in the collin soper frame
   
-  const static int nCat=2; //!< currently define only two categories (for both CiC and R9 categorization)
+  int nCat; //!< currently define only two categories (for both CiC and R9 categorization)
 
   /*!
     \param fName the path to the input file
@@ -79,10 +79,10 @@ public:
 
   void MakeWorkspace(); //!< Runs the workspace maker on all input files and saves the resulting workspace
 
-  //static void runOnAll( void (*f)(TString,TString), TString mcName);
-  //static void runOnAllR9( void (*f)(TString,TString), TString mcName);
-
-  void setUseR9(bool b){useR9 = b;} //!< Specify whether to use the CiC (R9) categorization
+  void setUseR9(bool b){//!< Specify whether to use the CiC (R9) categorization
+    useR9 = b;
+    nCat =2;
+  }
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
   void setUseUncorrMass(bool b=true){useUncorrMass=b;} //!< selected whether to use the default photon energies (no cluster corrections or scaling/smearing) for the mass
@@ -121,6 +121,7 @@ protected:
   bool requireCiC;                     // whether to require the photons to pass CiC (default: true)
   bool tightPt;                        // whether to require tight pt/m cuts (default: false)
   int selectionMap;                    // selection map number to use
+  std::vector<TH2F*> selectionMaps;    // selection maps to use
 
   int runLow,runHigh;                  // run range to use (default 0-999999)
 

@@ -101,6 +101,7 @@ $(OUTLIB)GlobeReader.o:	$(SRCDIR)GlobeReader.C
 $(OUTLIB)MakeSpinWorkspace.o:	$(SRCDIR)MakeSpinWorkspace.C \
 				$(OUTLIB)MixSpinDatasets.o \
 				$(OUTLIB)HggOutputReader2.o \
+				$(SRCDIR)selectionMaps.C \
 				$(OUTLIB)GlobeReader.o
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)MakeSpinWorkspace.o $<
 

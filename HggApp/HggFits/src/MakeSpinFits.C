@@ -56,7 +56,7 @@ void MakeSpinFits::getLabels(const char *varName, std::vector<TString> *lblVec,R
 }
 
 void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
-  std::cout << "MakeSpinFits::MakeSignalFitForFit" << std::endl;
+  std::cout << "\n\n\nMakeSpinFits::MakeSignalFitForFit\n\n\n" << std::endl;
   if(ws==0) return;
 
   RooRealVar mass = *(ws->var("mass"));
@@ -127,7 +127,7 @@ void MakeSpinFits::MakeSignalFitForFit(TString tag, TString mcName){
 }
 
 void MakeSpinFits::MakeSignalFit(TString tag, TString mcName,float cosTlow, float cosThigh){
-  std::cout << "MakeSpinFits::MakeSignalFit" << std::endl;
+  std::cout << "\n\n\nMakeSpinFits::MakeSignalFit\n\n\n" << std::endl;
   if(ws==0) return;
   TString inputTag = Form("%s_%s",mcName.Data(),tag.Data());
   TString outputTag = Form("%s_FIT_%s",mcName.Data(),tag.Data());
@@ -708,7 +708,7 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag){
 }
 
 void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
-  std::cout << "MakeSpinFits::getSimpleBkgSubtraction" <<std::endl;
+  std::cout << "\n\n\nMakeSpinFits::getSimpleBkgSubtraction\n\n\n" <<std::endl;
   RooDataSet *data = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag);
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
@@ -747,7 +747,7 @@ void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
 }
 
 void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){
-  std::cout << "MakeSpinFits::getSimpleTotalBkgSubtraction" <<std::endl;
+  std::cout << "\n\n\nMakeSpinFits::getSimpleTotalBkgSubtraction\n\n\n" <<std::endl;
   RooDataSet *data = (RooDataSet*)ws->data( "Data_Combined" );
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
@@ -778,9 +778,9 @@ void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){
 }
 
 void MakeSpinFits::run(){
-  std::cout << "MakeSpinFits::run" <<std::endl;
+  std::cout << "\n\n\nMakeSpinFits::run\n\n\n" <<std::endl;
   if(ws==0) return;
-
+  RooMsgService::instance().setSilentMode(true);
 
   const int NcosTbins = 4;
   float cosTbinEdges[NcosTbins+1] = {0, 0.2, 0.4, 0.6, 1};
