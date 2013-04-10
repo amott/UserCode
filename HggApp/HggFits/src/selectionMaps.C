@@ -345,21 +345,21 @@ std::vector<TH2F*> getSelectionMap9(){
   return ret;
 }
 
-std::vector<TH2F*> getSelectionMap10(){
+std::vector<TH2F*> getSelectionMap10(){ //optimized on ROC curves with CiC Isolation
   float etaBins[5]={0.,1.,1.48,2.,3.};
   float ptBins[2]={-100.,100000.};
   std::vector<TH2F*> ret;  
   ret.push_back(new TH2F("map1","",4,etaBins,1,ptBins));
-  ret.back()->SetBinContent(1,1,0.022); 
-  ret.back()->SetBinContent(2,1,0.027);
-  ret.back()->SetBinContent(3,1,0.037);
-  ret.back()->SetBinContent(4,1,0.055);
+  ret.back()->SetBinContent(1,1,0.018); // best photon Eff + fake Rejection
+  ret.back()->SetBinContent(2,1,0.03); 
+  ret.back()->SetBinContent(3,1,0.027);
+  ret.back()->SetBinContent(4,1,0.021);
 
   ret.push_back(new TH2F("map2","",4,etaBins,1,ptBins));
-  ret.back()->SetBinContent(1,1,0.032); 
-  ret.back()->SetBinContent(2,1,0.037);
-  ret.back()->SetBinContent(3,1,0.047);
-  ret.back()->SetBinContent(4,1,0.065);
+  ret.back()->SetBinContent(1,1,0.0285); // 90% real photon Efficiency
+  ret.back()->SetBinContent(2,1,0.0435);
+  ret.back()->SetBinContent(3,1,0.0465);
+  ret.back()->SetBinContent(4,1,0.0285);
 
   return ret;
 }

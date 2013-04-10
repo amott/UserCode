@@ -51,7 +51,7 @@ public:
   MakeSpinWorkspace(TString outputFileName); //!< Constructor requires the name of the file to which the output fill be written
   ~MakeSpinWorkspace();
   void getSelectionMap(int map, bool isData); //!< takes the index of the map required and returns a TH2F* map of the selection cut as a function of pT and eta
-  int   passSelection(TH2F* map,float sigEoE, float etaSC, float pt);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
+  int   passSelection(TH2F* map,float sigEoE1, float eta1, float pt1,float sigEoE2,float eta2,float pt2);  //!< Takes a selection map and photon information and returns the category to which the photon is assigned
   int   passSelection(float r9); //!< For the CiC (R9) selection: takes the r9 of the photon and returns the photon's category
   bool getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass); //!< Takes the current state of the input tree and which indices correspond to the leading and trailing photons and returns whether the event passes the preselection
 
@@ -160,6 +160,8 @@ protected:
   float getEffFromTGraph(TGraphAsymmErrors* e,float pt);
 
   TChain* getChainFromList(TString inputFileList, TString treeName);
+
+  bool passCiCIso(HggOutputReader2 &h, int i);
 };
 
 #endif

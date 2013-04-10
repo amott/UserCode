@@ -86,8 +86,10 @@ void MakeSpinWorkspace::getSelectionMap(int map,bool isData){
   nCat = selectionMaps.size();
 }
 
-int MakeSpinWorkspace::passSelection(TH2F* map,float sigEoE,float etaSC, float pt){
-  if(sigEoE < map->GetBinContent(map->FindFixBin(fabs(etaSC),pt))) return 0;
+int MakeSpinWorkspace::passSelection(TH2F* map,float sigEoE1,float eta1, float pt1,float sigEoE2,float eta2, float pt2){
+  float cut1 = map->GetBinContent(map->FindFixBin(fabs(eta1),pt1)); 
+  float cut2 = map->GetBinContent(map->FindFixBin(fabs(eta2),pt2)); 
+  if(sqrt(sigEoE1*sigEoE1/cut1/cut1+sigEoE2*sigEoE2/cut2/cut2) <=1) return 0; //elliptical cut!
   return 1;
 }
 
@@ -335,14 +337,15 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       p1 = passSelection(map,se1,pho1_etaSC,pt1_f);
       p2 = passSelection(map,se2,pho2_etaSC,pt2_f);
       */
-      float sm = sqrt(se1*se1+se2*se2);
-      float maxEta = (fabs(eta1_f) > fabs(eta2_f) ? fabs(eta1_f) : fabs(eta2_f));
+      if(!isGlobe) if(!passCiCIso(*h,0) || !passCiCIso(*h,1)) continue;// veto if either photon fails the iso
+
       for(int iCut=0;iCut<nCat;iCut++){
-	if(passSelection(selectionMaps.at(iCut),sm,maxEta,0) == 0){
+	if(passSelection(selectionMaps.at(iCut),se1,fabs(eta1_f),pt1_f,se2,fabs(eta2_f),pt2_f) == 0){
 	  p1=p2=iCut;
 	  break;
 	}
       }
+      
     }
     if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
     datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ?
@@ -693,4 +696,18 @@ TChain* MakeSpinWorkspace::getChainFromList(TString inputFileList, TString treeN
     chain->AddFile(line.c_str());
   }
   return chain;
+}
+
+bool MakeSpinWorkspace::passCiCIso(HggOutputReader2 &h, int i){
+  const float chargedIso[4] = {3.8,2.5,3.1,2.2};
+  const float goodIsoSum[4] = {6.0,4.7,5.6,3.6};
+  const float badIsoSum[4]  = {10.,6.5,5.6,4.4};
+
+  int index = (fabs(h.Photon_etaSC[i]) > 1.48)*2+(h.Photon_r9[i]<0.94);
+
+  if(h.Photon_dr03PFChargedIso[i] > chargedIso[index]) return false;
+  if(h.Photon_isosumGood[i] > goodIsoSum[index]) return false;
+  if(h.Photon_isosumBad[i] > badIsoSum[index]) return false;
+
+  return true;
 }
