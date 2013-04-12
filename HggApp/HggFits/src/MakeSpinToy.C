@@ -163,7 +163,7 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genTy
     
   case ALT125:
     std::cout << "GENERATING ALTERNATE SPIN DISTRIBUTION" <<std::endl;
-    mcM = hggMassPdf->generate(*mass,thisNsig); // still generate the peak according to the higgs line shape
+    mcM = altMassPdf->generate(*mass,thisNsig); 
     mcC = altGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
     break;
     
@@ -343,7 +343,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
       fits.getSimpleBkgSubtraction(mcLabels[2],*it);
     }
     
-    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[2],mcLabels[2]);
     fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
 
     fits.getSimpleTotalBkgSubtraction(mcLabels[1]);
@@ -354,7 +354,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
     toyws = ws;
     MakeSpinFits fits("","");
     fits.setWorkspace(toyws);
-    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[2]);
+    fits.Make2DCombinedSignalTest(mcLabels[2],mcLabels[2]);
     fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
   }
   toyws->Print();
@@ -362,6 +362,8 @@ double* MakeSpinToy::run1(genType gen, int& N){
   double hggll=0,altll=0;
   double shggll=0,saltll=0;
   double nFit=0,nGen=0;
+  if(gen==Hgg125) nFit = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[1].Data()))->getVal();
+  else nFit = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[2].Data()))->getVal();
   for( std::vector<TString>::const_iterator it = catLabels.begin();
        it != catLabels.end(); it++){
     //fits.MakeBackgroundFit("Hgg125",*it,125,2,false);
@@ -377,8 +379,6 @@ double* MakeSpinToy::run1(genType gen, int& N){
     altPdf = (RooHistPdf*)ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data()));
 
 
-    if(gen==Hgg125) nFit+= thisSdataHgg->sumEntries();
-    else nFit+= thisSdataALT->sumEntries();
     if(gen!=Data) nGen+=toyws->var( Form("N_gen_sig_%s",it->Data()) )->getVal();
     else nGen+=thisSdataHgg->sumEntries();
 
@@ -422,7 +422,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   //use 2D fit to test compatibility
   RooRealVar *yield1D   = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[1].Data()));
   RooRealVar *yieldHgg  = toyws->var(Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",mcLabels[1].Data(),mcLabels[1].Data())); // yield fitting hgg mass and hgg cosT distributions
-  RooRealVar *yieldALT  = toyws->var(Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",mcLabels[1].Data(),mcLabels[2].Data())); // yield fitting hgg mass and alt cosT distributions
+  RooRealVar *yieldALT  = toyws->var(Form("Data_m_%s_c_%s_FULL2DFIT_Nsig",mcLabels[2].Data(),mcLabels[2].Data())); // yield fitting alt mass and alt cosT distributions
   
   double errHgg = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldHgg->getError(),2));
   double errALT = TMath::Sqrt(pow(yield1D->getError(),2) + pow(yieldALT->getError(),2));
@@ -431,7 +431,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   double alt2Dll  = TMath::Log(TMath::Prob( pow(yield1D->getVal()-yieldALT->getVal(),2)/pow(errALT,2),1));
 
   RooFitResult *fitHgg = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[1].Data(),mcLabels[1].Data())); 
-  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[1].Data(),mcLabels[2].Data()));
+  RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[2].Data(),mcLabels[2].Data()));
 
 
   std::cout << "FIT NLL: " << endl

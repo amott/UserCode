@@ -54,6 +54,7 @@ int main(int argc, char** argv){
   string RescaleFile = cfgReader.getParameter("RescaleFile",cfgOption);
 
   bool isGlobe = (cfgReader.getParameter("isGlobe",cfgOption).compare("yes")==0);
+  bool isList = (cfgReader.getParameter("isList",cfgOption).compare("yes")==0);
 
   float lumi = atof(cfgReader.getParameter("lumi",cfgOption).c_str());
 
@@ -109,7 +110,7 @@ int main(int argc, char** argv){
 
   cout << "Data:    " << data <<endl;
 
-  msw.addFile(data,"Data",true,-1,isGlobe);
+  msw.addFile(data,"Data",true,-1,(isGlobe || isList));
   for(vector<string>::const_iterator mcIt = mcListVec.begin();
       mcIt != mcListVec.end();
       mcIt++){
@@ -119,7 +120,7 @@ int main(int argc, char** argv){
     int Ngen = -1;
     if(NgenSt.compare("")!=0) Ngen = atoi(NgenSt.c_str());
     cout << mcName << ":    " << filePath <<endl;
-    msw.addFile(filePath,mcName,false,Ngen,isGlobe);
+    msw.addFile(filePath,mcName,false,Ngen,(isGlobe || isList));
   }
   
   msw.setIsGlobe(isGlobe);

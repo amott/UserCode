@@ -42,6 +42,15 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   ws->SetName("cms_hgg_spin_workspace");  
   labels = new RooCategory("labels","labels");
   
+  /*
+  chargedIso = {3.8,2.5,3.1,2.2};
+  goodIsoSum = {6.0,4.7,5.6,3.6};
+  badIsoSum  = {10.,6.5,5.6,4.4};
+  */
+
+  chargedIso[0] = 3.8; chargedIso[1] = 2.5; chargedIso[2] = 3.1; chargedIso[3] = 2.2;
+  goodIsoSum[0] = 6.0; goodIsoSum[1] = 4.7; goodIsoSum[2] = 5.6; goodIsoSum[4] = 3.6;
+  badIsoSum [0] = 10.; badIsoSum [1] = 6.5; badIsoSum [2] = 5.6; badIsoSum [4] = 4.4;
 }
 
 MakeSpinWorkspace::~MakeSpinWorkspace(){
@@ -128,6 +137,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   if(isGlobe) g = new GlobeReader(tree);
   else h = new HggOutputReader2(tree);
     
+
+  if(!isGlobe) setupBranches(*h);
   
   TFile *efficiencyCorrection=0;
   if(isData && EfficiencyCorrectionFile_Data!=""){ //Use MC derived correction weights for the photons
@@ -699,9 +710,6 @@ TChain* MakeSpinWorkspace::getChainFromList(TString inputFileList, TString treeN
 }
 
 bool MakeSpinWorkspace::passCiCIso(HggOutputReader2 &h, int i){
-  const float chargedIso[4] = {3.8,2.5,3.1,2.2};
-  const float goodIsoSum[4] = {6.0,4.7,5.6,3.6};
-  const float badIsoSum[4]  = {10.,6.5,5.6,4.4};
 
   int index = (fabs(h.Photon_etaSC[i]) > 1.48)*2+(h.Photon_r9[i]<0.94);
 
@@ -710,4 +718,15 @@ bool MakeSpinWorkspace::passCiCIso(HggOutputReader2 &h, int i){
   if(h.Photon_isosumBad[i] > badIsoSum[index]) return false;
 
   return true;
+}
+
+void MakeSpinWorkspace::setupBranches(HggOutputReader2 &h){
+  h.fChain->SetBranchStatus("*",0);
+
+  h.fChain->SetBranchStatus("Photon.*",1);
+  h.fChain->SetBranchStatus("mPair",1);
+  h.fChain->SetBranchStatus("mPairNoCorr",1);
+  h.fChain->SetBranchStatus("cosThetaLead",1);
+  h.fChain->SetBranchStatus("evtWeight",1);
+  h.fChain->SetBranchStatus("diPhotonMVA",1);
 }

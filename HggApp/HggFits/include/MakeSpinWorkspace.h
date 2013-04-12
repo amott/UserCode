@@ -162,6 +162,12 @@ protected:
   TChain* getChainFromList(TString inputFileList, TString treeName);
 
   bool passCiCIso(HggOutputReader2 &h, int i);
+
+  float chargedIso[4];
+  float goodIsoSum[4];
+  float badIsoSum[4];
+
+  void setupBranches(HggOutputReader2 &h);
 };
 
 #endif
