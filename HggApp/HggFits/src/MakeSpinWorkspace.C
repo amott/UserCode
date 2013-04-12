@@ -91,6 +91,9 @@ void MakeSpinWorkspace::getSelectionMap(int map,bool isData){
   case 2:
     selectionMaps = getSelectionMap10();    
     break;
+  case 3:
+    selectionMaps = getSelectionMap11();    
+    break;
   }
   nCat = selectionMaps.size();
 }
