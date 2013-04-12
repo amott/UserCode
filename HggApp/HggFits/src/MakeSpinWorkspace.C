@@ -6,6 +6,8 @@
 using namespace std;
 #include "selectionMaps.C"
 
+#define debug_workspaces 0
+
 MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   mixer(0),
   fileKFactor(0),
@@ -18,6 +20,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   requireCiC=true;
   tightPt=false;
   selectionMap=0;
+
+  useUncorrMass=false;
 
   runLow=0;
   runHigh= 9999999;
@@ -49,8 +53,8 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   */
 
   chargedIso[0] = 3.8; chargedIso[1] = 2.5; chargedIso[2] = 3.1; chargedIso[3] = 2.2;
-  goodIsoSum[0] = 6.0; goodIsoSum[1] = 4.7; goodIsoSum[2] = 5.6; goodIsoSum[4] = 3.6;
-  badIsoSum [0] = 10.; badIsoSum [1] = 6.5; badIsoSum [2] = 5.6; badIsoSum [4] = 4.4;
+  goodIsoSum[0] = 6.0; goodIsoSum[1] = 4.7; goodIsoSum[2] = 5.6; goodIsoSum[3] = 3.6;
+  badIsoSum [0] = 10.; badIsoSum [1] = 6.5; badIsoSum [2] = 5.6; badIsoSum [3] = 4.4;
 }
 
 MakeSpinWorkspace::~MakeSpinWorkspace(){
@@ -110,6 +114,7 @@ int MakeSpinWorkspace::passSelection(float r9){
   return 1;
 }
 bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass){
+  
   if(h->nPhoton < 2
      || h->diPhotonMVA<-1
      || mass < mMin
@@ -260,7 +265,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     else val=h->GetEntry(++iEntry);
     
     if(val==0) break;
-      
+    if(debug_workspaces && iEntry>=20000) break;
 
     if( !(iEntry%10000) ){
       cout << "Processing " << iEntry << endl;
@@ -298,6 +303,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     float m;
     if(isGlobe) m = g->higgs_mass;
     else m = (useUncorrMass ? h->mPairNoCorr : h->mPair);
+    if(debug_workspaces && m!=-1) std::cout << "m: " << m <<std::endl;
 
     // apply selections
     if(isGlobe){ 
@@ -309,6 +315,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
 	if(h->Photon_passPFCiC[1]==false || h->Photon_passPFCiC[0]==false) continue;
       }
     }
+    if(debug_workspaces) std::cout <<  "passed selection" <<std::endl;
+
     float se1,se2;
     float r91_f,r92_f;
     float pt1_f,pt2_f;
@@ -378,8 +386,8 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       if(useHelicityFrame) cosTheta = g->costheta_hx;
       else                 cosTheta = g->costheta_cs;
     }else{ // not glob
-      if(useHelicityFrame) cosTheta = calculateCosThetaCS(h);
-      else                 cosTheta = h->cosThetaLead;
+      if(useHelicityFrame) cosTheta = h->cosThetaLead;
+      else                 cosTheta = calculateCosThetaCS(h);
     }
     if(useAbsCosTheta) cosTheta = fabs(cosTheta);
     cosT->setVal(cosTheta);
@@ -621,25 +629,28 @@ float MakeSpinWorkspace::getRescaleFactor(HggOutputReader2 &h){
   TLorentzVector p4_2; p4_2.SetPtEtaPhiM(h.Photon_pt[1],h.Photon_eta[1],h.Photon_phi[1],0);
 
   float pt_sys = (p4_1+p4_1).Pt();
-
+  
   //L1-HLT factor
   TGraphAsymmErrors* e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("effL1HLT_cat%d",cicCat) );
   EFF*=getEffFromTGraph(e,pt_sys);
-
+  delete e;
   //vertex efficiencies
   e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("ratioVertex_cat%d_pass",cicCat) );
   EFF*=getEffFromTGraph(e,pt_sys);
+  delete e;
   e = (TGraphAsymmErrors*)fileRescaleFactor->Get( Form("ratioVertex_cat%d_fail",cicCat) );
   EFF*=getEffFromTGraph(e,pt_sys);
-
+  delete e;
   //per-photon efficiencies
   TString labels[4] = {"EBHighR9","EBLowR9","EEHighR9","EELowR9"};
   for(int i=0;i<2;i++){
     int index = 2*(fabs(h.Photon_etaSC[i])>1.48)+(h.Photon_r9[i] > 0.94);
     e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioTP_")+labels[index] );
     EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+    delete e;
     e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioR9_")+labels[index] );
     EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+    delete e;
   }
   return EFF;
 }
@@ -726,10 +737,12 @@ bool MakeSpinWorkspace::passCiCIso(HggOutputReader2 &h, int i){
 void MakeSpinWorkspace::setupBranches(HggOutputReader2 &h){
   h.fChain->SetBranchStatus("*",0);
 
+  h.fChain->SetBranchStatus("nPhoton",1);
   h.fChain->SetBranchStatus("Photon.*",1);
   h.fChain->SetBranchStatus("mPair",1);
   h.fChain->SetBranchStatus("mPairNoCorr",1);
   h.fChain->SetBranchStatus("cosThetaLead",1);
   h.fChain->SetBranchStatus("evtWeight",1);
   h.fChain->SetBranchStatus("diPhotonMVA",1);
+  h.fChain->SetBranchStatus("runNumber",1);
 }
