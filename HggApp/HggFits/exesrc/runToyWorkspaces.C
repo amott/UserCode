@@ -18,6 +18,8 @@ int main(int argc, char** argv){
   a.addLongOption("RunData",ArgParser::noArg,"determine the S value for data");
   a.addLongOption("Standard",ArgParser::reqArg,"Specify the standard hypothesis");
   a.addLongOption("Alternate",ArgParser::reqArg,"Specify the alternate hypothesis");
+  a.addLongOption("fitType",ArgParser::reqArg,"specify the type of background fit [exp,poly] (default:exp)");
+  
 
   string ret;
   if(a.process(ret) !=0){
@@ -45,6 +47,10 @@ int main(int argc, char** argv){
   }
   mst.setTargetLumi(tlumi);
   mst.setNominalLumi(nlumi);
+
+  if(a.longFlagPres("fitType")){
+    if(a.getLongFlag("fitType").compare("poly")==0) mst.setBkgFitType(MakeSpinFits::kPoly);
+  }
 
   mst.setSaveWorkspaces(saveWS);
   mst.setDoData(runData);

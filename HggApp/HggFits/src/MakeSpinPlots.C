@@ -37,6 +37,8 @@ void MakeSpinPlots::runAll(){
 
 void MakeSpinPlots::runAll(TString mcName){
   if(!isSetup) setupDir();
+  if(ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))==0) return;
+
   std::vector<TString>::const_iterator catIt = catNames.begin();
   for(; catIt != catNames.end(); catIt++){
     runAll(*catIt,mcName);
@@ -110,6 +112,7 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
 
   
   RooRealVar* mass = ws->var("mass");
+  mass->setBins( (mass->getMax() - mass->getMin())/1.5 ); //enfore 1.5GeV bin width
   RooPlot* frame  = mass->frame();
   double Nb = ws->var(Form("Data_BKGFIT_%s_Nbkg",tag.Data()))->getVal();
   cout << Nb << endl;
@@ -235,7 +238,10 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
 void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
   
+  if(ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data()) ) == 0) return;
+
   RooRealVar* mass = ws->var("mass");
+  mass->setBins( (mass->getMax() - mass->getMin())/1.5 ); //enfore 1.5GeV bin width
   RooPlot* frame  = mass->frame();
 
   tPair lbl(mcName,tag);
@@ -304,9 +310,6 @@ void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
 }
 
 void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
-  double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
-  double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
-
   bool drawSM = (smName!="" && smName!=mcName);
 
   TCanvas cv;
@@ -353,9 +356,6 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
 }
 
 void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signal){
-  double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
-  double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
-
   bool drawSM = (smName!="" && smName!=mcName);
 
   TCanvas cv;
@@ -396,14 +396,11 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
 }
 
 void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
-  double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
-  double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
-
   bool drawSM = (smName!="" && smName!=mcName);
 
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->sumEntries();
-  float norm = 607*lumi/12.*thisN/(totEB+totEE);
+  float norm = thisN;
 
 
   if(signal) norm = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getVal();
@@ -570,6 +567,7 @@ void MakeSpinPlots::printAll(){
 }
 void MakeSpinPlots::printYields(const char* mcType){
   RooRealVar * tot = ws->var(Form("Data_%s_FULLFIT_Nsig",mcType));
+  if(tot==0) return;
 
   cout << "Total Yield:  " << tot->getVal() << "  +-  " << tot->getError() <<endl;
   cout << "Category Yields: CONSTRAINED FIT " << endl;
@@ -580,10 +578,9 @@ void MakeSpinPlots::printYields(const char* mcType){
   cout << "\nCategory Yields: INDEPENDENT FIT " << endl;
   for(int i=0;i<catNames.size();i++){
     RooRealVar *ind = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcType, catNames.at(i).Data()) );
+    if(ind==0) continue;
     cout << "\t" << catNames.at(i) <<":   " << ind->getVal() << "  +-  " << ind->getError() <<endl;
   }
-
-  float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
 
   float exp = ws->data(Form("%s_Combined",mcType))->sumEntries();///total * 607*lumi/12.;
   cout << endl << "Expected Events:  "  << exp << endl;
@@ -598,10 +595,11 @@ void MakeSpinPlots::printYields(const char* mcType){
   
   for(int i=0;i<catNames.size();i++){
     RooRealVar *ind = ws->var( Form("Data_%s_INDFIT_%s_Nsig",mcType, catNames.at(i).Data()) );
+    if(ind==0) continue;
     RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
     cout << "\t" << catNames.at(i) <<":   " << ind->getVal()/(exp*f->getVal()) << "  +-  " << ind->getError()/(exp*f->getVal()) <<endl;
   }
-  MakeChannelComp(mcType);
+  //MakeChannelComp(mcType);
 }
 
 void MakeSpinPlots::MakeChannelComp(const char* mcType){
@@ -609,7 +607,6 @@ void MakeSpinPlots::MakeChannelComp(const char* mcType){
 
   RooRealVar mu("mu","",-50,50);
 
-  float total = ws->var(Form("%s_EB_totalEvents",mcType))->getVal() + ws->var(Form("%s_EE_totalEvents",mcType))->getVal();
   float exp = ws->data(Form("%s_Combined",mcType))->sumEntries();///total * 607*lumi/12.;
 
   TH1F frame("frame","",catNames.size(),0,catNames.size());

@@ -105,6 +105,8 @@ public:
   void setMCStandard(TString s){mcLabels[1]=s;} //!< specify the name of the SM hypothesis (default: Hgg125)
   void setMCComparison(TString s){mcLabels[2]=s;} //!< specify the name of the alternate hypothesis
 
+  void setBkgFitType(MakeSpinFits::BkgFitType f){fitType=f;} //!< set the type of background fit for the toys
+
   TObjArray toyWSs;
 protected:
   float targetLumi;
@@ -117,6 +119,8 @@ protected:
   bool doData;
   std::vector<TString> catLabels;
 
+  MakeSpinFits::BkgFitType fitType;
+  
   TString mcLabels[3];
 };
 

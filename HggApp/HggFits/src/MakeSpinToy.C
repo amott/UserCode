@@ -9,6 +9,8 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName)
 
   MakeSpinFits::getLabels("evtcat",&catLabels,ws);
 
+  fitType=MakeSpinFits::kPoly;
+
   mass = ws->var("mass");
   cosT = ws->var("cosT");
   //cosT->setRange(0,1);
@@ -317,7 +319,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
 
 
     MakeSpinFits fits("","");
-    //fits.setBkgFit(MakeSpinFits::kPoly);
+    fits.setBkgFit(fitType);
     fits.setWorkspace(toyws);
     
     for( std::vector<TString>::const_iterator it = catLabels.begin();
@@ -332,6 +334,9 @@ double* MakeSpinToy::run1(genType gen, int& N){
       fits.MakeSignalFitForFit(*it,mcLabels[2]);
       fits.MakeBackgroundOnlyFit(*it);    
     }
+    toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[1].Data())));
+    toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[2].Data())));
+
     fits.MakeCombinedSignalTest(mcLabels[1]);
     fits.MakeCombinedSignalTest(mcLabels[2]);
     fits.AddCombinedBkgOnlySWeight(mcLabels[1]);
