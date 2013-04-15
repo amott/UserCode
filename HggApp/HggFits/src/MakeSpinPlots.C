@@ -3,10 +3,10 @@
 #include "subtract.cc"
 
 
-MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag){
+MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag, TString workspaceName){
   isSetup=false;
   inputFile = new TFile(inputFileName);
-  ws = (RooWorkspace*)inputFile->Get("cms_hgg_spin_workspace");
+  ws = (RooWorkspace*)inputFile->Get(workspaceName);
 
   MakeSpinFits::getLabels("fitlabels",&mcNames,ws);
 

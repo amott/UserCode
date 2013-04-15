@@ -47,7 +47,7 @@
 
 class MakeSpinPlots{
 public:
-  MakeSpinPlots(TString inputFileName,TString outTag); //!< Constructor requires path to input workspace file and a tag which will be inserted into every output filename
+  MakeSpinPlots(TString inputFileName,TString outTag,TString workspaceName="cms_hgg_spin_workspace"); //!< Constructor requires path to input workspace file and a tag which will be inserted into every output filename
   ~MakeSpinPlots();
 
   typedef std::pair<TString,TString> tPair;

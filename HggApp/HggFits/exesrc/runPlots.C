@@ -13,6 +13,7 @@ int main(int argc, char** argv){
   a.addArgument("OutputTag",ArgParser::required,"tag for the output plots");
   a.addLongOption("PrintOnly",ArgParser::noArg,"Only print the yields, don't make plots");
   a.addLongOption("AllMC",ArgParser::noArg,"make plots for all MC samples in the workspace (default: just Hgg125)");
+  a.addLongOption("workspace",ArgParser::required,"name of the workspace to process (default: cms_hgg_spin_workspace)");
 
   string ret;
   if(a.process(ret) != 0){
@@ -26,15 +27,20 @@ int main(int argc, char** argv){
   string tag = a.getArgument("OutputTag");
   bool pOnly = a.longFlagPres("PrintOnly");
   bool all = a.longFlagPres("AllMC");
-  MakeSpinPlots msp(inputWS,tag);
-
-  msp.setLumi(lumi);
-  msp.setBasePath(bp);
+  MakeSpinPlots *msp;
+  if(a.longFlagPres("workspace")){
+    msp = new MakeSpinPlots(inputWS,tag,a.getLongFlag("workspace"));
+  }else{
+    msp = new MakeSpinPlots(inputWS,tag);    
+  }
+  msp->setLumi(lumi);
+  msp->setBasePath(bp);
 
   if(!pOnly){
-    if(all) msp.runAll();
-    else msp.runAll("Hgg125");
+    if(all) msp->runAll();
+    else msp->runAll("Hgg125");
   }
 
-  msp.printAll();
+  msp->printAll();
+  delete msp;
 }
