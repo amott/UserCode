@@ -73,6 +73,7 @@ public:
   void printAll(); //!< Print to stdout the yields for all MC that have been fit
   void printYields(const char* mcType); //!< print to stdout the yield for the specified MC
   void MakeChannelComp(const char* mcType); //!< Make a channel compatibility plot for the specified MC sample
+  void setSMName(TString s){smName = s;}
 protected:
   TFile *inputFile;
   RooWorkspace *ws;
@@ -86,6 +87,8 @@ protected:
   std::vector<TString> mcNames;
   std::vector<TString> catNames;
   std::vector<TString> cosThetaBins;
+
+  TString smName;    //!< set the name of the SM hypothesis to draw on plots
 
   void getFitValues(TString tag,TString mcName); //!< fill the maps with fitted yields from the signal
 

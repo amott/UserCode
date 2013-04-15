@@ -17,6 +17,8 @@ MakeSpinPlots::MakeSpinPlots(TString inputFileName, TString outTag, TString work
   basePath = "figs/";
   outputTag=outTag;
 
+  smName="";
+
   setStyle();
 
 }
@@ -305,6 +307,8 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
   double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
 
+  bool drawSM = (smName!="" && smName!=mcName);
+
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->sumEntries();
   float norm = thisN; //607*lumi/12.*thisN/(totEB+totEE);
@@ -316,8 +320,8 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
   cout << "b" <<endl;
-  //ws->pdf(Form("%s_FIT_%s_cosTpdf",mcName.Data(),tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   ws->pdf(Form("%s_FIT_%s_cosTpdf",mcName.Data(),tag.Data()))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
+  if(drawSM) ws->pdf(Form("%s_FIT_%s_cosTpdf",smName.Data(),tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   cout << "c   " <<bkgWeight <<endl;
 
   bkgWeight->plotOn(frame,RooFit::Rescale(norm/bkgWeight->sumEntries()),RooFit::MarkerColor(kBlue) );  
@@ -326,7 +330,7 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
       
     ws->data(Form("Data_%s_%s_sigWeight",tag.Data(),mcName.Data()))->plotOn(frame,RooFit::MarkerStyle(4));
   }
-    cout << "d" <<endl;
+  cout << "d" <<endl;
   
   frame->SetMaximum(frame->GetMaximum()*(signal?0.8:0.4)*norm/tmp->sumEntries());
   frame->SetMinimum(-1*frame->GetMaximum());
@@ -335,10 +339,11 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   l.SetBorderSize(0);
   l.SetHeader(tag);
   l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
-  //l.AddEntry(frame->getObject(1),"SM Higgs","l");
   l.AddEntry(frame->getObject(1),mcName,"l");
-  l.AddEntry(frame->getObject(2),"background weighted Data","p");
-  if(signal) l.AddEntry(frame->getObject(3),"signal weighted Data","p");
+  if(drawSM) l.AddEntry(frame->getObject(2),"SM Higgs","l");
+  l.AddEntry(frame->getObject(2+drawSM),"background weighted Data","p");
+  if(signal) l.AddEntry(frame->getObject(3+drawSM),"signal weighted Data","p");
+
   cout << "e" <<endl;
 
   frame->Draw();
@@ -350,6 +355,8 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
 void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signal){
   double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
   double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
+
+  bool drawSM = (smName!="" && smName!=mcName);
 
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->reduce(TString("evtcat==evtcat::")+tag)->sumEntries();
@@ -363,8 +370,8 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
 
-  //ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   ws->pdf(Form("%s_FIT_%s_cosTpdf",mcName.Data(),tag.Data()))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
+  if(drawSM) ws->pdf(Form("%s_FIT_%s_cosTpdf",smName.Data(),tag.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   if(signal){
     RooDataHist *h = (RooDataHist*)ws->data( Form("Data_%s_%s_bkgSub_cosT",mcName.Data(),tag.Data()) );
     h->plotOn(frame,RooFit::MarkerStyle(4));
@@ -378,9 +385,9 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   l.SetBorderSize(0);
   l.SetHeader(tag);
   l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
-  //l.AddEntry(frame->getObject(1),"SM Higgs","l");
   l.AddEntry(frame->getObject(1),mcName,"l");
-  if(signal) l.AddEntry(frame->getObject(2),"bkg-subtracted Data","p");
+  if(drawSM) l.AddEntry(frame->getObject(2),"SM Higgs","l");
+  if(signal) l.AddEntry(frame->getObject(2+drawSM),"bkg-subtracted Data","p");
   
   frame->Draw();
   l.Draw("SAME");
@@ -391,6 +398,8 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
 void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
   double totEB  = ws->var(mcName+"_EB_totalEvents")->getVal();
   double totEE  = ws->var(mcName+"_EE_totalEvents")->getVal();
+
+  bool drawSM = (smName!="" && smName!=mcName);
 
   TCanvas cv;
   double thisN  = ws->data(mcName+"_Combined")->sumEntries();
@@ -403,13 +412,14 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_Combined"))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
 
-  //ws->pdf(Form("Hgg125_FIT_cosTpdf"))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   ws->pdf(Form("%s_FIT_cosTpdf",mcName.Data()))->plotOn(frame,RooFit::LineColor(kGreen),RooFit::Normalization(norm/tmp->sumEntries()));
+  if(drawSM)  ws->pdf(Form("%s_FIT_cosTpdf",smName.Data()))->plotOn(frame,RooFit::LineColor(kRed),RooFit::Normalization(norm/tmp->sumEntries()));
   if(signal){
     RooDataHist *h = (RooDataHist*)ws->data( Form("Data_%s_Combined_bkgSub_cosT",mcName.Data()) );
     h->plotOn(frame,RooFit::MarkerStyle(4));
     std::cout << "Nsig: " << h->sumEntries() << std::endl;
   }
+
   
   frame->SetMaximum(frame->GetMaximum()*(signal?2.:1.2)*norm/tmp->sumEntries());
   frame->SetMinimum(-1*frame->GetMaximum());
@@ -418,9 +428,9 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
   l.SetBorderSize(0);
   l.SetHeader("Combined");
   l.AddEntry(frame->getObject(0),"Data m#in [115,120]#cup[130,135]","p");
-  //l.AddEntry(frame->getObject(1),"SM Higgs","l");
   l.AddEntry(frame->getObject(1),mcName,"l");
-  if(signal) l.AddEntry(frame->getObject(2),"bkg-subtracted Data","p");
+  if(drawSM) l.AddEntry(frame->getObject(2),"SM Higgs","l");
+  if(signal) l.AddEntry(frame->getObject(2+drawSM),"bkg-subtracted Data","p");
   
   frame->Draw();
   l.Draw("SAME");

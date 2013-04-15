@@ -14,6 +14,7 @@ int main(int argc, char** argv){
   a.addLongOption("PrintOnly",ArgParser::noArg,"Only print the yields, don't make plots");
   a.addLongOption("AllMC",ArgParser::noArg,"make plots for all MC samples in the workspace (default: just Hgg125)");
   a.addLongOption("workspace",ArgParser::required,"name of the workspace to process (default: cms_hgg_spin_workspace)");
+  a.addLongOption("SMName",ArgParser::required,"name of the sample to draw as the SM Higgs (default: none)");
 
   string ret;
   if(a.process(ret) != 0){
@@ -36,6 +37,7 @@ int main(int argc, char** argv){
   msp->setLumi(lumi);
   msp->setBasePath(bp);
 
+  if(a.longFlagPres("SMName")) msp->setSMName(a.getLongFlag("SMName"));
   if(!pOnly){
     if(all) msp->runAll();
     else msp->runAll("Hgg125");
