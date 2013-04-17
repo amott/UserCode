@@ -599,7 +599,7 @@ void MakeSpinPlots::printYields(const char* mcType){
     RooRealVar *f = ws->var( Form("Data_%s_FULLFIT_%s_fsig",mcType, catNames.at(i).Data()) );
     cout << "\t" << catNames.at(i) <<":   " << ind->getVal()/(exp*f->getVal()) << "  +-  " << ind->getError()/(exp*f->getVal()) <<endl;
   }
-  //MakeChannelComp(mcType);
+  MakeChannelComp(mcType);
 }
 
 void MakeSpinPlots::MakeChannelComp(const char* mcType){

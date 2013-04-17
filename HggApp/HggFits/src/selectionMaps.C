@@ -383,5 +383,66 @@ std::vector<TH2F*> getSelectionMap11(){ //optimized on ROC curves with CiC Isola
   return ret;
 }
 
+std::vector<TH2F*> getSelectionMap12(){ //optimized on ROC curves with CiC Isolation in pT bins
+  float etaBins[5]={0.,1.,1.48,2.,3.};  
+  float ptBins[6]={0.,30.,40.,60.,100.,100000.};
+  std::vector<TH2F*> ret;  
+  ret.push_back(new TH2F("map1","",4,etaBins,5,ptBins));
+  //0-30
+  ret.back()->SetBinContent(1,1,0.012); // 90% fake rejection
+  ret.back()->SetBinContent(2,1,0.018); 
+  ret.back()->SetBinContent(3,1,0.021);
+  ret.back()->SetBinContent(4,1,0.021);
+  //30-40
+  ret.back()->SetBinContent(1,2,0.0105);
+  ret.back()->SetBinContent(2,2,0.018); 
+  ret.back()->SetBinContent(3,2,0.0195);
+  ret.back()->SetBinContent(4,2,0.0195);
+  //40-60
+  ret.back()->SetBinContent(1,3,0.0105);
+  ret.back()->SetBinContent(2,3,0.0165); 
+  ret.back()->SetBinContent(3,3,0.0195);
+  ret.back()->SetBinContent(4,3,0.018);
+  //60-100
+  ret.back()->SetBinContent(1,4,0.0105);
+  ret.back()->SetBinContent(2,4,0.015); 
+  ret.back()->SetBinContent(3,4,0.018);
+  ret.back()->SetBinContent(4,4,0.0165);
+  //100-
+  ret.back()->SetBinContent(1,5,0.009);
+  ret.back()->SetBinContent(2,5,0.012); 
+  ret.back()->SetBinContent(3,5,0.0165);
+  ret.back()->SetBinContent(4,5,0.015);
+
+  ret.push_back(new TH2F("map2","",4,etaBins,1,ptBins));
+  //0-30
+  ret.back()->SetBinContent(1,1,0.03); // 90% real photon Efficiency
+  ret.back()->SetBinContent(2,1,0.054);
+  ret.back()->SetBinContent(3,1,0.0675);
+  ret.back()->SetBinContent(4,1,0.039);
+  //30-40
+  ret.back()->SetBinContent(1,2,0.033);
+  ret.back()->SetBinContent(2,2,0.0495);
+  ret.back()->SetBinContent(3,2,0.055);
+  ret.back()->SetBinContent(4,2,0.033);
+  //40-60
+  ret.back()->SetBinContent(1,3,0.03);
+  ret.back()->SetBinContent(2,3,0.0435);
+  ret.back()->SetBinContent(3,3,0.0435);
+  ret.back()->SetBinContent(4,3,0.027);
+  //60-100
+  ret.back()->SetBinContent(1,4,0.0255);
+  ret.back()->SetBinContent(2,4,0.0345);
+  ret.back()->SetBinContent(3,4,0.0315);
+  ret.back()->SetBinContent(4,4,0.0225);
+  //100-
+  ret.back()->SetBinContent(1,5,0.018);
+  ret.back()->SetBinContent(2,5,0.0225);
+  ret.back()->SetBinContent(3,5,0.0225);
+  ret.back()->SetBinContent(4,5,0.021);
+
+  return ret;
+}
+
 
 #endif

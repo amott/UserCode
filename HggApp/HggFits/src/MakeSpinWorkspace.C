@@ -98,6 +98,9 @@ void MakeSpinWorkspace::getSelectionMap(int map,bool isData){
   case 3:
     selectionMaps = getSelectionMap11();    
     break;
+  case 4:
+    selectionMaps = getSelectionMap12();    
+    break;
   }
   nCat = selectionMaps.size();
 }
@@ -369,10 +372,15 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       }
       
     }
+    if(isGlobe && useR9){
+      if(g->category >3) continue; //veto exclusive tags for now
+      p1=p2= g->category % 2;
+      datamap = (g->category > 1 ? &dataMapEE : &dataMapEB);
+    }else{
     if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
     datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ?
 	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
-    
+    }
     //set all the variables
     mass->setVal(m);
     sige1->setVal(se1);

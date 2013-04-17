@@ -100,6 +100,8 @@ public:
   */
   void Make2DCombinedSignalTest(TString massMcName,TString costMcName); //!< Make a 2D S+B fit in the mass X cos(theta) plane
 
+  void Make2DTemplateSignalTest(TString mcName); //!< Make a 2D S+B fit in the mass X cos(theta) plane
+
   /*!
     Prforms a S+B fit with the individual category signal yields unconstrained.  Useful for channel compatibility measurement
     \sa MakeCombinedSignalTest()
