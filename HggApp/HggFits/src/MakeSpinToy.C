@@ -15,7 +15,7 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName)
   cosT = ws->var("cosT");
   //cosT->setRange(0,1);
   cosT->setBins(10);
-  S = new RooRealVar("S","",0,-1e6,1e6);
+  S = new RooRealVar("S","",0,-1e7,1e7);
 
   GenMinusFit = new RooRealVar("NgenMinusNfit","",0,-1e6,1e6);
 
@@ -37,12 +37,16 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName)
   S_2DTEMPFIT_TruthHgg = new RooDataSet("S_2DTEMPFIT_TruthHgg","",RooArgSet(*S,*GenMinusFit));
   S_2DTEMPFIT_TruthALT = new RooDataSet("S_2DTEMPFIT_TruthALT","",RooArgSet(*S,*GenMinusFit));
 
+  S_2DBINFIT_TruthHgg = new RooDataSet("S_2DBINFIT_TruthHgg","",RooArgSet(*S,*GenMinusFit));
+  S_2DBINFIT_TruthALT = new RooDataSet("S_2DBINFIT_TruthALT","",RooArgSet(*S,*GenMinusFit));
+
   S_TruthData=0;
   S_tot_TruthData=0;
   S_splot_TruthData=0;
   S_2D_TruthData=0;
   S_2DFIT_TruthData=0;
   S_2DTEMPFIT_TruthData=0;
+  S_2DBINFIT_TruthData=0;
 
   setSaveWorkspaces(false);
   setDoData(false);
@@ -60,6 +64,7 @@ void MakeSpinToy::setDoData(bool b){
     S_2D_TruthData = new RooDataSet("S_2D_TruthData","",RooArgSet(*S,*GenMinusFit));
     S_2DFIT_TruthData = new RooDataSet("S_2DFIT_TruthData","",RooArgSet(*S,*GenMinusFit));
     S_2DTEMPFIT_TruthData = new RooDataSet("S_2DFIT_TruthData","",RooArgSet(*S,*GenMinusFit));
+    S_2DBINFIT_TruthData = new RooDataSet("S_2DFIT_TruthData","",RooArgSet(*S,*GenMinusFit));
     S_tot_TruthData = new RooDataSet("S_tot_TruthData","",RooArgSet(*S,*GenMinusFit));
     
   }
@@ -327,36 +332,53 @@ float MakeSpinToy::getExpEvents(float lumi, TString cat,TString mcType,RooWorksp
 double* MakeSpinToy::run1(genType gen, int& N){
   TString mcType = mcLabels[gen];
   //we currently have 3 outputs
-  N=6;
+  N=7;
   double * out = new double[N];
 
   RooWorkspace *toyws=0;
   if(gen!=Data){
     toyws = new RooWorkspace(Form("toyws_%s",mcType.Data()),"toyws");
     generateToyWorkspace(toyws,gen);
-
+    RooCategory* cosTCats = (RooCategory*)ws->obj("CosThetaBins");
+    toyws->import(*cosTCats);
 
     MakeSpinFits fits("","");
     fits.setBkgFit(fitType);
     fits.setWorkspace(toyws);
     
+    //float bins[6] = {0.0,0.2,0.4,0.6,0.8,1.0};
+    //fits.setCosTBins(6,bins);
+
+    fits.binDatasetCosT(*toyws->data("Data_Combined"),"Data");
+    fits.binDatasetCosT(*toyws->data(mcLabels[1]+"_Combined"),mcLabels[1]);
+    fits.binDatasetCosT(*toyws->data(mcLabels[2]+"_Combined"),mcLabels[2]);
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
       //toyws->import(*ws->data(Form("Hgg125_%s",it->Data())));
       //toyws->import(*ws->data(mcLabels[2]+"_"+*it));
-      
       toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[1].Data(),it->Data())));
       toyws->import(*ws->pdf(Form("%s_FIT_%s_cosTpdf",mcLabels[2].Data(),it->Data())));
       
       fits.MakeSignalFitForFit(*it,mcLabels[1]);
       fits.MakeSignalFitForFit(*it,mcLabels[2]);
-      fits.MakeBackgroundOnlyFit(*it);    
+      fits.MakeBackgroundOnlyFit(*it);          
+      for(int iCos=0;iCos<cosTCats->numBins("");iCos++){
+	cosTCats->setIndex(iCos);
+	std::pair<float,float> cosTrange = MakeSpinFits::getCosTRangeFromCatName(cosTCats->getLabel());
+	toyws->import(*ws->pdf( mcLabels[1]+"_FIT_"+*it+"_"+cosTCats->getLabel()) );
+	toyws->import(*ws->pdf( mcLabels[2]+"_FIT_"+*it+"_"+cosTCats->getLabel()) );
+	fits.MakeSignalFitForFit(*it+"_"+cosTCats->getLabel(),mcLabels[1]);
+	fits.MakeSignalFitForFit(*it+"_"+cosTCats->getLabel(),mcLabels[2]);
+	fits.MakeBackgroundOnlyFit(*it,cosTrange.first,cosTrange.second);
+      }
     }
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[1].Data())));
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[2].Data())));
 
     fits.MakeCombinedSignalTest(mcLabels[1]);
     fits.MakeCombinedSignalTest(mcLabels[2]);
+    fits.MakeCombinedSignalTest(mcLabels[1],true); // make the binned signal tests
+    fits.MakeCombinedSignalTest(mcLabels[2],true);
     fits.AddCombinedBkgOnlySWeight(mcLabels[1]);
     fits.AddCombinedBkgOnlySWeight(mcLabels[2]);
 
@@ -465,6 +487,9 @@ double* MakeSpinToy::run1(genType gen, int& N){
   RooFitResult *fitTempHgg = (RooFitResult*)toyws->obj(Form("Data_%s_TEMPLATE2DFIT_fitResult",mcLabels[1].Data()));
   RooFitResult *fitTempALT = (RooFitResult*)toyws->obj(Form("Data_%s_TEMPLATE2DFIT_fitResult",mcLabels[2].Data()));
 
+  RooFitResult *fitCostHgg = (RooFitResult*)toyws->obj(Form("Data_%s_FULLCOSTFIT_fitResult",mcLabels[1].Data()));
+  RooFitResult *fitCostALT = (RooFitResult*)toyws->obj(Form("Data_%s_FULLCOSTFIT_fitResult",mcLabels[2].Data()));
+
   
 
   std::cout << "FIT NLL: " << endl
@@ -475,6 +500,12 @@ double* MakeSpinToy::run1(genType gen, int& N){
 
   double hgg2DTEMPFITNll = fitTempHgg->minNll();
   double alt2DTEMPFITNll = fitTempALT->minNll();
+  
+  double hggCostFITNll = fitCostHgg->minNll();
+  double altCostFITNll = fitCostALT->minNll();
+  std::cout << "BIN FIT NLL: " << endl
+	    << "Hgg: " << fitCostHgg->minNll() << endl
+	    << "ALT: " << fitCostALT->minNll() << endl;
   
 
   GenMinusFit->setVal( nGen-nFit);
@@ -489,6 +520,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
   out[3] = 2*(alt2Dll-hgg2Dll);
   out[4] = -2*(alt2DFITNll-hgg2DFITNll);
   out[5] = -2*(alt2DTEMPFITNll-hgg2DTEMPFITNll);
+  out[6] = -2*(altCostFITNll-hggCostFITNll);
 
   return out;
 }
@@ -517,6 +549,9 @@ void MakeSpinToy::runN(int N){
     S->setVal(hggOut[5]);
     S_2DTEMPFIT_TruthHgg->add(RooArgSet(*S,*GenMinusFit));   
 
+    S->setVal(hggOut[6]);
+    S_2DBINFIT_TruthHgg->add(RooArgSet(*S,*GenMinusFit));   
+
     double * altOut = run1(ALT125,Nout);
 
     S->setVal(altOut[0]);
@@ -536,6 +571,9 @@ void MakeSpinToy::runN(int N){
 
     S->setVal(altOut[5]);
     S_2DTEMPFIT_TruthALT->add(RooArgSet(*S,*GenMinusFit));   
+
+    S->setVal(altOut[6]);
+    S_2DBINFIT_TruthALT->add(RooArgSet(*S,*GenMinusFit));   
 
     delete hggOut;
     delete altOut;
@@ -561,6 +599,9 @@ void MakeSpinToy::runN(int N){
     S->setVal(dataOut[5]);
     S_2DTEMPFIT_TruthData->add(RooArgSet(*S,*GenMinusFit));   
     
+    S->setVal(dataOut[6]);
+    S_2DBINFIT_TruthData->add(RooArgSet(*S,*GenMinusFit));   
+    
   }
 }
 
@@ -572,6 +613,7 @@ void MakeSpinToy::save(TString outputFile){
   makeForCombineTool("q2D",S_2D_TruthHgg,S_2D_TruthALT,S_2D_TruthData)->Write();
   makeForCombineTool("q2DFIT",S_2DFIT_TruthHgg,S_2DFIT_TruthALT,S_2DFIT_TruthData)->Write();
   makeForCombineTool("q2DTEMPFIT",S_2DTEMPFIT_TruthHgg,S_2DTEMPFIT_TruthALT,S_2DTEMPFIT_TruthData)->Write();
+  makeForCombineTool("q2DBINFIT",S_2DBINFIT_TruthHgg,S_2DBINFIT_TruthALT,S_2DBINFIT_TruthData)->Write();
   if(toyWSs.GetEntries()>0) toyWSs.Write();
   f->Close();
 }

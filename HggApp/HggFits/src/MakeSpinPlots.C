@@ -61,6 +61,8 @@ void MakeSpinPlots::runAll(TString tag, TString mcName){
     double sigEff = ws->var(Form("%s_FIT_%s_sigmaEff",mcName.Data(),tmp.Data()))->getVal();
     fitSigEff[tPair(mcName,tmp)]    = dPair(sigEff,0);
     PlotSignalFits(tag,mcName,*csBinIt);    
+    DrawBlindFit(tag,mcName,*csBinIt);
+    DrawFit(tag,mcName,*csBinIt);
   }
   DrawSpinBackground(tag,mcName,false);
   DrawSpinBackground(tag,mcName,true);
@@ -75,10 +77,11 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   double sige = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getError();
   double fsig = ws->var(Form("Data_%s_FULLFIT_%s_fsig",mcName.Data(),tag.Data()))->getVal();
   std::cout << sig*fsig << " +- " << sige*fsig <<std::endl;
-  double bkg  = ws->var(Form("Data_%s_FULLFIT_Nbkg",mcName.Data()))->getVal();
-  double bkge = ws->var(Form("Data_%s_FULLFIT_Nbkg",mcName.Data()))->getError();
-  double fbkg = ws->var(Form("Data_%s_FULLFIT_%s_fbkg",mcName.Data(),tag.Data()))->getVal();
-  std::cout << bkg*fbkg << " +- " << bkge*fbkg <<std::endl;
+  //double bkg  = ws->var(Form("Data_%s_FULLFIT_Nbkg",mcName.Data()))->getVal();
+  //double bkge = ws->var(Form("Data_%s_FULLFIT_Nbkg",mcName.Data()))->getError();
+  double bkg = ws->var(Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),tag.Data()))->getVal();
+  double bkge = ws->var(Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),tag.Data()))->getError();
+  //std::cout << bkg*fbkg << " +- " << bkge*fbkg <<std::endl;
   double mean = ws->var(Form("%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getVal();
   double meane= ws->var(Form("%s_FIT_%s_mean",mcName.Data(),tag.Data()))->getError();
 
@@ -92,14 +95,14 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
   std::cout << bkgPdf <<std::endl;
   RooRealVar range("range","",mean-sigEff,mean+sigEff);
   RooRealVar all("all","",ws->var("mass")->getMin(),ws->var("mass")->getMax());
-  double BkgInRange  = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkg*fbkg;
-  double BkgInRangeE = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkge*fbkg;
+  double BkgInRange  = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkg;
+  double BkgInRangeE = bkgPdf->createIntegral(range)->getVal()/bkgPdf->createIntegral(all)->getVal()*bkge;
   
 
   tPair lbl(mcName,tag);
 
   nSignal[lbl]      = dPair(sig*fsig,sige*fsig);
-  nBackground[lbl]  = dPair(bkg*fbkg,bkge*fbkg);
+  nBackground[lbl]  = dPair(bkg,bkge);
   fitMean[lbl]      = dPair(mean,meane);
   fitSigEff[lbl]    = dPair(sigEff,sigEffE);
   fitBkg1Sigma[lbl] = dPair(BkgInRange,BkgInRangeE);
@@ -107,7 +110,17 @@ void MakeSpinPlots::getFitValues(TString tag,TString mcName){
 }
 
 
-void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
+void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName,TString cosThetaBin){
+  TString fitTag="FULLFIT";
+  TString cat = "evtcat";
+  if(cosThetaBin!=""){
+    tag+="_"+cosThetaBin;
+    fitTag="FULLCOSTFIT";
+    cat = "evtcat_cosT";
+  }
+  TString dataTag = "_Combined";
+  if(cosThetaBin!="") dataTag+="_CosTBin";
+
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
 
   
@@ -116,11 +129,11 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
   RooPlot* frame  = mass->frame();
   double Nb = ws->var(Form("Data_BKGFIT_%s_Nbkg",tag.Data()))->getVal();
   cout << Nb << endl;
-  RooDataSet *blind = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass<119) || (mass>135.5)) && evtcat==evtcat::")+tag);
+  RooDataSet *blind = (RooDataSet*)ws->data("Data"+dataTag)->reduce(TString("((mass<119) || (mass>135.5)) && ")+cat+"=="+cat+"::"+tag);
   blind->plotOn(frame);
 
   tPair lbl(mcName,tag);
-  double nBkg = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+tag);
+  double nBkg = ws->data("Data"+dataTag)->sumEntries(cat+"=="+cat+"::"+tag);
 
   ws->pdf( Form("Data_BKGFIT_%s_bkgModel",tag.Data()) )->plotOn(frame,RooFit::Range("all"),RooFit::Normalization(nBkg/blind->sumEntries()),
 									       RooFit::LineColor(kRed));
@@ -161,38 +174,48 @@ void MakeSpinPlots::DrawBlindFit(TString tag, TString mcName){
   frame->addObject(expBkg);
   frame->Draw();
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s_BLIND.png",outputTag.Data(),mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/C/mgg-%s-%s-%s_BLIND.C",outputTag.Data(),mcName.Data(),tag.Data()) );
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s_BLIND.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
 
-void MakeSpinPlots::DrawFit(TString tag, TString mcName){
+void MakeSpinPlots::DrawFit(TString tag, TString mcName,TString cosThetaBin){
+  TString fitTag="FULLFIT";
+  TString cat = "evtcat";
+  if(cosThetaBin!=""){
+    tag+="_"+cosThetaBin;
+    fitTag="FULLCOSTFIT";
+    cat = "evtcat_cosT";
+ }
+  TString dataTag = "_Combined";
+  if(cosThetaBin!="") dataTag+="_CosTBin";
   TCanvas *cv = new TCanvas(Form("%s_%s",mcName.Data(),tag.Data()));
-  
+
   RooRealVar* mass = ws->var("mass");
   RooPlot* frame  = mass->frame();
 
   mass->setBins( (mass->getMax() - mass->getMin())/1.5 ); //enfore 1.5GeV bin width
 
   tPair lbl(mcName,tag);
+  std::cout << Form("Data_%s_%s_%s_Nsig",mcName.Data(),fitTag.Data(),tag.Data()) <<std::endl;
+  double Ns = ((RooFormulaVar*)ws->obj( Form("Data_%s_%s_%s_Nsig",mcName.Data(),fitTag.Data(),tag.Data()) ))->getVal();
+  double Nb = ((RooFormulaVar*)ws->obj( Form("Data_%s_%s_%s_Nbkg",mcName.Data(),fitTag.Data(),tag.Data()) ))->getVal();
 
-  double Ns = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nsig",mcName.Data(),tag.Data()) ))->getVal();
-  double Nb = ((RooFormulaVar*)ws->obj( Form("Data_%s_FULLFIT_%s_Nbkg",mcName.Data(),tag.Data()) ))->getVal();
+  double Nblind = ws->data("Data"+dataTag)->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries(cat+"=="+cat+"::"+tag);
+  double Ntot   = ws->data("Data"+dataTag)->sumEntries(cat+"=="+cat+"::"+tag);
 
-  double Nblind = ws->data("Data_Combined")->reduce("(mass>100 && mass<119) || (mass>135.5 && mass<170)")->sumEntries(TString("evtcat==evtcat::")+tag);
-  double Ntot   = ws->data("Data_Combined")->sumEntries(TString("evtcat==evtcat::")+tag);
-
-  RooFitResult* fitres = (RooFitResult*)ws->obj(Form("Data_%s_FULLFIT_fitResult",mcName.Data())); 
+  RooFitResult* fitres = (RooFitResult*)ws->obj(Form("Data_%s_%s_fitResult",mcName.Data(),fitTag.Data())); 
   std::cout << fitres << std::endl;
-  ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
+  ws->data("Data"+dataTag)->reduce(cat+"=="+cat+"::"+tag)->plotOn(frame,RooFit::LineColor(kWhite),RooFit::MarkerColor(kWhite));
   //Data_Hgg125_FULLFIT_EB_0
-  ws->pdf(Form("Data_%s_FULLFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
-  ws->pdf(Form("Data_%s_FULLFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
-  ws->pdf(Form("Data_%s_FULLFIT_%s",mcName.Data(),tag.Data()))->plotOn(frame, RooFit::LineColor(kRed));
+  ws->pdf(Form("Data_%s_%s_%s",mcName.Data(),fitTag.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kGreen),RooFit::VisualizeError(*fitres,2.0));
+  ws->pdf(Form("Data_%s_%s_%s",mcName.Data(),fitTag.Data(),tag.Data()))->plotOn(frame, RooFit::FillColor(kYellow),RooFit::VisualizeError(*fitres,1.0));
+  ws->pdf(Form("Data_%s_%s_%s",mcName.Data(),fitTag.Data(),tag.Data()))->plotOn(frame, RooFit::LineColor(kRed));
   std::cout << "1" << std::endl;
   ws->pdf(Form("Data_BKGFIT_%s_bkgModel",tag.Data()))->plotOn(frame, RooFit::Normalization(Nb/(Nb+Ns)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
   std::cout << "2" << std::endl;
 
-  ws->data("Data_Combined")->reduce(TString("evtcat==evtcat::")+tag)->plotOn(frame);
+  ws->data("Data"+dataTag)->reduce(cat+"=="+cat+"::"+tag)->plotOn(frame);
   frame->Draw();
 
   //TLatex *prelim = new TLatex(250,x->GetXmax()-40.,"CMS Preliminary");
@@ -231,6 +254,7 @@ void MakeSpinPlots::DrawFit(TString tag, TString mcName){
   frame->addObject(Nsig);
   frame->Draw();
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.png",outputTag.Data(),mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/C/mgg-%s-%s-%s.C",outputTag.Data(),mcName.Data(),tag.Data()) );
   cv->SaveAs( basePath+Form("/mgg-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
@@ -305,6 +329,7 @@ void MakeSpinPlots::DrawIndFit(TString tag, TString mcName){
   frame->addObject(Nsig);
   frame->Draw();
   cv->SaveAs( basePath+Form("/mgg-FloatedFraction-%s-%s-%s.png",outputTag.Data(),mcName.Data(),tag.Data()) );
+  cv->SaveAs( basePath+Form("/C/mgg-FloatedFraction-%s-%s-%s.C",outputTag.Data(),mcName.Data(),tag.Data()) );
   cv->SaveAs( basePath+Form("/mgg-FloatedFraction-%s-%s-%s.pdf",outputTag.Data(),mcName.Data(),tag.Data()) );
   delete cv;
 }
@@ -352,6 +377,7 @@ void MakeSpinPlots::DrawSpinBackground(TString tag, TString mcName,bool signal){
   frame->Draw();
   l.Draw("SAME");
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_%s%s_%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/C/CosThetaDist_%s%s_%s_%s.C",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_%s%s_%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
 }
 
@@ -365,7 +391,7 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
 
 
   if(signal) norm = nSignal[lbl].first;   //((RooFormulaVar*)ws->obj(Form("Data_%s_INDFIT_%s_Nsig",mcName.Data(),tag.Data())) )->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(0,1,5);
+  RooPlot *frame = ws->var("cosT")->frame(0,1,10);
 
   RooDataSet* tmp = (RooDataSet*)ws->data("Data_Combined")->reduce(TString("((mass>115 && mass<120) || (mass>130 && mass<135)) && evtcat==evtcat::")+tag);
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
@@ -392,6 +418,7 @@ void MakeSpinPlots::DrawSpinSubBackground(TString tag, TString mcName,bool signa
   frame->Draw();
   l.Draw("SAME");
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/C/CosThetaDist_SimpleSub_%s%s_%s_%s.C",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data(),tag.Data()) );
 }
 
@@ -404,7 +431,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
 
 
   if(signal) norm = ws->var(Form("Data_%s_FULLFIT_Nsig",mcName.Data()))->getVal();
-  RooPlot *frame = ws->var("cosT")->frame(0,1,9);
+  RooPlot *frame = ws->var("cosT")->frame(0,1,10);
 
   RooDataSet* tmp = (RooDataSet*)ws->data(Form("Data_Combined"))->reduce("(mass>115 && mass<120) || (mass>130 && mass<135)");
   tmp->plotOn(frame,RooFit::Rescale(norm/tmp->sumEntries()));
@@ -432,6 +459,7 @@ void MakeSpinPlots::DrawSpinSubTotBackground(TString mcName,bool signal){
   frame->Draw();
   l.Draw("SAME");
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s.png",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data()) );
+  cv.SaveAs( basePath+Form("/cosThetaPlots/C/CosThetaDist_SimpleSub_%s%s_%s.C",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data()) );
   cv.SaveAs( basePath+Form("/cosThetaPlots/CosThetaDist_SimpleSub_%s%s_%s.pdf",outputTag.Data(),(signal ? "":"_BLIND"),mcName.Data()) );
 }
 
@@ -474,6 +502,7 @@ void MakeSpinPlots::PlotSignalFits(TString tag, TString mcName,TString cosThetaB
   frame->addObject(sigL);
   frame->Draw();
   cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s_%s.png",mcName.Data(),outputTag.Data(),tag.Data()));
+  cv.SaveAs(basePath+Form("/signalModels/C/sig_%s_%s_%s.C",mcName.Data(),outputTag.Data(),tag.Data()));
   cv.SaveAs(basePath+Form("/signalModels/sig_%s_%s_%s.pdf",mcName.Data(),outputTag.Data(),tag.Data()));
 
 }
@@ -658,14 +687,22 @@ void MakeSpinPlots::setupDir(){
 
   basePath = basePath+"/"+outputTag+"/";
   mkdir(basePath.Data(),S_IRWXU|S_IRGRP|S_IXGRP);    
-    
+  TString path = basePath;
+  //C-files
+  path = basePath+"C";
+  mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
+
   //signal models
-  TString path = basePath+"signalModels";
+  path = basePath+"signalModels";
+  mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
+  path = basePath+"signalModels/C/";
   mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
 
 
   // cos(theta)
   path = basePath+"cosThetaPlots";
+  mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
+  path = basePath+"cosThetaPlots/C/";
   mkdir((path.Data()),S_IRWXU|S_IRGRP|S_IXGRP);
 
   isSetup = true;

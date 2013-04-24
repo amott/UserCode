@@ -87,6 +87,7 @@ public:
   RooDataSet *S_2D_TruthHgg, *S_2D_TruthALT, *S_2D_TruthData;
   RooDataSet *S_2DFIT_TruthHgg, *S_2DFIT_TruthALT, *S_2DFIT_TruthData;
   RooDataSet *S_2DTEMPFIT_TruthHgg, *S_2DTEMPFIT_TruthALT, *S_2DTEMPFIT_TruthData;
+  RooDataSet *S_2DBINFIT_TruthHgg, *S_2DBINFIT_TruthALT, *S_2DBINFIT_TruthData;
   RooHistPdf *altPdf,*hggPdf,*bkgPdf;
 
   /*!

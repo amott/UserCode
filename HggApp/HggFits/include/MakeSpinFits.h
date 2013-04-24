@@ -83,13 +83,13 @@ public:
 
   void MakeCombinedSignalSpin(TString mcName); //!< Make RooHistPdfs of the cos(theta) distribution for inclusive signal samples
 
-  void MakeBackgroundOnlyFit(TString catTag); //!< Make a background only fit to data in single category the type of fit is controlled by the fitType member
+  void MakeBackgroundOnlyFit(TString catTag,float cosTlow=-2,float cosThigh=2); //!< Make a background only fit to data in single category the type of fit is controlled by the fitType member
 
   /*!
     Performs a simultaneous signal hypothesis test and extracts a total number of signal events.
     The fraction of signal in the different categories is fixed in the fit (by the signal MC sample) and only the total yield is allowed to float
   */
-  void MakeCombinedSignalTest(TString mcName); //!< Make a combined simultaneous fit to S+B
+  void MakeCombinedSignalTest(TString mcName,bool cosTBinned=false); //!< Make a combined simultaneous fit to S+B
   /*!
     Performs a simultaneous signal hypothesis test in using 2D pdfs of mass X cos(theta).  The cos(theta) pdfs are RooHistPdfs taken from the signal MC and data sidebands.
     As with MakeCombinedSignalTest() the fraction of events in each category is fixed.
@@ -153,12 +153,18 @@ public:
   }
   void setUse2DIntegralMorph(bool b=true){use2DIntegralMorph=b;}
 
+  void binDatasetCosT(RooAbsData& data,TString name);
+
+  void setCosTBins(const int N, const float *edges); //!< specify the bin boundaries for cosT binning.  N = size(edges)
+
+  static std::pair<float,float> getCosTRangeFromCatName(TString name);
 protected:
   RooWorkspace *ws;
 
   std::vector<TString> mcLabel;
 
   std::vector<TString> catLabels;
+  std::vector<TString> cosTcatLabels;
 
   bool addSWeight;
   bool useCB;
@@ -172,6 +178,9 @@ protected:
   BkgFitType fitType;
 
   bool use2DIntegralMorph;
+
+  float *cosTbinEdges;
+  int NcosTbins;
 };
 
 #endif
