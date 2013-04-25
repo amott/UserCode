@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <map>
 #include <sstream>
 using namespace std;
 
@@ -23,7 +25,7 @@ using namespace std;
 #include "RazorDMAnalysis.hh"
 
 //Float_t Jet_Min_Pt = 70.0;
-Float_t Jet_Min_Pt = 80.0;
+Float_t Jet_Min_Pt = 80.0;//at least 2 jest PT>80 GeV
 
 RazorDMAnalysis::RazorDMAnalysis(TTree *tree) : Vecbos(tree) {
   _goodRunLS = false;
@@ -43,6 +45,7 @@ RazorDMAnalysis::RazorDMAnalysis(TTree *tree, string jsonFile,bool goodRunLS, bo
     setJsonGoodRunList(jsonFile);
     fillRunLSMap();
   }
+  
 }
 
 RazorDMAnalysis::~RazorDMAnalysis() {}
@@ -57,11 +60,11 @@ void RazorDMAnalysis::SetWeight(double weight){
 
 void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   if(fChain == 0) return;
-
+  
   int HLT_Razor;
   int HLT_Razor_prescaled;
   int passedHLT;
-
+  
   bool ECALTPFilterFlag;
   bool drBoundary;
   bool drDead;
@@ -87,18 +90,22 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   double pTHem2;
   double etaHem2;
   double phiHem2;
+  double Jet_PT[20];
+  double Jet_Eta[20];
+  double Jet_Phi[20];
+  double CSV[20];
   int    nBtag;
   int    nBtagTight;
   double W = _weight;
   double mst, mchi;
   int    BOX_NUM;
   Double_t Mu_Px_[2], Mu_Py_[2], Mu_Pz_[2], Mu_E_[2];
-
+  
   double metX[4], metY[4], metCorrX[4], metCorrY[4], ht;
   double mht[3];//xyz
-
+  
   //Cristian MC information
-
+  
   //Int_t           nMC;
   //Float_t         pMC[2001];   //[nMC]
   //Float_t         thetaMC[2001];   //[nMC]
@@ -108,18 +115,18 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   //Int_t           idMC[2001];   //[nMC]
   //Int_t           mothMC[2001];   //[nMC]
   //Int_t           statusMC[2001];   //[nMC]
-
+  
   float mssm[3];
   //int    ss;
   int    nPV;
   int Jet_Multiplicity;
-
+  int N_Jets;
   // gen level info
   double pT1, pT2, eta1, eta2, phi1, phi2;
   int i1, i2;
   // ttbar decay: 0 = nolep, 1 = semilep; 2 = fully lep
   int iTopDecay;
-
+  
   // prepare the output tree
   TTree* outTree = new TTree("outTree", "outTree");
   outTree->Branch("run", &run, "run/D");
@@ -129,23 +136,28 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   outTree->Branch("orbit", &orbit, "orbit/D");
   outTree->Branch("BOX_NUM", &BOX_NUM, "BOX_NUM/I");
   //outTree->Branch("ss", &ss, "ss/I");
-
+  
   // HLT bits
   outTree->Branch("HLT_Razor", &HLT_Razor, "HLT_Razor/I"); 
   outTree->Branch("HLT_Razor_prescaled", &HLT_Razor_prescaled, "HLT_Razor_prescaled/I"); 
   outTree->Branch("passedHLT", &passedHLT, "passedHLT/I");
 
   //  block
-  outTree->Branch("R", &R, "R[4]/D");
-  outTree->Branch("RSQ", &RSQ, "RSQ[4]/D");
-  outTree->Branch("MR", &MR, "MR[4]/D");
-  outTree->Branch("MRT", &MRT, "MRT[4]/D");
+  outTree->Branch("R", R, "R[4]/D");
+  outTree->Branch("RSQ", RSQ, "RSQ[4]/D");
+  outTree->Branch("MR", MR, "MR[4]/D");
+  outTree->Branch("MRT", MRT, "MRT[4]/D");
   outTree->Branch("pTHem1", &pTHem1, "pTHem1/D");
   outTree->Branch("etaHem1", &etaHem1, "etaHem1/D");
   outTree->Branch("phiHem1", &phiHem1, "phiHem1/D");
   outTree->Branch("pTHem2", &pTHem2, "pTHem2/D");
   outTree->Branch("etaHem2", &etaHem2, "etaHem2/D");
   outTree->Branch("phiHem2", &phiHem2, "phiHem2/D");
+  outTree->Branch("N_Jets", &N_Jets, "N_Jets/I");
+  outTree->Branch("Jet_PT", Jet_PT, "Jet_PT[N_Jets]/D");
+  outTree->Branch("Jet_Eta", Jet_Eta, "Jet_Eta[N_Jets]/D");
+  outTree->Branch("Jet_Phi", Jet_Phi, "Jet_Phi[N_Jets]/D");
+  outTree->Branch("CSV", CSV, "CSV[N_Jets]/D");
   outTree->Branch("nBtag", &nBtag, "nBtag/I");
   outTree->Branch("nBtagTight", &nBtagTight, "nBtagTight/I");
   outTree->Branch("W", &W, "W/D");
@@ -161,41 +173,41 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
   outTree->Branch("pT2", &pT2, "pT2/D");
   outTree->Branch("eta2", &eta2, "eta2/D");
   outTree->Branch("phi2", &phi2, "phi2/D");
-
-  outTree->Branch("N_Jets", &Jet_Multiplicity, "Jet_Multiplicity/I");
-
-  outTree->Branch("Mu_Px",&Mu_Px_,"Mu_Px_[2]/D");
-  outTree->Branch("Mu_Py",&Mu_Py_,"Mu_Py_[2]/D");
-  outTree->Branch("Mu_Pz",&Mu_Pz_,"Mu_Pz_[2]/D");
-  outTree->Branch("Mu_E",&Mu_E_,"Mu_E_[2]/D");
-
+  
+  //outTree->Branch("N_Jets", &N_Jets, "N_Jets/I");
+  
+  outTree->Branch("Mu_Px", Mu_Px_,"Mu_Px_[2]/D");
+  outTree->Branch("Mu_Py", Mu_Py_,"Mu_Py_[2]/D");
+  outTree->Branch("Mu_Pz", Mu_Pz_,"Mu_Pz_[2]/D");
+  outTree->Branch("Mu_E", Mu_E_,"Mu_E_[2]/D");
+  
   outTree->Branch("iTopDecay", &iTopDecay, "iTopDecay/I");
-  outTree->Branch("mssm", &mssm, "mssm[3]/F");
-
+  outTree->Branch("mssm", mssm, "mssm[3]/F");
+  
   //MET Info
-  outTree->Branch("metX", &metX, "metX[4]/D");
-  outTree->Branch("metY", &metY, "metY[4]/D");
-  outTree->Branch("metCorrX", &metCorrX, "metCorrX[4]/D");
-  outTree->Branch("metCorrY", &metCorrY, "metCorrY[4]/D");
+  outTree->Branch("metX", metX, "metX[4]/D");
+  outTree->Branch("metY", metY, "metY[4]/D");
+  outTree->Branch("metCorrX", metCorrX, "metCorrX[4]/D");
+  outTree->Branch("metCorrY", metCorrY, "metCorrY[4]/D");
   outTree->Branch("ht", &ht, "ht/D");
-  outTree->Branch("mht", &mht, "mht[3]/D");//xyz->[0,1,2]
+  outTree->Branch("mht", mht, "mht[3]/D");//xyz->[0,1,2]
   
   //MC GEN LEVEL INFO
   
   if( _isData == 0 ){
     
     outTree->Branch("nMC", &nMc, "nMC/I");
-    outTree->Branch("pMC", &pMc, "pMC[101]/F");
-    outTree->Branch("thetaMC", &thetaMc, "thetaMC[101]/F");
-    outTree->Branch("etaMC", &etaMc, "etaMC[101]/F");
-    outTree->Branch("phiMC", &phiMc, "phiMC[101]/F");
-    outTree->Branch("energyMC", &energyMc, "energyMC[101]/F");
-    outTree->Branch("vxMC", &vxMc, "vxMC[101]/F");
-    outTree->Branch("vyMC", &vyMc, "vyMC[101]/F");
-    outTree->Branch("vzMC", &vzMc, "vzMC[101]/F");
-    outTree->Branch("idMC", &idMc, "idMC[101]/I");
-    outTree->Branch("mothMC", &mothMc, "mothMC[101]/I");
-    outTree->Branch("statusMC", &statusMc, "statusMC[101]/I");
+    outTree->Branch("pMC", pMc, "pMC[101]/F");
+    outTree->Branch("thetaMC", thetaMc, "thetaMC[101]/F");
+    outTree->Branch("etaMC", etaMc, "etaMC[101]/F");
+    outTree->Branch("phiMC", phiMc, "phiMC[101]/F");
+    outTree->Branch("energyMC", energyMc, "energyMC[101]/F");
+    outTree->Branch("vxMC", vxMc, "vxMC[101]/F");
+    outTree->Branch("vyMC", vyMc, "vyMC[101]/F");
+    outTree->Branch("vzMC", vzMc, "vzMC[101]/F");
+    outTree->Branch("idMC", idMc, "idMC[101]/I");
+    outTree->Branch("mothMC", mothMc, "mothMC[101]/I");
+    outTree->Branch("statusMC", statusMc, "statusMC[101]/I");
     
   }
   
@@ -230,12 +242,12 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     nb = fChain->GetEntry(jentry);   nbytes += nb;
     if (jentry%1000 == 0) cout << ">>> Processing event # " << jentry << endl;
 
-
+    
     //IMPORTANT: FOR DATA RELOAD THE TRIGGER MASK PER FILE WHICH IS SUPPOSED TO CONTAIN UNIFORM CONDITIONS X FILE
     if(_isData) {
       setRequiredTriggers(maskHLT_Razor); reloadTriggerMask(true); HLT_Razor = hasPassedHLT();
       setRequiredTriggers(maskHLT_Razor_prescaled); reloadTriggerMask(true); HLT_Razor_prescaled = hasPassedHLT();
-
+      
       ECALTPFilterFlag = (METFlags >> 0)%2;
       drBoundary = (METFlags >> 1)%2;
       drDead = (METFlags >> 2)%2;
@@ -245,7 +257,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
       HBHENoiseFilterResultFlag =  (METFlags >> 6)%2;
       eeBadScFilterFlag = (METFlags >> 8)%2;
     }
-
+    
     //Good Run selection
     if (_isData && _goodRunLS && !isGoodRunLS()) {
       if ( lastRun != runNumber || lastLumi != lumiBlock) {
@@ -265,8 +277,9 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     Npassed_In += weightII;
     
     double m0=9999, m12=9999, mc=9999;
-
-    _isSMS = false;//Chage to true when running on SMS sample
+    
+    _isSMS = true;//Chage to true when running on SMS sample
+    
     if( _isData == 0  && _isSMS ){
       //double m0=9999, m12=9999, mc=9999;
       
@@ -343,7 +356,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     passedHLT = HLT_Razor + HLT_Razor_prescaled;
 
     if ( _isData == true ) {
-      //if ( passedHLT == 0 ) continue;//Comment for getting trigger turn-ons
+      if ( passedHLT == 0 ) continue;//Comment for getting trigger turn-ons
       if ((ECALTPFilterFlag==0) || (drBoundary==0) || (drDead==0) || (CSCHaloFilterFlag==0) || (trackerFailureFilterFlag==0) || (BEECALFlag==0) || ( HBHENoiseFilterResultFlag ==0 ) || ( eeBadScFilterFlag == 0 ) ) continue;
     }
     
@@ -599,19 +612,10 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
 	  break;
 	}
       }
-      /*for(std::vector<TLorentzVector>::iterator Mu_it = MuTight.begin(); Mu_it != MuTight.end(); ++Mu_it){
-	
-	if ( (*Mu_it).Pt() < 15. ) continue;
-	
-	if( (*pfJet_it).DeltaR( *Mu_it ) <= 0.3){
-	  isMuon = true;
-	  break;
-	}
-	}*/
       
       if (!isMuon){
 	pfJets_noMu.push_back( *pfJet_it );//If no muon found push it back into the collection  
-	i_pfJets_noMu.push_back(ctr);
+	i_pfJets_noMu.push_back(i_pfJets[ctr]);
       }
       
       ctr++;
@@ -620,17 +624,34 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     
     // Number of Jets                                                                                             
     Jet_Multiplicity = pfJets_noMu.size();
-
-    //std::cout << "Number of PfJets:  " << pfJets.size() << "  Number of Pfjets Muon subtracted:  " << \
-      //      pfJets_noMu.size()<< std::endl; 
-      
-    // >= 2Jets with pT> 70 GeV                                                            
+    N_Jets = pfJets_noMu.size();
+    std::map<double, double> JetPTMap;
+    std::map<double, double> JetEtaMap;
+    std::map<double, double> JetPhiMap;
+    std::vector<double> JetPT;
+    for(int j = 0; j < pfJets_noMu.size(); j++){
+      JetPTMap[pfJets_noMu[j].Pt()] = combinedSecondaryVertexBJetTagsAK5Jet[  i_pfJets_noMu[j]  ];
+      JetEtaMap[pfJets_noMu[j].Pt()] = pfJets_noMu[j].Eta();
+      JetPhiMap[pfJets_noMu[j].Pt()] = pfJets_noMu[j].Phi();
+      JetPT.push_back( pfJets_noMu[j].Pt() );
+    }
+    
+    std::sort(JetPT.begin(), JetPT.end());
+    std::reverse(JetPT.begin(), JetPT.end());
+    for(int j = 0; j < pfJets_noMu.size(); j++){
+      Jet_PT[j] = JetPT[j];
+      Jet_Eta[j] = JetEtaMap[JetPT[j]];
+      Jet_Phi[j] = JetPhiMap[JetPT[j]];
+      CSV[j] = JetPTMap[JetPT[j]];
+    }
+    
+    // >= 2Jets with pT > 80 GeV                                                            
     if( int( pfJets_noMu.size() ) < 2 ) continue;//At least 2 Jets                                         
     //std::cout << "debug -1" << std::endl;
     int iFirst_pfJet = HighestPt(pfJets_noMu, -99);
     int iSecond_pfJet = HighestPt(pfJets_noMu, iFirst_pfJet);
-    if( pfJets_noMu[iSecond_pfJet].Pt() < 70. ) continue;//First and second most energetic Jets \
-    //Must have Pt > 70 GeV  
+    if( pfJets_noMu[iSecond_pfJet].Pt() < Jet_Min_Pt ) continue;//First and second most energetic Jets \
+    //Must have Pt > 80 GeV  
     
     Npassed_2Jet+=weightII;
     
@@ -639,8 +660,8 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     nBtagTight = 0;
     
     for( int b = 0; b < i_pfJets_noMu.size(); b++ ){
-      if( pfJetPassCSVL( combinedSecondaryVertexBJetTagsAK5Jet[ i_pfJets[ i_pfJets_noMu[b] ] ] ) ) nBtag++;//Loose
-      if( pfJetPassCSVT( combinedSecondaryVertexBJetTagsAK5Jet[ i_pfJets[ i_pfJets_noMu[b] ] ] ) ) nBtagTight++;
+      if( pfJetPassCSVL( combinedSecondaryVertexBJetTagsAK5Jet[ i_pfJets_noMu[b] ] ) ) nBtag++;//Loose
+      if( pfJetPassCSVT( combinedSecondaryVertexBJetTagsAK5Jet[ i_pfJets_noMu[b] ] ) ) nBtagTight++;
       //Tight  
     }
     
@@ -655,7 +676,6 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     TVector3 Muon_MET_Correction(0,0,0);
 
     // Boxes
-    
     Mu_Px_[0] = Mu_Py_[0] = Mu_Pz_[0] = Mu_E_[0] = Mu_Px_[1] = Mu_Py_[1] = Mu_Pz_[1] = Mu_E_[1] =  -9999;
 
     // Correct MET for Presence of Loose Muons with pT>15 GeV
@@ -713,7 +733,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
 
     // Tight Electron ID
     vector<int> iEleTight;
-    for(int i=0; i<nEle; i++) {
+    for(int i=0; i < nEle; i++) {
       TLorentzVector thisEle(pxEle[i], pyEle[i], pzEle[i], energyEle[i]);
       if(isTrigElectron(i) && thisEle.Pt() > 15.) {
 	iEleTight.push_back(i);//Fill if the electron is tight and Pt > 15 GeV
