@@ -8,7 +8,8 @@ MakeSpinToy::MakeSpinToy(TString fileName,TString wsName)
   ws = (RooWorkspace*)f->Get(wsName);
 
   MakeSpinFits::getLabels("evtcat",&catLabels,ws);
-
+  MakeSpinFits::getLabels("evtcat_cosT",&catCosTLabels,ws);
+  
   fitType=MakeSpinFits::kPoly;
 
   mass = ws->var("mass");
@@ -105,113 +106,126 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,genType gen){
 void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genType gen,float nSigTot){
   std::cout << "generateToyWorkspace per cat" <<std::endl;
   //get the generation PDFs
+  RooCategory* cosTCats = (RooCategory*)ws->obj("CosThetaBins");
 
-  //mass
+  RooDataSet *data = new RooDataSet(Form("Data_%s",cat),"",RooArgSet(*mass,*cosT));
+  RooDataSet *toysig = new RooDataSet(Form("ToySigData_%s",cat),"",RooArgSet(*mass,*cosT));
+  int sigGen=0,bkgGen=0;
   RooAbsPdf* hggMassPdf = ws->pdf( Form("%s_FIT_%s",mcLabels[1].Data(),cat) );
   RooAbsPdf* altMassPdf = ws->pdf( Form("%s_FIT_%s",mcLabels[2].Data(),cat) );
 
-  ws->var(Form("%s_FIT_%s_mean",mcLabels[1].Data(),cat))->setVal(125.);
-  ws->var(Form("%s_FIT_%s_mean",mcLabels[2].Data(),cat))->setVal(125.);
 
-  RooAbsPdf* bkgMassPdf = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",cat) );
+  for(int iCos=0;iCos<cosTCats->numBins("");iCos++){
+    cosTCats->setIndex(iCos);
+    const char* csCat = Form("%s_%s",cat,cosTCats->getLabel());
+    //mass
+
+    //ws->var(Form("%s_FIT_%s_mean",mcLabels[1].Data(),cat))->setVal(125.);
+    //ws->var(Form("%s_FIT_%s_mean",mcLabels[2].Data(),cat))->setVal(125.);
+
+    RooAbsPdf* bkgMassPdf = ws->pdf( Form("Data_BKGFIT_%s_bkgModel",csCat) );
   
-  cosT->setBins(50,"generate");
-  mass->setBins(200,"generate");
-  //cosT
-  RooDataSet *tmp  = (RooDataSet*)(ws->data("Data_Combined")->reduce(Form("evtcat==evtcat::%s && ((mass>110 && mass<120) || (mass>130 && mass<140))",cat)));
-  RooDataSet *tmpH = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[1].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
-  RooDataSet *tmpR = (RooDataSet*)ws->data(Form("%s_Combined",mcLabels[2].Data()))->reduce(Form("evtcat==evtcat::%s",cat));
+    cosT->setBins(50,"generate");
+    mass->setBins(200,"generate");
+    //cosT
+    RooDataSet *tmp  = (RooDataSet*)(ws->data("Data_Combined_CosTBin")->reduce(Form("evtcat_cosT==evtcat_cosT::%s && ((mass>110 && mass<120) || (mass>130 && mass<140))",csCat)));
+    RooDataSet *tmpH = (RooDataSet*)ws->data(Form("%s_Combined_CosTBin",mcLabels[1].Data()))->reduce(Form("evtcat_cosT==evtcat_cosT::%s",csCat));
+    RooDataSet *tmpR = (RooDataSet*)ws->data(Form("%s_Combined_CosTBin",mcLabels[2].Data()))->reduce(Form("evtcat_cosT==evtcat_cosT::%s",csCat));
 
-  RooDataHist histBkg ("bkgDataHist","",*cosT,"generate"); histBkg.add(*tmp);
-  RooDataHist histHgg ("hggDataHist","",RooArgSet(*mass,*cosT),"generate"); histHgg.add(*tmpH);
-  RooDataHist histAlt ("altDataHist","",RooArgSet(*mass,*cosT),"generate"); histAlt.add(*tmpR);
-
-  RooHistPdf bkgGenPdf("bkgGenPdf","",*cosT,histBkg);
-  RooHistPdf hggGenPdf("hggGenPdf","",RooArgSet(*mass,*cosT),histHgg);
-  RooHistPdf altGenPdf("altGenPdf","",RooArgSet(*mass,*cosT),histAlt);
-
-  /*
-  RooDataHist histBkg ("bkgDataHist","",*cosT,"generate"); histBkg.add(*tmp);
-  RooDataHist histHgg ("hggDataHist","",*cosT,"generate"); histHgg.add(*tmpH);
-  RooDataHist histAlt ("altDataHist","",*cosT,"generate"); histAlt.add(*tmpR);
-
-  RooHistPdf bkgGenPdf("bkgGenPdf","",*cosT,histBkg);
-  RooHistPdf hggGenPdf("hggGenPdf","",*cosT,histHgg);
-  RooHistPdf altGenPdf("altGenPdf","",*cosT,histAlt);
-  */
-  /*
-  RooKeysPdf* bkgGenPdf = new RooKeysPdf("bkgGenPdf","",*cosT,*tmp);
-  RooKeysPdf* hggGenPdf = new RooKeysPdf("hggGenPdf","",*cosT,*tmpH);
-  RooKeysPdf* altGenPdf = new RooKeysPdf("altGenPdf","",*cosT,*tmpR);
-  */
-  /*
-  tmp->SetName(Form("OriginalData_%s",cat));
-  RooDataHist tmpHist("bkgGenHist","",*cosT,*tmp);
-  RooHistPdf* bkgGenPdf = new RooHistPdf("bkgGenPdf","",*cosT,tmpHist);
-  
-  std::cout << "BKG GEN PDF:  " << bkgGenPdf <<std::endl;
-  if(!bkgGenPdf) return;
-  RooHistPdf* hggGenPdf = (RooHistPdf*)ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",cat));
-  RooHistPdf* altGenPdf = (RooHistPdf*)ws->pdf(Form("ALT125_FIT_%s_cosTpdf",cat));
-  */
-  std::cout << &hggGenPdf <<std::endl;
-
-
-  //get the expected number of events in this categoy
-  //Data_Hgg125_FULAALFIT_EB_0_Nbkg
-  int Nbkg = ((RooFormulaVar*)ws->obj(Form("Data_%s_FULLFIT_%s_Nbkg",mcLabels[gen].Data(),cat)))->getVal()*targetLumi/nominalLumi;
-  int Nsig = nSigTot * ws->var(Form("Data_%s_FULLFIT_%s_fsig",mcLabels[gen].Data(),cat))->getVal();
-
-  TRandom3 rng(0);
-  int thisNbkg = (int)rng.Poisson(Nbkg);
-  int thisNsig = Nsig;//(int)rng.Poisson(Nsig); //number of events to generate
-
-  std::cout << "\nGenerating  " << thisNbkg << " background and " << thisNsig << " signal events\n" <<std::endl;
-
-  RooRealVar nSigGen(Form("N_gen_sig_%s",cat),"",thisNsig);
-  RooRealVar nBkgGen(Form("N_gen_bkg_%s",cat),"",thisNbkg);
-
-  RooDataSet *M = bkgMassPdf->generate(*mass,thisNbkg);
-  RooDataSet *C = bkgGenPdf.generate(*cosT,thisNbkg,RooFit::AutoBinned(kFALSE));
-
-
-  RooDataSet *mcM, *mcC;
-  RooDataSet *mc;
-  switch(gen){
-  case Hgg125:
-    std::cout << "GENERATING HIGGS SPIN DISTRIBUTION" <<std::endl;
-    //mcM = hggMassPdf->generate(*mass,thisNsig);
-    //mcC = hggGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
-    mc = hggGenPdf.generate(RooArgSet(*mass,*cosT),thisNsig,RooFit::AutoBinned(kFALSE));
-    break;
+    RooDataHist histBkg ("bkgDataHist","",*cosT,"generate"); histBkg.add(*tmp);
+    RooDataHist histHgg ("hggDataHist","",RooArgSet(*mass,*cosT),"generate"); histHgg.add(*tmpH);
+    RooDataHist histAlt ("altDataHist","",RooArgSet(*mass,*cosT),"generate"); histAlt.add(*tmpR);
     
-  case ALT125:
-    std::cout << "GENERATING ALTERNATE SPIN DISTRIBUTION" <<std::endl;
-    //mcM = altMassPdf->generate(*mass,thisNsig); 
-    //mcC = altGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
-    mc = altGenPdf.generate(RooArgSet(*mass,*cosT),thisNsig,RooFit::AutoBinned(kFALSE));
-    break;
+    RooHistPdf bkgGenPdf("bkgGenPdf","",*cosT,histBkg);
+    RooHistPdf hggGenPdf("hggGenPdf","",RooArgSet(*mass,*cosT),histHgg);
+    RooHistPdf altGenPdf("altGenPdf","",RooArgSet(*mass,*cosT),histAlt);
     
-  default:
-    return;
-  }
-  std::cout << "M size: " << M->sumEntries() << std::endl << "C size: " << C->sumEntries() <<std::endl;
-  //std::cout << "M size: " << mcM->sumEntries() << std::endl << "C size: " << mcC->sumEntries() <<std::endl;
-  
-  M->Print();
-  C->Print();
-  //mcM->Print();
-  //mcC->Print();
-  mc->Print();
-  M->merge(C);
-  //mcM->merge(mcC);
-  M->append(*mc);
+    /*
+      RooDataHist histBkg ("bkgDataHist","",*cosT,"generate"); histBkg.add(*tmp);
+      RooDataHist histHgg ("hggDataHist","",*cosT,"generate"); histHgg.add(*tmpH);
+      RooDataHist histAlt ("altDataHist","",*cosT,"generate"); histAlt.add(*tmpR);
+      
+      RooHistPdf bkgGenPdf("bkgGenPdf","",*cosT,histBkg);
+      RooHistPdf hggGenPdf("hggGenPdf","",*cosT,histHgg);
+      RooHistPdf altGenPdf("altGenPdf","",*cosT,histAlt);
+    */
+    /*
+      RooKeysPdf* bkgGenPdf = new RooKeysPdf("bkgGenPdf","",*cosT,*tmp);
+      RooKeysPdf* hggGenPdf = new RooKeysPdf("hggGenPdf","",*cosT,*tmpH);
+      RooKeysPdf* altGenPdf = new RooKeysPdf("altGenPdf","",*cosT,*tmpR);
+    */
+    /*
+      tmp->SetName(Form("OriginalData_%s",cat));
+      RooDataHist tmpHist("bkgGenHist","",*cosT,*tmp);
+      RooHistPdf* bkgGenPdf = new RooHistPdf("bkgGenPdf","",*cosT,tmpHist);
+      
+      std::cout << "BKG GEN PDF:  " << bkgGenPdf <<std::endl;
+      if(!bkgGenPdf) return;
+      RooHistPdf* hggGenPdf = (RooHistPdf*)ws->pdf(Form("Hgg125_FIT_%s_cosTpdf",cat));
+      RooHistPdf* altGenPdf = (RooHistPdf*)ws->pdf(Form("ALT125_FIT_%s_cosTpdf",cat));
+    */
 
-  mc->SetName(Form("ToySigData_%s",cat));
-  M->SetName(Form("Data_%s",cat));
-  
-  toyws->import(*M);
-  toyws->import(*mc);
+
+    //get the expected number of events in this categoy
+    //Data_Hgg125_FULAALFIT_EB_0_Nbkg
+    int Nbkg = ((RooFormulaVar*)ws->obj(Form("Data_%s_FULLCOSTFIT_%s_Nbkg",mcLabels[gen].Data(),csCat)))->getVal()*targetLumi/nominalLumi;
+    int Nsig = nSigTot * ws->var(Form("Data_%s_FULLCOSTFIT_%s_fsig",mcLabels[gen].Data(),csCat))->getVal();
+
+    TRandom3 rng(0);
+    int thisNbkg = (int)rng.Poisson(Nbkg);
+    int thisNsig = Nsig;//(int)rng.Poisson(Nsig); //number of events to generate
+    
+    std::cout << "\nGenerating  " << thisNbkg << " background and " << thisNsig << " signal events\n" <<std::endl;
+
+    sigGen+=thisNsig;
+    bkgGen+=thisNbkg;
+
+
+    RooDataSet *M = bkgMassPdf->generate(*mass,thisNbkg);
+    RooDataSet *C = bkgGenPdf.generate(*cosT,thisNbkg,RooFit::AutoBinned(kFALSE));
+    
+    
+    RooDataSet *mcM, *mcC;
+    RooDataSet *mc;
+    switch(gen){
+    case Hgg125:
+      std::cout << "GENERATING HIGGS SPIN DISTRIBUTION" <<std::endl;
+      //mcM = hggMassPdf->generate(*mass,thisNsig);
+      //mcC = hggGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
+      mc = hggGenPdf.generate(RooArgSet(*mass,*cosT),thisNsig,RooFit::AutoBinned(kFALSE));
+      break;
+      
+    case ALT125:
+      std::cout << "GENERATING ALTERNATE SPIN DISTRIBUTION" <<std::endl;
+      //mcM = altMassPdf->generate(*mass,thisNsig); 
+      //mcC = altGenPdf.generate(*cosT,thisNsig,RooFit::AutoBinned(kFALSE));
+      mc = altGenPdf.generate(RooArgSet(*mass,*cosT),thisNsig,RooFit::AutoBinned(kFALSE));
+      break;
+      
+    default:
+      return;
+    }
+    std::cout << "M size: " << M->sumEntries() << std::endl << "C size: " << C->sumEntries() <<std::endl;
+    //std::cout << "M size: " << mcM->sumEntries() << std::endl << "C size: " << mcC->sumEntries() <<std::endl;
+    
+    M->Print();
+    C->Print();
+    //mcM->Print();
+    //mcC->Print();
+    mc->Print();
+    M->merge(C);
+    //mcM->merge(mcC);
+    M->append(*mc);
+    
+    data->append(*M);
+    toysig->append(*mc);
+  }  
+
+  RooRealVar nSigGen(Form("N_gen_sig_%s",cat),"",sigGen);
+  RooRealVar nBkgGen(Form("N_gen_bkg_%s",cat),"",bkgGen);
+
+  toyws->import(*data);
+  toyws->import(*toysig);
   toyws->import(*hggMassPdf);
   toyws->import(*altMassPdf);
   toyws->import(nSigGen);
@@ -362,6 +376,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
       fits.MakeSignalFitForFit(*it,mcLabels[1]);
       fits.MakeSignalFitForFit(*it,mcLabels[2]);
       fits.MakeBackgroundOnlyFit(*it);          
+      
       for(int iCos=0;iCos<cosTCats->numBins("");iCos++){
 	cosTCats->setIndex(iCos);
 	std::pair<float,float> cosTrange = MakeSpinFits::getCosTRangeFromCatName(cosTCats->getLabel());
@@ -370,7 +385,7 @@ double* MakeSpinToy::run1(genType gen, int& N){
 	fits.MakeSignalFitForFit(*it+"_"+cosTCats->getLabel(),mcLabels[1]);
 	fits.MakeSignalFitForFit(*it+"_"+cosTCats->getLabel(),mcLabels[2]);
 	fits.MakeBackgroundOnlyFit(*it,cosTrange.first,cosTrange.second);
-      }
+	}
     }
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[1].Data())));
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[2].Data())));

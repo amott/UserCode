@@ -117,13 +117,21 @@ int MakeSpinWorkspace::passSelection(float r9){
   return 1;
 }
 bool MakeSpinWorkspace::getBaselineSelection(HggOutputReader2* h,int maxI,int minI,float mass){
-  
-  if(h->nPhoton < 2
+  if(requireCiC){
+  if(h->nPhotonPFCiC < 2
      || h->diPhotonMVA<-1
      || mass < mMin
      || mass > mMax
-     || h->Photon_pt[minI] < pt2Min
-     || h->Photon_pt[maxI] < pt1Min) return false;
+     || h->PhotonPFCiC_pt[minI] < pt2Min
+     || h->PhotonPFCiC_pt[maxI] < pt1Min) return false;
+  }else{
+    if(h->nPhoton < 2
+       || h->diPhotonMVA<-1
+       || mass < mMin
+       || mass > mMax
+       || h->Photon_pt[minI] < pt2Min
+       || h->Photon_pt[maxI] < pt1Min) return false;
+  }
   return true;
 }
 
@@ -279,8 +287,13 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     if(isGlobe){
       maxI=0; minI=1;
     }else{
-      maxI = (h->Photon_pt[1] > h->Photon_pt[0] ? 1:0);
-      minI = (h->Photon_pt[1] > h->Photon_pt[0] ? 0:1);
+      if(requireCiC){
+	maxI = (h->PhotonPFCiC_pt[1] > h->PhotonPFCiC_pt[0] ? 1:0);
+	minI = (h->PhotonPFCiC_pt[1] > h->PhotonPFCiC_pt[0] ? 0:1);
+      }else{
+	maxI = (h->Photon_pt[1] > h->Photon_pt[0] ? 1:0);
+	minI = (h->Photon_pt[1] > h->Photon_pt[0] ? 0:1);
+      }
     }
 
     if(!isGlobe){ // globe trees don't have run number ...
@@ -288,44 +301,14 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       if(isData && (run < runLow || run > runHigh) ) continue;
     }
     float pho1_etaSC, pho2_etaSC;
-    if(isGlobe){
-      pho1_etaSC = g->lead_calo_eta;
-      pho2_etaSC = g->sublead_calo_eta;
-    }else{
-      pho1_etaSC = h->Photon_etaSC[maxI];
-      pho2_etaSC = h->Photon_etaSC[minI];
-    }
-
-    float weight = (isGlobe ? g->evweight : h->evtWeight*getEfficiency(*h,125));
-
-    if(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) nEB+=weight;
-    else nEE+=weight;
-
-    Nentries++;
-    
-    float m;
-    if(isGlobe) m = g->higgs_mass;
-    else m = (useUncorrMass ? h->mPairNoCorr : h->mPair);
-    if(debug_workspaces && m!=-1) std::cout << "m: " << m <<std::endl;
-
-    // apply selections
-    if(isGlobe){ 
-      if(m <mMin || m > mMax) continue;
-    }else{// globe ntuples already have selections, just need mass cuts
-      if(!getBaselineSelection(h,maxI,minI,m)) continue;
-      if(tightPt && (h->Photon_pt[maxI]/m < 1./3. || h->Photon_pt[minI]/m < 1./4.) ) continue;
-      if(requireCiC){
-	if(h->Photon_passPFCiC[1]==false || h->Photon_passPFCiC[0]==false) continue;
-      }
-    }
-    if(debug_workspaces) std::cout <<  "passed selection" <<std::endl;
-
     float se1,se2;
     float r91_f,r92_f;
     float pt1_f,pt2_f;
     float eta1_f,eta2_f;
     float phi1_f,phi2_f;
     if(isGlobe){
+      pho1_etaSC = g->lead_calo_eta;
+      pho2_etaSC = g->sublead_calo_eta;
       se1 = g->lead_sigmaE_nosmear/g->lead_E;
       se2 = g->sublead_sigmaE_nosmear/g->sublead_E;
       r91_f = g->lead_r9;
@@ -336,20 +319,62 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       eta2_f = g->sublead_calo_eta;
       phi1_f = g->lead_calo_phi;
       phi2_f = g->sublead_calo_phi;
-      
     }else{
-      se1 = h->Photon_EError[maxI]/h->Photon_E[maxI];
-      se2 = h->Photon_EError[minI]/h->Photon_E[minI];
-      r91_f = h->Photon_r9[maxI];
-      r92_f = h->Photon_r9[minI];
-      pt1_f = h->Photon_pt[maxI];
-      pt2_f = h->Photon_pt[minI];
-      eta1_f = h->Photon_etaSC[maxI];
-      eta2_f = h->Photon_etaSC[minI];
-      phi1_f = h->Photon_phi[maxI];
-      phi2_f = h->Photon_phi[minI];
+      if(requireCiC){
+	pho1_etaSC = h->PhotonPFCiC_etaSC[maxI];
+	pho2_etaSC = h->PhotonPFCiC_etaSC[minI];
+	se1 = h->PhotonPFCiC_EError[maxI]/h->PhotonPFCiC_E[maxI];
+	se2 = h->PhotonPFCiC_EError[minI]/h->PhotonPFCiC_E[minI];
+	r91_f = h->PhotonPFCiC_r9[maxI];
+	r92_f = h->PhotonPFCiC_r9[minI];
+	pt1_f = h->PhotonPFCiC_pt[maxI];
+	pt2_f = h->PhotonPFCiC_pt[minI];
+	eta1_f = h->PhotonPFCiC_etaSC[maxI];
+	eta2_f = h->PhotonPFCiC_etaSC[minI];
+	phi1_f = h->PhotonPFCiC_phi[maxI];
+	phi2_f = h->PhotonPFCiC_phi[minI];
+      }else{
+	pho1_etaSC = h->Photon_etaSC[maxI];
+	pho2_etaSC = h->Photon_etaSC[minI];
+	se1 = h->Photon_EError[maxI]/h->Photon_E[maxI];
+	se2 = h->Photon_EError[minI]/h->Photon_E[minI];
+	r91_f = h->Photon_r9[maxI];
+	r92_f = h->Photon_r9[minI];
+	pt1_f = h->Photon_pt[maxI];
+	pt2_f = h->Photon_pt[minI];
+	eta1_f = h->Photon_etaSC[maxI];
+	eta2_f = h->Photon_etaSC[minI];
+	phi1_f = h->Photon_phi[maxI];
+	phi2_f = h->Photon_phi[minI];
+      }
     }
+    float weight=1;
+    if(!isData) weight = (isGlobe ? g->evweight : h->evtWeight*getEfficiency(*h,125));
+    if(weight==0 && !isData){
+      std::cout << "0 weight event!    " << h->evtWeight << "    " << getEfficiency(*h,125) <<std::endl;
+    }
+    if(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) nEB+=weight;
+    else nEE+=weight;
 
+    Nentries++;
+    
+    float m;
+    if(isGlobe) m = g->higgs_mass;
+    else{
+      if(requireCiC) m = (useUncorrMass ? h->mPairNoCorrPFCiC : h->mPairPFCiC);
+      else m = (useUncorrMass ? h->mPairNoCorr : h->mPair);
+
+    }
+    if(debug_workspaces && m!=-1) std::cout << "m: " << m <<std::endl;
+
+    // apply selections
+    if(isGlobe){ 
+      if(m <mMin || m > mMax) continue;
+    }else{// globe ntuples already have selections, just need mass cuts
+      if(!getBaselineSelection(h,maxI,minI,m)) continue;
+      if(tightPt && (pt1_f/m < 1./3. || pt2_f/m < 1./4.) ) continue;
+    }
+    if(debug_workspaces) std::cout <<  "passed selection" <<std::endl;
 
     int p1=nCat,p2=nCat;
     assert(minI != maxI);
@@ -562,6 +587,10 @@ float MakeSpinWorkspace::getEffWeight(float eta, float pt, float phi, float r9){
   //std::cout << "returning: " <<returnVal;
   //delete effMap;
   //delete keyList;
+  if(returnVal!=returnVal){
+    std::cout << "INVALID WEIGHT!!!!" <<std::endl;
+    assert(false);
+  }
   return returnVal;
 
 }
@@ -606,8 +635,15 @@ void MakeSpinWorkspace::MakeWorkspace(){
 float MakeSpinWorkspace::getEfficiency(HggOutputReader2 &h, int massPoint){
   float KFac = getKFactor(h,massPoint);
   float rescale = getRescaleFactor(h);
-
-  return KFac*rescale;
+   if(KFac!=KFac || KFac==0){
+    std::cout << "INVALID KFACTOR!!!!"<<std::endl;
+    assert(false);
+  }
+   if(rescale!=rescale ||rescale==0){
+    std::cout << "INVALID rescale!!!!"<<std::endl;
+    assert(false);
+  }
+ return KFac*rescale;
 }
 
 float MakeSpinWorkspace::getKFactor(HggOutputReader2 &h, int massPoint){
@@ -619,7 +655,11 @@ float MakeSpinWorkspace::getKFactor(HggOutputReader2 &h, int massPoint){
   float kf=1;
   assert(hist!=0);
   if(hist){
-    kf = hist->GetBinContent(hist->FindFixBin(h.genHiggsPt));
+    int bin = hist->FindFixBin(h.genHiggsPt);
+    if(bin > hist->GetNbinsX()) bin = hist->GetNbinsX();
+    if(bin <= 1) bin=2;
+    kf = hist->GetBinContent(bin);
+    if(kf==0) std::cout << bin << " " << h.genHiggsPt << std::endl;
   }
   delete hist;
   return kf;
@@ -630,11 +670,21 @@ float MakeSpinWorkspace::getRescaleFactor(HggOutputReader2 &h){
 
   float EFF=1;
 
-  int cicCat = 2*(fabs(h.Photon_etaSC[0])>1.48 || fabs(h.Photon_etaSC[1])>1.48)
-    + (h.Photon_r9[0]<0.94 || h.Photon_r9[1]<0.94);
+  int cicCat = 0;
+  if(requireCiC) 2*(fabs(h.PhotonPFCiC_etaSC[0])>1.48 || fabs(h.PhotonPFCiC_etaSC[1])>1.48) + (h.PhotonPFCiC_r9[0]<0.94 || h.PhotonPFCiC_r9[1]<0.94);
+  else cicCat =  2*(fabs(h.Photon_etaSC[0])>1.48      || fabs(h.Photon_etaSC[1])>1.48)      + (h.Photon_r9[0]<0.94      || h.Photon_r9[1]<0.94);
 
-  TLorentzVector p4_1; p4_1.SetPtEtaPhiM(h.Photon_pt[0],h.Photon_eta[0],h.Photon_phi[0],0);
-  TLorentzVector p4_2; p4_2.SetPtEtaPhiM(h.Photon_pt[1],h.Photon_eta[1],h.Photon_phi[1],0);
+  TLorentzVector p4_1; 
+  TLorentzVector p4_2;
+
+  if(requireCiC){
+    p4_1.SetPtEtaPhiM(h.PhotonPFCiC_pt[0],h.PhotonPFCiC_eta[0],h.PhotonPFCiC_phi[0],0);
+    p4_2.SetPtEtaPhiM(h.PhotonPFCiC_pt[1],h.PhotonPFCiC_eta[1],h.PhotonPFCiC_phi[1],0);
+
+  }else{
+    p4_1.SetPtEtaPhiM(h.Photon_pt[0],h.Photon_eta[0],h.Photon_phi[0],0);
+    p4_2.SetPtEtaPhiM(h.Photon_pt[1],h.Photon_eta[1],h.Photon_phi[1],0);
+  }
 
   float pt_sys = (p4_1+p4_1).Pt();
   
@@ -654,10 +704,12 @@ float MakeSpinWorkspace::getRescaleFactor(HggOutputReader2 &h){
   for(int i=0;i<2;i++){
     int index = 2*(fabs(h.Photon_etaSC[i])>1.48)+(h.Photon_r9[i] > 0.94);
     e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioTP_")+labels[index] );
-    EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+    if(requireCiC) EFF*=getEffFromTGraph(e,h.PhotonPFCiC_pt[i]);
+    else EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
     delete e;
     e = (TGraphAsymmErrors*)fileRescaleFactor->Get( TString("ratioR9_")+labels[index] );
-    EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
+    if(requireCiC) EFF*=getEffFromTGraph(e,h.PhotonPFCiC_pt[i]);
+    else EFF*=getEffFromTGraph(e,h.Photon_pt[i]);
     delete e;
   }
   return EFF;
@@ -747,10 +799,15 @@ void MakeSpinWorkspace::setupBranches(HggOutputReader2 &h){
 
   h.fChain->SetBranchStatus("nPhoton",1);
   h.fChain->SetBranchStatus("Photon.*",1);
+  h.fChain->SetBranchStatus("PhotonPFCiC.*",1);
   h.fChain->SetBranchStatus("mPair",1);
+  h.fChain->SetBranchStatus("mPairPFCiC",1);
   h.fChain->SetBranchStatus("mPairNoCorr",1);
+  h.fChain->SetBranchStatus("mPairNoCorrPFCiC",1);
   h.fChain->SetBranchStatus("cosThetaLead",1);
+  h.fChain->SetBranchStatus("cosThetaLeadPFCiC",1);
   h.fChain->SetBranchStatus("evtWeight",1);
   h.fChain->SetBranchStatus("diPhotonMVA",1);
   h.fChain->SetBranchStatus("runNumber",1);
+  h.fChain->SetBranchStatus("genHiggsPt",1);
 }

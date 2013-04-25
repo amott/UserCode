@@ -76,15 +76,21 @@ void MixSpinDatasets::internalMix(const char* mc1, const char* mc2,
   RooRealVar * tot_EB_2 = ws->var( Form("%s_EB_totalEvents",mc2) );
   RooRealVar * tot_EE_1 = ws->var( Form("%s_EE_totalEvents",mc1) );
   RooRealVar * tot_EE_2 = ws->var( Form("%s_EE_totalEvents",mc2) );
+
+  RooRealVar * ngen_1   = ws->var( Form("%s_Ngen",mc1) );
+  RooRealVar * ngen_2   = ws->var( Form("%s_Ngen",mc2) );
   
   RooRealVar * tot_EB_mix = new RooRealVar( Form("%s_EB_totalEvents",outputName.Data()), "", tot_EB_1->getVal()*f1 + tot_EB_2->getVal()*(1-f1) );
   RooRealVar * tot_EE_mix = new RooRealVar( Form("%s_EE_totalEvents",outputName.Data()), "", tot_EE_1->getVal()*f1 + tot_EE_2->getVal()*(1-f1) );
+  RooRealVar * ngen_mix   = new RooRealVar( Form("%s_Ngen",outputName.Data()),           "", ngen_1->getVal()*f1 + ngen_2->getVal()*(1-f1) );
 
   ws->import(*tot_EB_mix);
   ws->import(*tot_EE_mix);
-  
+  ws->import (*ngen_mix);
+
   delete mixed;
   delete mixed_TMP;
   delete tot_EB_mix;
   delete tot_EE_mix;
+  delete ngen_mix;
 }

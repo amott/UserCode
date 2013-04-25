@@ -24,6 +24,7 @@ int main(int argc, char** argv){
   a.addLongOption("setTrailingPtCut",ArgParser::reqArg,"set the pT cut of the trailing photon (default: 24)");
   a.addLongOption("useHelicityFrame",ArgParser::noArg,"use the helicity frame to measure cos(theta) (default: collins-sopper frame)");
   a.addLongOption("useAsymmCosTheta",ArgParser::noArg,"use the asymmetric (non-absolute value) cos(theta)");
+  a.addLongOption("noData",ArgParser::noArg,"don't run data (useful for adding additional MC samples)");
 
   string ret;
   if(a.process(ret) !=0){
@@ -110,7 +111,8 @@ int main(int argc, char** argv){
 
   cout << "Data:    " << data <<endl;
 
-  msw.addFile(data,"Data",true,-1,isList);
+
+  if(!a.longFlagPres("noData"))   msw.addFile(data,"Data",true,-1,isList);
   for(vector<string>::const_iterator mcIt = mcListVec.begin();
       mcIt != mcListVec.end();
       mcIt++){

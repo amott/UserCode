@@ -120,6 +120,7 @@ protected:
   bool saveWorkspaces;
   bool doData;
   std::vector<TString> catLabels;
+  std::vector<TString> catCosTLabels;
 
   MakeSpinFits::BkgFitType fitType;
   

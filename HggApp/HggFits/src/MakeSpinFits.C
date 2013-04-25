@@ -149,9 +149,9 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName,float cosTlow, floa
   RooRealVar mean(Form("%s_mean",outputTag.Data()),Form("%s_mean",outputTag.Data()),meanStart,meanLow,meanHigh);
   RooRealVar sig1(Form("%s_sigma1",outputTag.Data()),Form("%s_sigma1",outputTag.Data()),1,0.1,6);
   RooRealVar sig2(Form("%s_sigma2",outputTag.Data()),Form("%s_sigma2",outputTag.Data()),4,2,10);
-  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),7,5,20);
-  RooRealVar f1(Form("%s_f1",outputTag.Data()),Form("%s_f1",outputTag.Data()),0.1,0.01,1);
-  RooRealVar f2(Form("%s_f2",outputTag.Data()),Form("%s_f2",outputTag.Data()),0.1,0.01,1);
+  RooRealVar sig3(Form("%s_sigma3",outputTag.Data()),Form("%s_sigma3",outputTag.Data()),7,5,40);
+  RooRealVar f1(Form("%s_f1",outputTag.Data()),Form("%s_f1",outputTag.Data()),0.1,0.00011,1);
+  RooRealVar f2(Form("%s_f2",outputTag.Data()),Form("%s_f2",outputTag.Data()),0.1,0.0001,1);
   RooGaussian g1(Form("%s_g1",outputTag.Data()),Form("%s_g1",outputTag.Data()),mass,mean,sig1);
   RooGaussian g2(Form("%s_g2",outputTag.Data()),Form("%s_g2",outputTag.Data()),mass,mean,sig2);
   RooGaussian g3(Form("%s_g3",outputTag.Data()),Form("%s_g3",outputTag.Data()),mass,mean,sig3);
