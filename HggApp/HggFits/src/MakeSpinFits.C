@@ -224,6 +224,7 @@ void MakeSpinFits::MakeSignalFit(TString tag, TString mcName,float cosTlow, floa
   ws->import(*res);
 
   delete SignalModel;
+  //delete ds;
 }
 
 float MakeSpinFits::computeFWHM(RooAbsPdf* pdf, float mean,RooRealVar *var){
@@ -352,6 +353,7 @@ void MakeSpinFits::AddCombinedBkgOnlySWeight(TString mcName){
     ws->import(*sweights);
     ws->import(sig);
     ws->import(bkg);
+    delete data;
   }    
 }
 
@@ -680,6 +682,8 @@ void MakeSpinFits::Make2DTemplateSignalTest(TString mcName){
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
 
+  std::vector<RooAbsPdf*>  pdfsToDelete;
+
   std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
     cout << *catIt <<endl;
@@ -688,6 +692,8 @@ void MakeSpinFits::Make2DTemplateSignalTest(TString mcName){
     RooAbsData *signalData = ws->data(Form("%s_Combined",mcName.Data()))->reduce(TString("evtcat==evtcat::"+*catIt));
     RooDataHist *signalDataHist = new RooDataHist( Form("Data_%s_TEMPLATE2DFIT_%s_signalDataHist",mcName.Data(),catIt->Data()), "", RooArgSet(*mass,*cosT),*signalData);
     RooHistPdf *signalHistPdf = new RooHistPdf( Form("Data_%s_TEMPLATE2DFIT_%s_signalHistPdf",mcName.Data(),catIt->Data()), "",  RooArgSet(*mass,*cosT), * signalDataHist);
+
+    pdfsToDelete.push_back(signalHistPdf);
 
     RooAbsPdf *bkgMassModel    = ws->pdf( Form("Data_BKGFIT_%s_bkgShape",catIt->Data() ) );
 
@@ -721,7 +727,13 @@ void MakeSpinFits::Make2DTemplateSignalTest(TString mcName){
     RooAddPdf *comb = new RooAddPdf(Form("Data_%s_TEMPLATE2DFIT_%s",mcName.Data(),catIt->Data()),"",RooArgList(*signalHistPdf,*bkgModel),
 				    RooArgList(*thisNsig,*thisNbkg) );
 
+    
+    pdfsToDelete.push_back(bkgModel);
+    pdfsToDelete.push_back(comb);
+
     combFit->addPdf(*comb,*catIt);
+    delete signalData;
+    //delete signalDataHist;    
   }    
 
   RooDataSet *ds = (RooDataSet*)ws->data("Data_Combined");
@@ -733,6 +745,8 @@ void MakeSpinFits::Make2DTemplateSignalTest(TString mcName){
   ws->import(*combFit);
   ws->import(*res);
 
+  while(!pdfsToDelete.empty()){ delete pdfsToDelete.back();  pdfsToDelete.pop_back(); }
+  delete combFit;
 }
 
 
@@ -749,6 +763,8 @@ void MakeSpinFits::Make2DFloatingSignalTest(TString massMcName,TString costMcNam
 
   RooRealVar *mass = ws->var("mass");
   RooRealVar *cosT = ws->var("cosT");
+
+
 
   std::vector<TString>::const_iterator catIt = catLabels.begin();
   for(; catIt != catLabels.end(); catIt++){
@@ -935,6 +951,8 @@ void MakeSpinFits::MakeBackgroundOnlyFit(TString catTag, float cosTlow, float co
   ws->import(*BkgModel);
   ws->import(*Nbkg);
   ws->import(*res);
+
+  delete ds;
 }
 
 void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
@@ -974,6 +992,7 @@ void MakeSpinFits::getSimpleBkgSubtraction(TString mcName,TString tag){
   sigBkgSub->SetName(Form("Data_%s_%s_bkgSub_cosT",mcName.Data(),tag.Data()));
 
   ws->import(*sigBkgSub);
+  delete data;
 }
 
 void MakeSpinFits::getSimpleTotalBkgSubtraction(TString mcName){

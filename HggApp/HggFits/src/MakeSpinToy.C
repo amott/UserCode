@@ -224,6 +224,11 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genTy
     
     data->append(*M);
     toysig->append(*mc);
+
+
+    delete tmp;
+    delete tmpH;
+    delete tmpR;
   }  
 
   RooRealVar nSigGen(Form("N_gen_sig_%s",cat),"",sigGen);
