@@ -85,6 +85,12 @@ public:
 
   void MakeBackgroundOnlyFit(TString catTag,float cosTlow=-2,float cosThigh=2); //!< Make a background only fit to data in single category the type of fit is controlled by the fitType member
 
+
+  /*! 
+    Performs a simultaneous S+B fit to the target data.  The S parameters are fixed by the MC but the B parameters are allowed to float freely.
+    \sa MakeCombinedSignalTest()
+  */
+  void MakeFullSBFit(TString mcName,bool cosTBinned=false);
   /*!
     Performs a simultaneous signal hypothesis test and extracts a total number of signal events.
     The fraction of signal in the different categories is fixed in the fit (by the signal MC sample) and only the total yield is allowed to float

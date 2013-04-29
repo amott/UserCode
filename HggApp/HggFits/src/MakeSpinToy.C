@@ -91,8 +91,11 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,genType gen){
     RooDataSet* d = (RooDataSet*)toyws->data( Form("Data_%s",it->Data()) );
     RooDataSet* tmp = new RooDataSet("DataCat+"+*it,"",RooArgSet(*mass,*cosT),RooFit::Index(*cat),RooFit::Import(*it,*d) );
     dataComb->append(*tmp);
+    std::cout << Form("%s_FIT_%s_sigmaEff",mcLabels[1].Data(),it->Data()) <<"     " <<ws << std::endl;
+
     toyws->import(*(ws->var(Form("%s_FIT_%s_sigmaEff",mcLabels[1].Data(),it->Data()) )));
     toyws->import(*(ws->var(Form("%s_FIT_%s_sigmaEff",mcLabels[2].Data(),it->Data()) )));
+    delete tmp;
   }
   toyws->import(*cat);
   toyws->import(*dataComb);
@@ -101,6 +104,8 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,genType gen){
   toyws->import(*(ws->var(mcLabels[1]+"_FIT_Combined_sigmaEff")));
   toyws->import(*(ws->var(mcLabels[2]+"_FIT_Combined_sigmaEff")));
   toyws->import(*((RooCategory*)ws->obj("labels")));
+
+  delete dataComb;
 }
 
 void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genType gen,float nSigTot){
@@ -230,6 +235,12 @@ void MakeSpinToy::generateToyWorkspace(RooWorkspace *toyws,const char* cat,genTy
   toyws->import(*altMassPdf);
   toyws->import(nSigGen);
   toyws->import(nBkgGen);
+
+  delete data;
+  delete toysig;
+
+  //delete hggMassPdf;
+  //delete altMassPdf;
 
   std::cout << "Done Generating Category " << cat << std::endl;
 }
@@ -390,27 +401,31 @@ double* MakeSpinToy::run1(genType gen, int& N){
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[1].Data())));
     toyws->import(*ws->pdf(Form("%s_FIT_cosTpdf",mcLabels[2].Data())));
 
-    fits.MakeCombinedSignalTest(mcLabels[1]);
-    fits.MakeCombinedSignalTest(mcLabels[2]);
-    fits.MakeCombinedSignalTest(mcLabels[1],true); // make the binned signal tests
-    fits.MakeCombinedSignalTest(mcLabels[2],true);
-    fits.AddCombinedBkgOnlySWeight(mcLabels[1]);
-    fits.AddCombinedBkgOnlySWeight(mcLabels[2]);
+    //fits.MakeCombinedSignalTest(mcLabels[1]);
+    //fits.MakeCombinedSignalTest(mcLabels[2]);
+    //fits.MakeCombinedSignalTest(mcLabels[1],true); // make the binned signal tests
+    //fits.MakeCombinedSignalTest(mcLabels[2],true);
+    //fits.AddCombinedBkgOnlySWeight(mcLabels[1]);
+    //fits.AddCombinedBkgOnlySWeight(mcLabels[2]);
+    fits.MakeFullSBFit(mcLabels[1],false);          
+    fits.MakeFullSBFit(mcLabels[1],true);          
+    fits.MakeFullSBFit(mcLabels[2],false);          
+    fits.MakeFullSBFit(mcLabels[2],true);          
 
     for( std::vector<TString>::const_iterator it = catLabels.begin();
 	 it != catLabels.end(); it++){
-      fits.getSimpleBkgSubtraction(mcLabels[1],*it);
-      fits.getSimpleBkgSubtraction(mcLabels[2],*it);
+      //fits.getSimpleBkgSubtraction(mcLabels[1],*it);
+      //fits.getSimpleBkgSubtraction(mcLabels[2],*it);
     }
     
-    fits.Make2DCombinedSignalTest(mcLabels[2],mcLabels[2]);
-    fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
+    //fits.Make2DCombinedSignalTest(mcLabels[2],mcLabels[2]);
+    //fits.Make2DCombinedSignalTest(mcLabels[1],mcLabels[1]);
 
     fits.Make2DTemplateSignalTest(mcLabels[1]);
     fits.Make2DTemplateSignalTest(mcLabels[2]);
 
-    fits.getSimpleTotalBkgSubtraction(mcLabels[1]);
-    fits.getSimpleTotalBkgSubtraction(mcLabels[2]);
+    //fits.getSimpleTotalBkgSubtraction(mcLabels[1]);
+    //fits.getSimpleTotalBkgSubtraction(mcLabels[2]);
 
   }
   else{ //doing data
@@ -423,13 +438,14 @@ double* MakeSpinToy::run1(genType gen, int& N){
     fits.Make2DTemplateSignalTest(mcLabels[2]);
 
   }
-  toyws->Print();
+  //toyws->Print();
 
   double hggll=0,altll=0;
   double shggll=0,saltll=0;
   double nFit=0,nGen=0;
-  if(gen==Hgg125) nFit = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[1].Data()))->getVal();
-  else nFit = toyws->var(Form("Data_%s_FULLFIT_Nsig",mcLabels[2].Data()))->getVal();
+  if(gen==Hgg125) nFit = toyws->var(Form("Data_%s_FULLSBFIT_Nsig",mcLabels[1].Data()))->getVal();
+  else nFit = toyws->var(Form("Data_%s_FULLSBFIT_Nsig",mcLabels[2].Data()))->getVal();
+  /*
   for( std::vector<TString>::const_iterator it = catLabels.begin();
        it != catLabels.end(); it++){
     //fits.MakeBackgroundFit("Hgg125",*it,125,2,false);
@@ -476,6 +492,8 @@ double* MakeSpinToy::run1(genType gen, int& N){
     delete thisShistHgg;
     delete thisShistALT;
   }
+  */
+  /*
   RooDataHist *thisBkgHgg = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcLabels[1].Data()));
   RooDataHist *thisBkgALT = (RooDataHist*)toyws->data(Form("Data_%s_Combined_bkgSub_cosT",mcLabels[2].Data()));
   hggPdf = (RooHistPdf*)ws->pdf(mcLabels[1]+"_FIT_cosTpdf");
@@ -498,21 +516,21 @@ double* MakeSpinToy::run1(genType gen, int& N){
 
   RooFitResult *fitHgg = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[1].Data(),mcLabels[1].Data())); 
   RooFitResult *fitALT = (RooFitResult*)toyws->obj(Form("Data_m_%s_c_%s_FULL2DFIT_fitResult",mcLabels[2].Data(),mcLabels[2].Data()));
-
+  */
   RooFitResult *fitTempHgg = (RooFitResult*)toyws->obj(Form("Data_%s_TEMPLATE2DFIT_fitResult",mcLabels[1].Data()));
   RooFitResult *fitTempALT = (RooFitResult*)toyws->obj(Form("Data_%s_TEMPLATE2DFIT_fitResult",mcLabels[2].Data()));
 
-  RooFitResult *fitCostHgg = (RooFitResult*)toyws->obj(Form("Data_%s_FULLCOSTFIT_fitResult",mcLabels[1].Data()));
-  RooFitResult *fitCostALT = (RooFitResult*)toyws->obj(Form("Data_%s_FULLCOSTFIT_fitResult",mcLabels[2].Data()));
+  RooFitResult *fitCostHgg = (RooFitResult*)toyws->obj(Form("Data_%s_FULLSBCOSTFIT_fitResult",mcLabels[1].Data()));
+  RooFitResult *fitCostALT = (RooFitResult*)toyws->obj(Form("Data_%s_FULLSBCOSTFIT_fitResult",mcLabels[2].Data()));
 
   
-
+  /*
   std::cout << "FIT NLL: " << endl
 	    << "Hgg: " << fitHgg->minNll() << endl
 	    << "ALT: " << fitALT->minNll() << endl;
   double hgg2DFITNll = fitHgg->minNll();
   double alt2DFITNll = fitALT->minNll();
-
+  */
   double hgg2DTEMPFITNll = fitTempHgg->minNll();
   double alt2DTEMPFITNll = fitTempALT->minNll();
   
@@ -529,11 +547,14 @@ double* MakeSpinToy::run1(genType gen, int& N){
   else delete toyws;
 
   //setup outputs:
+  /*
   out[0] = 2*(altll-hggll);
   out[1] = 2*(totALTLL-totHggLL);
   out[2] = 2*(saltll-shggll);
   out[3] = 2*(alt2Dll-hgg2Dll);
   out[4] = -2*(alt2DFITNll-hgg2DFITNll);
+  */
+  out[0]=out[1]=out[2]=out[3]=out[4]=0;
   out[5] = -2*(alt2DTEMPFITNll-hgg2DTEMPFITNll);
   out[6] = -2*(altCostFITNll-hggCostFITNll);
 
