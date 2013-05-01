@@ -25,7 +25,10 @@ int main(int argc, char** argv){
   a.addLongOption("useHelicityFrame",ArgParser::noArg,"use the helicity frame to measure cos(theta) (default: collins-sopper frame)");
   a.addLongOption("useAsymmCosTheta",ArgParser::noArg,"use the asymmetric (non-absolute value) cos(theta)");
   a.addLongOption("noData",ArgParser::noArg,"don't run data (useful for adding additional MC samples)");
-
+  a.addLongOption("catFromTree",ArgParser::noArg,"take the event category from input tree (globe only, default: no)");
+  a.addLongOption("optimization",ArgParser::noArg,"workspace is for optimization, saves more variables");
+  a.addLongOption("TwoEBCats",ArgParser::noArg,"split the EB into two categories at eta=0.8");
+  a.addLongOption("VetoInnerEE",ArgParser::noArg,"Veto the inner region of the EE");
   string ret;
   if(a.process(ret) !=0){
     cout << "Invalid Options:  " << ret <<endl;
@@ -126,6 +129,11 @@ int main(int argc, char** argv){
   }
   
   msw.setIsGlobe(isGlobe);
+  if(a.longFlagPres("catFromTree")) msw.setTakeCatFromTree();
+  if(a.longFlagPres("optimization")) msw.setOptimization();
+  if(a.longFlagPres("TwoEBCats")) msw.setTwoEBCats();
+  if(a.longFlagPres("VetoInnerEE")) msw.setVetoInnerEE();
+
 
   msw.setLumi(lumi);
 

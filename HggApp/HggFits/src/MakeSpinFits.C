@@ -541,6 +541,7 @@ void MakeSpinFits::MakeCombinedSignalTest(TString mcName,bool cosTBinned){
   RooFitResult *res=combFit->fitTo(*ds,RooFit::Save(kTRUE),RooFit::Strategy(2),RooFit::NumCPU(NUM_CPU),RooFit::Minos(kFALSE),RooFit::Extended(kTRUE));
   res->SetName(Form("Data_%s_%s_fitResult",mcName.Data(),fitTag.Data()) );
   
+  ws->import(*nSig);
   ws->import(*combFit);
   ws->import(*res);
 

@@ -81,7 +81,6 @@ public:
 
   void setUseR9(bool b){//!< Specify whether to use the CiC (R9) categorization
     useR9 = b;
-    nCat =2;
   }
   void setTightPt(bool b){tightPt = b;} //!< Specify whether to use the tight pt/m cuts
 
@@ -108,7 +107,11 @@ public:
   void setUseAbsCosTheta(bool b=true){useAbsCosTheta=b;}     //!< use the absolute value of cos(theta)
 
   void setLumi(float f){lumi=f;}
+  void setTakeCatFromTree(bool b=true){takeCatFromTree=b;}   //!< use the category found in the input trees rather than recomputing
+  void setOptimization(bool b=true){optimization=b;}
 
+  void setTwoEBCats(bool b =true){twoEBcats=b;}
+  void setVetoInnerEE(bool b=true){vetoInnerEE=b; nCat*=1.5;}
 protected:
   std::vector<TString> fileName,label; // lists of input file names and corresponding labels
   std::vector<bool> isData,isList;     // list of bools specifying whether the files correspond to data
@@ -116,8 +119,13 @@ protected:
   RooWorkspace *ws;                    // workspace for output
   RooCategory* labels;                 // list of labels to store inside the RooWorkspace
   TFile *outputFile;                   //!< pointer to output file
+  bool optimization;                    //!< specify that the workspace is for optimization, so save more variables
+  
 
   //selections
+  bool takeCatFromTree;                // take the category from the input tree
+  bool twoEBcats;                      // use two EB cats to get better CEB performance
+  bool vetoInnerEE;                    // veto non-linear region of EE
   bool requireCiC;                     // whether to require the photons to pass CiC (default: true)
   bool tightPt;                        // whether to require tight pt/m cuts (default: false)
   int selectionMap;                    // selection map number to use

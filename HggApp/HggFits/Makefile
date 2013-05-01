@@ -39,6 +39,7 @@ HGGAPPLIB        = $(HGGAPPDIR)lib/
 HGGAPPINC        = $(HGGAPPDIR)include/
 SRCDIR           = ./src/
 EXESRCDIR        = ./exesrc/
+SCRIPTS          = ./scripts/
 CXX	         += -I$(INCLUDEDIR) -I$(INCLUDEDIRCOMMON) -I. -I$(INCLUDEDIRROOFIT)
 OUTLIB	         = ./lib/
 
@@ -88,6 +89,9 @@ runToyWorkspaces:		$(EXESRCDIR)runToyWorkspaces.C \
 				$(HGGAPPINC)ReadConfig.hh
 	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o runToyWorkspaces $(OUTLIB)/*.o  $(GLIBS) $ $<	
 
+optimizeSigmaE: 		$(SCRIPTS)optimizeSigmaE.C \
+				$(OUTLIB)MakeSpinFits.o
+	$(CXX) $(CXXFLAGS) $(ROOFITLIBS) -I $(HGGAPPINC) -I $(INCLUDEDIR) -o optimizeSigmaE $(OUTLIB)/*.o  $(GLIBS) $ $<	
 
 $(OUTLIB)ArgParser.o:		$(SRCDIR)ArgParser.cc
 		$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)ArgParser.o $<

@@ -15,7 +15,12 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   isGlobe(0),
   lumi(-1)
 {
+
+  optimization=false;
   //setup the defaults
+  takeCatFromTree=false;
+  twoEBcats=false;
+  vetoInnerEE=false;
 
   requireCiC=true;
   tightPt=false;
@@ -27,7 +32,7 @@ MakeSpinWorkspace::MakeSpinWorkspace(TString outputFileName):
   runHigh= 9999999;
 
   useR9=false;
-  nCat=2;
+  nCat=4;
 
   setMassRange(110.,170.);
   setPtCuts(32.,24.);
@@ -101,14 +106,21 @@ void MakeSpinWorkspace::getSelectionMap(int map,bool isData){
   case 4:
     selectionMaps = getSelectionMap12();    
     break;
+  case 5:
+    selectionMaps = getSelectionMap13();    
+    break;
+  case 6:
+    selectionMaps = getSelectionMap14();    
+    break;
   }
-  nCat = selectionMaps.size();
+  nCat = 2*selectionMaps.size();
+  if(twoEBcats) nCat += selectionMaps.size();
 }
 
 int MakeSpinWorkspace::passSelection(TH2F* map,float sigEoE1,float eta1, float pt1,float sigEoE2,float eta2, float pt2){
   float cut1 = map->GetBinContent(map->FindFixBin(fabs(eta1),pt1)); 
   float cut2 = map->GetBinContent(map->FindFixBin(fabs(eta2),pt2)); 
-  if(sqrt(sigEoE1*sigEoE1/cut1/cut1+sigEoE2*sigEoE2/cut2/cut2) <=1) return 0; //elliptical cut!
+  if(sqrt(sigEoE1*sigEoE1/cut1/cut1+sigEoE2*sigEoE2/cut2/cut2) <=sqrt(2)) return 0; //elliptical cut!
   return 1;
 }
 
@@ -221,14 +233,18 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   set.add(*mass);
   set.add(*cosT);
   set.add(*evtW);
+
+  if(optimization){
+    set.add(*sige1);
+    set.add(*sige2);
+    
+    set.add(*eta1); set.add(*eta2);
+    set.add(*etaSC1); set.add(*etaSC2);
+    set.add(*phi1); set.add(*phi2);
+    set.add(*pt1); set.add(*pt2);
+    set.add(*r91); set.add(*r92);
+  }
   /*
-  set.add(*sige1);
-  set.add(*sige2);
-  set.add(*eta1); set.add(*eta2);
-  set.add(*etaSC1); set.add(*etaSC2);
-  set.add(*phi1); set.add(*phi2);
-  set.add(*pt1); set.add(*pt2);
-  set.add(*r91); set.add(*r92);
   set.add(*idMVA1); set.add(*idMVA2);
   set.add(*diPhotonMVA);
   */
@@ -236,30 +252,11 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   RooRealVar *totEE = new RooRealVar(Form("%s_EE_totalEvents",tag.Data()),"",0,0,1e9);
   RooRealVar *totGen = new RooRealVar(tag+"_Ngen","",N);
 
+  std::map<int,RooDataSet*> dataMap;
 
-  std::map<std::pair<int,int>, RooDataSet*> dataMapEB, dataMapEE;
-  std::map<std::pair<int,int>, RooDataSet*> *datamap;
-
-  if(useR9){
-    //if we are using the CiC categories, we only have nCat categories per detector region, so we don't use the 
-    //second index of the pair and define fewer categories
-    for(int j=0;j<nCat;j++){
-      cat->defineType( Form("EB_%d",j),2*j );
-      cat->defineType( Form("EE_%d",j),2*j+1 );
-      dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set);
-      dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set);
-    }
-  }else{
-    //using the sigmaE/E categories, we have nCat categories
-    for(int j=0;j<nCat;j++){
-      cat->defineType( Form("EB_%d",j),2*j );
-      cat->defineType( Form("EE_%d",j),2*j+1 );      
-      dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d",tag.Data(),j),"",set);
-      dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d",tag.Data(),j),"",set);
-      //dataMapEB[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EB_%d_%d",tag.Data(),i,j),"",set);
-      //dataMapEE[std::pair<int,int>(j,0)] = new RooDataSet(Form("%s_EE_%d_%d",tag.Data(),i,j),"",set);
-      
-    }
+  std::cout << "nCat: " << nCat <<std::endl;
+  for(int j=0;j<nCat;j++){
+    dataMap[j] = new RooDataSet(Form("%s_cat%d",tag.Data(),j),"",set);    
   }
 
   Long64_t iEntry=-1;
@@ -350,7 +347,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     }
     float weight=1;
     if(!isData) weight = (isGlobe ? g->evweight : h->evtWeight*getEfficiency(*h,125));
-    if(weight==0 && !isData){
+    if(weight==0 && !isData && !isGlobe){
       std::cout << "0 weight event!    " << h->evtWeight << "    " << getEfficiency(*h,125) <<std::endl;
     }
     if(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) nEB+=weight;
@@ -379,41 +376,51 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     int p1=nCat,p2=nCat;
     assert(minI != maxI);
     //determine the photon categories
-    if(useR9){
+    int cat=-1;
+    if(vetoInnerEE){
+      if(fabs(pho1_etaSC) > 1.48 && fabs(pho1_etaSC) < 1.70) continue;
+      if(fabs(pho2_etaSC) > 1.48 && fabs(pho2_etaSC) < 1.70) continue;
+    }
+    if(takeCatFromTree && isGlobe){
+      cat = g->category;
+    }else if(useR9){
       p1 = passSelection(r91_f);
       p2 = passSelection(r92_f);
+      if(p1 && p2) cat=0;
+      else cat=1;
+      if(twoEBcats) if( !(fabs(pho1_etaSC) < 0.80 && fabs(pho2_etaSC) < 0.80) ) cat+=2;
+      if( !(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ) cat+=2;
     }else{
-      /*
-      p1 = passSelection(map,se1,pho1_etaSC,pt1_f);
-      p2 = passSelection(map,se2,pho2_etaSC,pt2_f);
-      */
       if(!isGlobe) if(!passCiCIso(*h,0) || !passCiCIso(*h,1)) continue;// veto if either photon fails the iso
 
-      for(int iCut=0;iCut<nCat;iCut++){
+      int nLayer=nCat/(twoEBcats?3:2);
+      for(int iCut=0;iCut<nLayer;iCut++){
 	if(passSelection(selectionMaps.at(iCut),se1,fabs(eta1_f),pt1_f,se2,fabs(eta2_f),pt2_f) == 0){
-	  p1=p2=iCut;
+	  cat=iCut;
 	  break;
 	}
       }
-      
+      if(twoEBcats) if( !(fabs(pho1_etaSC) < 0.80 && fabs(pho2_etaSC) < 0.80) ) cat+=nLayer;
+      if( !(fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ) cat+=nLayer;      
     }
-    if(isGlobe && useR9){
-      if(g->category >3) continue; //veto exclusive tags for now
-      p1=p2= g->category % 2;
-      datamap = (g->category > 1 ? &dataMapEE : &dataMapEB);
-    }else{
-    if(p1 >= nCat || p2 >= nCat) continue; //we can veto photons here
-    datamap = ((fabs(pho1_etaSC) < 1.48 && fabs(pho2_etaSC) < 1.48) ?
-	       &dataMapEB : & dataMapEE); //choses the correct dataset to add the event to
-    }
+    if(cat < 0 || cat >= nCat) continue;
     //set all the variables
     mass->setVal(m);
     sige1->setVal(se1);
     sige2->setVal(se2);
 
-    float cosTheta;
+    eta1->setVal(eta1_f);
+    eta2->setVal(eta2_f);
+    etaSC1->setVal(pho1_etaSC);
+    etaSC2->setVal(pho2_etaSC);
+    phi1->setVal(phi1_f);
+    phi2->setVal(phi2_f);
+    pt1->setVal(pt1_f);
+    pt2->setVal(pt2_f);
+    r91->setVal(r91_f);
+    r92->setVal(r92_f);
 
-    
+    float cosTheta;    
 
     if(isGlobe){
       if(useHelicityFrame) cosTheta = g->costheta_hx;
@@ -424,27 +431,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
     }
     if(useAbsCosTheta) cosTheta = fabs(cosTheta);
     cosT->setVal(cosTheta);
-    /*
-    eta1->setVal(h->Photon_eta[maxI]);
-    eta2->setVal(h->Photon_eta[minI]);
-    
-    etaSC1->setVal(h->Photon_etaSC[maxI]);
-    etaSC2->setVal(h->Photon_etaSC[minI]);
-    
-    phi1->setVal(h->Photon_phi[maxI]);
-    phi2->setVal(h->Photon_phi[minI]);
-    
-    pt1->setVal(h->Photon_pt[maxI]);
-    pt2->setVal(h->Photon_pt[minI]);
-    
-    r91->setVal(h->Photon_r9[maxI]);
-    r92->setVal(h->Photon_r9[minI]);
-    
-    idMVA1->setVal(h->Photon_idMVA[maxI]);
-    idMVA2->setVal(h->Photon_idMVA[minI]);
-    
-    diPhotonMVA->setVal(h->diPhotonMVA);
-    */
+
     //efficiencyCorrection=0
     float pho1EffWeight = getEffWeight(eta1_f,pt1_f,phi1_f,r91_f);
     float pho2EffWeight = getEffWeight(eta2_f,pt2_f,phi2_f,r92_f);
@@ -462,12 +449,7 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       std::cout << "Large Event Weight: " << evtW->getVal() << std::endl;
       set.Print("V");
     }
-    if(useR9){
-      int cat = (p1==0 && p2==0 ? 0 : 1);
-      (*datamap)[std::pair<int,int>(cat,0)]->add(set);
-    }else{
-      (*datamap)[std::pair<int,int>(p1,0)]->add(set);
-    }
+    dataMap[cat]->add(set);
   }
   cout << "Processed " << iEntry << " Entries" <<endl;
 
@@ -485,13 +467,12 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
   
   std::cout << tag << " LUMI RESCALE: " << lumiRescaleFactor <<std::endl;
 
-  std::map<std::pair<int,int>, RooDataSet*>::iterator dIt;
-  for(dIt = dataMapEB.begin();dIt!=dataMapEB.end();dIt++){
+  std::map<int, RooDataSet*>::iterator dIt;
+  for(dIt = dataMap.begin();dIt!=dataMap.end();dIt++){
     //loop over the barrel datasets and add the individual data to the combined dataset
     //dIt->setWeightVar(*evtW);
     TString cattag;
-    if(useR9) cattag = Form("EB_%d", (dIt->first).first );
-    else cattag = Form("EB_%d", (dIt->first).first );
+    cattag = Form("cat%d", dIt->first );
     std::cout << cattag <<std::endl;
     RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
     tmp->Print();
@@ -502,24 +483,6 @@ void MakeSpinWorkspace::AddToWorkspace(TString inputFile,TString tag, bool isDat
       dataComb->add(*set);
     }
     //dataComb->append(*tmp);
-    //ws->import(*(dIt->second));
-  }
-  for(dIt = dataMapEE.begin();dIt!=dataMapEE.end();dIt++){
-    //loop over the endcap datasets and add the individual data to the combined dataset
-    //dIt->setWeightVar(*evtW);
-    TString cattag;
-    if(useR9) cattag = Form("EE_%d", (dIt->first).first );
-    else cattag = Form("EE_%d", (dIt->first).first );
-    std::cout << cattag <<std::endl;
-    RooDataSet *tmp = new RooDataSet("DataCat_"+cattag,"",set,RooFit::Index(*cat),RooFit::Import(cattag,*(dIt->second)) );
-    tmp->Print();
-    Long64_t iEntry=-1;
-    const RooArgSet *set;
-    while( (set = tmp->get(++iEntry)) ){
-      if(!isData) ((RooRealVar*)set->find("evtWeight"))->setVal( ((RooRealVar*)set->find("evtWeight"))->getVal()*lumiRescaleFactor/puWeightCorrection );
-      dataComb->add(*set);
-    }
-    //dataComb->append(*tmp);    
     //ws->import(*(dIt->second));
   }
 
@@ -616,7 +579,7 @@ void MakeSpinWorkspace::MakeWorkspace(){
   NgenIt = Ngen.begin();
   ilIt = isList.begin();
 
-  if(!useR9) getSelectionMap(selectionMap,1); // load the selection map
+  if(!useR9 && !takeCatFromTree) getSelectionMap(selectionMap,1); // load the selection map
 
   for(; fnIt != fileName.end(); fnIt++, lIt++, idIt++,NgenIt++, ilIt++){
     AddToWorkspace(*fnIt,*lIt,*idIt,*NgenIt,*ilIt);
