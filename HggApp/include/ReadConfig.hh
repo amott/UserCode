@@ -95,7 +95,7 @@ int ReadConfig::parseLine(string s){
   string sc = stripComments(s);
   if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
 
-  int eqPos = sc.find_first_of('='); // location of the assignment
+  unsigned int eqPos = sc.find_first_of('='); // location of the assignment
   //cout << eqPos << endl;
   if(eqPos == sc.find_first_not_of(' ')) throw runtime_error(string("non l-value assignment:  ")+s);; // can't start the line with =
   if(eqPos == string::npos) throw runtime_error(string("non l-value assignment:  ")+s);; // and it must exist
@@ -114,12 +114,12 @@ int ReadConfig::parseSectionLine(string s,string &sec){
 
   if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
   if(sc.find_first_not_of(' ') == string::npos) return 0; // if there was nothing other than spaces on the line
-  int eqPos = sc.find_first_of('='); // location of the assignment
+  unsigned int eqPos = sc.find_first_of('='); // location of the assignment
 
   if(eqPos == sc.find_first_not_of(' ')) throw runtime_error(string("non l-value assignment:  ")+s);; // can't start the line with =
   if(eqPos == string::npos){ // might be a new section, lets check.  Section format needs to be [NAME]
-    int openParPos = sc.find_first_of('[');
-    int closeParPos = sc.find_first_of(']');
+    unsigned int openParPos = sc.find_first_of('[');
+    unsigned int closeParPos = sc.find_first_of(']');
     if(openParPos==string::npos || closeParPos==string::npos) throw runtime_error(string("non l-value assignment:  ")+s);; // need an assignment operator
     if(openParPos >= closeParPos || closeParPos==openParPos+1) throw runtime_error(string("invalid section heading:  ")+s);
 
@@ -149,7 +149,7 @@ string ReadConfig::stripComments(string s){  //walk down the string and remove e
   //return s.substr(0,s.find_first_of('#'));
   bool inQuote = false;
   string out;
-  for(int i=0;i<s.size();i++){
+  for(unsigned int i=0;i<s.size();i++){
     if(s[i] == '"') inQuote = !inQuote;
     if(s[i] == '#' && !inQuote) break;
     out+=s[i];
