@@ -22,8 +22,8 @@
 #endif
 //#include "TMVAGui.C"                         
 //#if not defined(__CINT__) || defined(__MAKECINT__) 
-#include "../h2ginclude/HggVertexAnalyzer.h"
-#include "../h2ginclude/HggVertexFromConversions.h"
+//#include "../h2ginclude/HggVertexAnalyzer.h"
+//#include "../h2ginclude/HggVertexFromConversions.h"
 //#include "../h2ginclude/PhotonInfo.h"
 //#include "../h2ginclude/VertexAlgoParameters.h"
                  

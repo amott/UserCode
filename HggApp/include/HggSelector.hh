@@ -3,7 +3,7 @@
 #include <HggPhotonID.hh>
 
 #include <HggEGEnergyCorrector.hh>
-#include <HggVertexing.hh>
+//#include <HggVertexing.hh>
 #include <HggEnergyScale.hh>
 
 #include <vector>
@@ -17,7 +17,7 @@
 #include "TH1F.h"
 
 using namespace std;
-#include "HggVertexing.hh"
+//#include "HggVertexing.hh"
 
 class HggSelector{
 public:
