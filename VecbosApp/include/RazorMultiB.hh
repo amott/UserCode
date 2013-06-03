@@ -28,12 +28,15 @@ public:
   void SetConditions(TTree* treeCond);
   void SetWeight(double);
   double _weight;
+  vector<Jet> FastJetAlgorithmForceTwo(vector<TLorentzVector> InputCollection, double Rparam=0.5, double thePtMin=1.);
 
 private:
   bool _isSMS;
   bool _isData;
   bool _goodRunLS;
   TTree* _treeCond;
+  struct JetConfig;
+  JetConfig *theJetConfig;
   
 };
 #endif

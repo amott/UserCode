@@ -979,6 +979,7 @@ public :
    Float_t         betastarAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
    Float_t         rmsCandsHandAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
    Float_t         jetIdMvaAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
+   Float_t         jetIdMvaPhilV1AK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
    Float_t         nChargedIdMvaAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
    Float_t         nNeutralsIdMvaAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]
    Float_t         dZIdMvaAK5PFPUcorrJet[200];   //[nAK5PFPUcorrJet]

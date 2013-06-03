@@ -88,6 +88,8 @@ public:
 
 private:
   bool _isData;
+  bool isT1tttt;
+  bool isEffOnly;
   bool _goodRunLS;
   TTree* _treeCond;
   
