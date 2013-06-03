@@ -278,7 +278,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     
     double m0=9999, m12=9999, mc=9999;
     
-    _isSMS = true;//Chage to true when running on SMS sample
+    _isSMS = false;//Chage to true when running on SMS sample
     
     if( _isData == 0  && _isSMS ){
       //double m0=9999, m12=9999, mc=9999;
@@ -301,7 +301,7 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
 	    string aa1 = val.substr( val.find("_")+ 1 );
 	    string sm0 = aa1.substr( 0, val.find("_")-1 );
 	    string sm1 = aa1.substr( val.find("_") );
-	    //std::cout << "sm0: " << sm0 << " sm1:  " << sm1 << std::endl;
+	    std::cout << "sm0: " << sm0 << " sm1:  " << sm1 << std::endl;
 	    mssm[0] = atof(sm0.c_str());
 	    mssm[1] = atof(sm1.c_str());
 	  }else if( n == 3 )mssm[2] = atof( val.c_str() );
@@ -563,6 +563,18 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     //std::cout << "debug -2" << std::endl;
         
     //std::cout << "debug 0" << std::endl;
+
+
+    bool IsoPF = false;
+    for(int kk = 0; kk < nPFCand; kk++){
+      if( ILV( kk ) < 0.15 ){
+	std::cout << "\n ILV: " << ILV( kk ) << std::endl;
+	IsoPF = true;
+	break;
+      }
+    }
+    
+    if(IsoPF) continue;
     
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
@@ -754,7 +766,8 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
 
     //std::cout << "debug 1" << std::endl;
     // TAU VETO
-    if (iTauTight.size()>0) continue;
+    
+    if (iTauTight.size()>0) continue;//removed after a bug was found in the tau ID
 
     //std::cout << "debug 2" << std::endl;
     //This will give the number of events that pass until this point but not necesarily was recorded

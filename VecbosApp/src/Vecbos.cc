@@ -2725,10 +2725,12 @@ bool Vecbos::isLooseMuon(int iMu, bool CorrectingIsoforMuons){
   bool MuID = true;
 
   isMuonID2012(iMu,&MuID);
-  float pt = GetPt(pxMuon[iMu],pyMuon[iMu]);
-  float iso = pfCombinedIsoMuon[iMu]/pt;
-  if(CorrectingIsoforMuons) iso -= CorrrectIsoforMuons(pt);
-
+  //float pt = GetPt(pxMuon[iMu],pyMuon[iMu]);
+  TVector3 MuP(pxMuon[iMu], pyMuon[iMu], pzMuon[iMu]);
+  float iso = pfCombinedIsoMuon[iMu]/MuP.Pt();
+  //if(CorrectingIsoforMuons) iso -= CorrrectIsoforMuons(pt);
+  if(CorrectingIsoforMuons) iso -= CorrrectIsoforMuons(iMu, MuP);
+  
   if(MuID && iso < 0.4) return true;
 
   return false;
@@ -2929,6 +2931,13 @@ bool Vecbos::isLooseElectron(int iEle){
   return false;
 }
 
+double Vecbos::ILV(int iPFCand){
+  double pfIso03 = ChargedIso03PFCand[iPFCand] + NeutralIso03PFCand[iPFCand] + PhotonIso03PFCand[iPFCand];
+  double PT = pzPFCand[iPFCand]/sinh(etaPFCand[iPFCand]);
+  return (pfIso03 - 0.5*max(SumPUPtR03PFCand[iPFCand], 0.0))/PT;
+}
+
+
 double Vecbos::CorrrectIsoforMuons(double pt) {
   if(pt <= 0.) return 0.0;
   float Check_Muon_Pt = 0.0;
@@ -2940,6 +2949,20 @@ double Vecbos::CorrrectIsoforMuons(double pt) {
   }
   return 0.;
 }
+
+double Vecbos::CorrrectIsoforMuons(int iMu, TVector3 MuP) {
+  if(MuP.Pt() <= 0.) return 0.0;
+  TVector3 Check_Muon;
+  for (Int_t i = 0; i < nMuon; i++) {
+    if ( i != iMu && isLooseMuon(i, false) ) {
+      Check_Muon.SetXYZ( pxMuon[i], pyMuon[i], pzMuon[i]);
+      if (Check_Muon.Pt() > 15 && MuP.DeltaR( Check_Muon ) < 0.4 ) return Check_Muon.Pt()/MuP.Pt();
+      //This will only correct for the first loose muon match inside the cone < 0.4 with muon pt >15 that is not itself. I can fix this to correct for more muons.
+    }
+  }
+  return 0.0;
+}
+
 
 bool Vecbos::isPFIsolatedMuon(int muonIndex, bool CorrectingIsoforMuons) {
   float eta = etaMuon[muonIndex];
