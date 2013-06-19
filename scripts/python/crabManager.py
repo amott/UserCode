@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+"""
+Simple script to easily manager multiple crab jobs. Check status, resubmit failed jobs and send specific commands to the jobs.
+
+Author: Alex Mott (Caltech)
+Date: June 2013
+"""
+
+
 import os
 import sys
 import subprocess

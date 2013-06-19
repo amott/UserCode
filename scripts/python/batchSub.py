@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+"""
+script to easily submit jobs to the Caltech and CERN batch systems.  The script just needs the form of the command line input for the job and it will take care of splitting the inpute files and building the correct scripts.
+
+Author: Alex Mott (Caltech)
+Date:   Summer 2012
+"""
+
 import os
 import sys
 import getopt
