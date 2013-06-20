@@ -101,6 +101,7 @@ VecbosApp:  $(SRCDIR)VecbosApp.C \
 	$(OUTLIB)RedIsolationVtxOptimTree.o \
 	$(OUTLIB)RedEleIDOptimTree.o \
 	$(OUTLIB)LQ3Helper.o \
+	$(OUTLIB)VecbosExample.o \
 	$(OUTLIB)VBTFLeptEff.o \
 	$(OUTLIB)LQ3Analysis.o \
 	$(OUTLIB)SUSYMultiTop.o \
@@ -151,6 +152,7 @@ lib: 	$(OUTLIBCOMMON)Conditions.o \
 	$(OUTLIB)MonoJet.o \
 	$(OUTLIB)CandleCalib.o \
 	$(OUTLIB)LQ3Helper.o \
+	$(OUTLIB)VecbosExample.o \
 	$(OUTLIB)VBTFLeptEff.o \
 	$(OUTLIB)SUSYNLO.o 	\
 	$(OUTLIB)LQ3Analysis.o \
@@ -308,6 +310,9 @@ $(OUTLIB)CreateWJetDataset.o: $(SRCDIR)CreateWJetDataset.cc $(OUTLIB)VecbosBase.
 
 $(OUTLIB)LQ3Helper.o: $(SRCDIR)LQ3Helper.cc
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)LQ3Helper.o $<
+
+$(OUTLIB)VecbosExample.o: $(SRCDIR)VecbosExample.cc
+	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)VecbosExample.o $<
 
 $(OUTLIB)LQ3Analysis.o: $(SRCDIR)LQ3Analysis.cc $(OUTLIB)Vecbos.o $(OUTLIB)LQ3Helper.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)LQ3Analysis.o $<
