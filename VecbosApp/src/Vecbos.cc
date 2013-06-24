@@ -2214,8 +2214,8 @@ vector<TLorentzVector> Vecbos::CombineJets(vector<TLorentzVector> myjets){
   }
 
   // set masses to 0
-  j1.SetPtEtaPhiM(j1.Pt(),j1.Eta(),j1.Phi(),0.0);
-  j2.SetPtEtaPhiM(j2.Pt(),j2.Eta(),j2.Phi(),0.0);
+  // j1.SetPtEtaPhiM(j1.Pt(),j1.Eta(),j1.Phi(),0.0);
+  // j2.SetPtEtaPhiM(j2.Pt(),j2.Eta(),j2.Phi(),0.0);
   
   if(j2.Pt() > j1.Pt()){
     TLorentzVector temp = j1;

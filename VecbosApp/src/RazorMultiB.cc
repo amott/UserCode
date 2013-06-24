@@ -29,16 +29,34 @@ RazorMultiB::RazorMultiB(TTree *tree) : Vecbos(tree) {
   _isSMS = false;
 }
 
-RazorMultiB::RazorMultiB(TTree *tree, string jsonFile,bool goodRunLS, bool isData) : Vecbos(tree) {
-
+RazorMultiB::RazorMultiB(TTree *tree, string jsonFile, bool goodRunLS, bool isData) : Vecbos(tree) {
   _goodRunLS = goodRunLS;
   _isData = isData;
   _weight=1.0;
+  _isSMS = false;
 
   //To read good run list!
   if (goodRunLS && isData) {
     setJsonGoodRunList(jsonFile);
     fillRunLSMap();
+    InitEventFlag("/afs/cern.ch/user/w/woodson/public/WEIGHT/AllBadABCDNEWTAUID.txt");
+  }
+
+}
+
+
+RazorMultiB::RazorMultiB(TTree *tree, string jsonFile, bool goodRunLS, bool isData, string smsName) : Vecbos(tree) {
+  _goodRunLS = goodRunLS;
+  _isData = isData;
+  _weight=1.0;
+  _isSMS = false;
+  if (smsName!="none") _isSMS = false;
+
+  //To read good run list!
+  if (goodRunLS && isData) {
+    setJsonGoodRunList(jsonFile);
+    fillRunLSMap();
+    InitEventFlag("/afs/cern.ch/user/w/woodson/public/WEIGHT/AllBadABCDNEWTAUID.txt");
   }
 }
 
@@ -64,7 +82,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   bool drDead;
   bool CSCHaloFilterFlag;
   bool trackerFailureFilterFlag;
-  bool BEECALFlag; 
+  bool BEECALFlag;
 
   // PF block
   double run;
@@ -86,7 +104,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   int    nBtag_medium;
   int    nBtag_tight;
   double W=_weight;
-  double mg, mst, mchi;
+  double mg, mchi;
   int    BOX_NUM;
   int    ss;
   int    nPV;
@@ -133,6 +151,26 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   int nBtag_TCHPT_lead4jets;
   double Mll;
 
+  // New Razor Variables
+  double MR_pTcorr;
+  double gammaR;
+  double shatR_bl;
+  double dPhiCM;
+  double EB1;
+  double EB2;
+  double CosThetaB1;
+  double CosThetaB2;
+  double TopMass1;
+  double TopMass2;
+  double EL1;
+  double EL2;
+  double CosThetaL1;
+  double CosThetaL2;
+  double GluinoMass1;
+  double GluinoMass2;
+
+  
+
   // prepare the output tree
   TTree* outTree = new TTree("outTree", "outTree");
   outTree->Branch("run", &run, "run/D");
@@ -165,7 +203,6 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   outTree->Branch("nBtag_TCHPT", &nBtag_TCHPT, "nBtag_TCHPT/I");
   outTree->Branch("W", &W, "W/D");
   outTree->Branch("mg", &mg, "mg/D");
-  outTree->Branch("mst", &mst, "mst/D");
   outTree->Branch("mchi", &mchi, "mchi/D");
   outTree->Branch("nPV", &nPV, "nPV/I");
 
@@ -181,6 +218,25 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   outTree->Branch("etaFJHem2", &etaFJHem2, "etaFJHem2/D");
   outTree->Branch("phiFJHem2", &phiFJHem2, "phiFJHem2/D");
   
+
+  // New Razor Variables
+  outTree->Branch("MR_pTcorr", &MR_pTcorr, "MR_pTcorr/D");
+  outTree->Branch("gammaR", &gammaR, "gammaR/D");
+  outTree->Branch("dPhiCM", &dPhiCM, "dPhiCM/D");
+  outTree->Branch("shatR_bl", &shatR_bl, "shatR_bl/D");
+  outTree->Branch("EB1", &EB1, "EB1/D");
+  outTree->Branch("EB2", &EB2, "EB2/D");
+  outTree->Branch("EL1", &EL1, "EL1/D");
+  outTree->Branch("EL2", &EL2, "EL2/D");
+  outTree->Branch("CosThetaB1", &CosThetaB1, "CosThetaB1/D");
+  outTree->Branch("CosThetaB2", &CosThetaB2, "CosThetaB2/D");
+  outTree->Branch("CosThetaL1", &CosThetaL1, "CosThetaL1/D");
+  outTree->Branch("CosThetaL2", &CosThetaL2, "CosThetaL2/D");
+  outTree->Branch("TopMass1", &TopMass1, "TopMass1/D");
+  outTree->Branch("TopMass2", &TopMass2, "TopMass2/D");
+  outTree->Branch("GluinoMass1", &GluinoMass1, "GluinoMass1/D");
+  outTree->Branch("GluinoMass2", &GluinoMass2, "GluinoMass2/D");
+
   //Gen-Level
   outTree->Branch("idMc1", &idMc1, "idMc1/I");
   outTree->Branch("idMothMc1", &idMothMc1, "idMothMc1/I");
@@ -264,50 +320,22 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       lastLumi = lumiBlock;
       std::cout << "[GoodRunLS]::Run " << lastRun << " LS " << lastLumi << " is OK" << std::endl;
     }
+
+    // Kill bad events in Data
+    if(_isData && FailFilters()) continue;
+    if(_isData && isFlagged()) continue;
     
     Npassed_In += weightII;
     
     double m0=9999, m12=9999, mc=9999;
      
-    /*
-    // to integrate with others
-    if((!_isData) && _isSMS){
-      //find the simplified model parameters for T1tttt                                                                                              
-      std::vector<std::string>::const_iterator c_begin = commentLHE->begin();
-      std::vector<std::string>::const_iterator c_end = commentLHE->end();
-      for(std::vector<std::string>::const_iterator cit=c_begin; cit!=c_end; ++cit) {
-	size_t found = (*cit).find("T1bbbb");
-	if( found != std::string::npos) {
-	  size_t foundLength = (*cit).size();
-	  found = (*cit).find("=");
-	  std::string smaller = (*cit).substr(found+1,foundLength);
-	  found = smaller.find("_");
-	  smaller = smaller.substr(found+1,smaller.size());
-	  
-	  std::istringstream iss(smaller);
-	  iss >> m0;
-	  iss.clear();
-	  
-	  found = smaller.find("_");
-	  smaller = smaller.substr(found+1,smaller.size());
-	  iss.str(smaller);
-	  iss >> m12;
-	  iss.clear();
-	  
-	  found = smaller.find("_");
-	  smaller = smaller.substr(found+1,smaller.size());
-	  iss.str(smaller);
-	  iss >> mc;
-	  iss.clear();
-	  
-	}
-      }
-    }
-    */
 
-    mg=m12;
-    mst=m0;
-    mchi=mc;
+
+    if((!_isData) && _isSMS){
+      std::vector<float> parameterPoint = ParseEvent();
+      mg = parameterPoint[0];
+      mchi = parameterPoint[1];
+    }
     
     //HLT
     int passedHLT = HLT_DoubleMu+HLT_DoubleEle+HLT_MuEle;
@@ -330,52 +358,54 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     vector <int> iIsolatedPFJet;
     bool badjet = false;
 
-    for(int i=0; i< nAK5PFNoPUJet; i++) {
-      //double EU = uncorrEnergyAK5PFNoPUJet[i];
-      double EU = (chargedHadronEnergyAK5PFNoPUJet[i]+neutralHadronEnergyAK5PFNoPUJet[i]+photonEnergyAK5PFNoPUJet[i]+electronEnergyAK5PFNoPUJet[i]+muonEnergyAK5PFNoPUJet[i]);
-      TLorentzVector myJet(pxAK5PFNoPUJet[i], pyAK5PFNoPUJet[i], pzAK5PFNoPUJet[i], energyAK5PFNoPUJet[i]);
-      // Apply jet correction first 
-      bool good_jet = false;
-      if (myJet.Pt() > 30.0 && fabs(myJet.Eta()) < 3.0) {
-        double fHAD = (neutralHadronEnergyAK5PFNoPUJet[i]+chargedHadronEnergyAK5PFNoPUJet[i])/EU;
-        if(fHAD > 0.99) {
-          badjet = true;
-          break;
-        }
-	if (fabs(myJet.Eta()) < 2.4 && chargedEmEnergyAK5PFNoPUJet[i] > 0.0 ) good_jet = true;
-        if (fabs(myJet.Eta()) < 2.4 && chargedHadronEnergyAK5PFNoPUJet[i] > 0.0 ) good_jet = true;
-        if (muonEnergyAK5PFNoPUJet[i] > 0.0 ) good_jet = true;
-        if (fabs(myJet.Eta()) >= 2.4 && neutralHadronEnergyAK5PFNoPUJet[i]/EU < 0.99 && neutralEmEnergyAK5PFNoPUJet[i]/EU < 0.99) good_jet = true;
-        if (good_jet==false) {
-          badjet = true;
-          break;
-        }
-      }
-      if (myJet.Pt()>30. && fabs(myJet.Eta())< 3.0) {
-	PFJet.push_back(myJet);
-	iPFJet.push_back(i);
-	nPFJets += 1;
-	// Examine if PFJet is isolted from leptons or not and Mll pass the Z mass threshold
+
+    for(int i = 0; i < nAK5PFNoPUJet; i++){
+      TLorentzVector myJet;
+      double px = pxAK5PFNoPUJet[i];
+      double py = pyAK5PFNoPUJet[i];
+      double pz = pzAK5PFNoPUJet[i];
+      double E = sqrt(px*px+py*py+pz*pz);
+      myJet.SetPxPyPzE(px,py,pz,E);
+  
+      if(myJet.Pt() > 30.0 && fabs(myJet.Eta()) < 3.0){
+	if ( goodJetID(i) ) {
+	  PFJet.push_back(myJet);
+	  iPFJet.push_back(i);
+	  nPFJets += 1;
+	  // Examine if PFJet is isolated from leptons or not and Mll pass the Z mass threshold
 	
-	bool isIsolatedJet = true;	
-	for(int j=0; j<nMuon; j++) {
-	  TLorentzVector thisMu(pxMuon[j], pyMuon[j], pzMuon[j], energyMuon[j]);
-	  if(isTightMuon(j) && (thisMu.Pt()>20.) && (myJet.DeltaR(thisMu)<=0.5)) isIsolatedJet = false;
-	}	  
-	for(int k=0; k<nEle; k++) {
-	  TLorentzVector thisEle(pxEle[k], pyEle[k], pzEle[k], energyEle[k]);
-	  if(isTightElectron(k) && (thisEle.Pt()>20.) && (myJet.DeltaR(thisEle)<=0.5)) isIsolatedJet = false;
+	} else {
+	  PFJet.clear();
+	  iPFJet.clear();
+	  nPFJets = 0.;
+	  break;
 	}
-	if(isIsolatedJet) {
-	  IsolatedPFJet.push_back(myJet);
-	  iIsolatedPFJet.push_back(i);
-	  nIsolatedPFJets += 1;
-	}
-      } 
+      }
     }
-    
+
+    for (int i = 0; i < PFJet.size(); i++){
+      TLorentzVector myJet = PFJet[i];
+      int iJet = iPFJet[i];
+      // Examine if PFJet is isolated from leptons or not and Mll pass the Z mass threshold
+      bool isIsolatedJet = true;	
+      for(int j=0; j<nMuon; j++) {
+	TLorentzVector thisMu(pxMuon[j], pyMuon[j], pzMuon[j], energyMuon[j]);
+	if(isTightMuon(j) && (thisMu.Pt()>20.) && (myJet.DeltaR(thisMu)<=0.3)) isIsolatedJet = false;
+      }	  
+      for(int k=0; k<nEle; k++) {
+	TLorentzVector thisEle(pxEle[k], pyEle[k], pzEle[k], energyEle[k]);
+	if(isTightElectron(k) && (thisEle.Pt()>20.) && (myJet.DeltaR(thisEle)<=0.3)) isIsolatedJet = false;
+      }
+      if(isIsolatedJet) {
+	IsolatedPFJet.push_back(myJet);
+	iIsolatedPFJet.push_back(iJet);
+	nIsolatedPFJets += 1;
+      }
+    }
+  
+  
     // jet ID
-    if (badjet == true) continue;
+    if (nPFJets==0) continue;
 
     //4Jet
     /*
@@ -388,6 +418,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     }
     */
 
+    // at least 2 jets
     if (nPFJets < 2) continue;
     
     int flag = 1;
@@ -542,8 +573,214 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     // two good leptons
     if(BOX_NUM<0) continue;
     Npassed_Lept += weightII;
+    
 
+    // create vector of b-jets
+    vector<TLorentzVector> BJets;
+    vector<float> discBJets;
+    vector<int> iBJets;
+    vector<TLorentzVector> otherJets;
+    vector<int> iotherJets;
 
+    for(int b=0; b < iIsolatedPFJet.size(); b++){
+      int n = iIsolatedPFJet.at(b);
+      float disc = combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n];
+      TLorentzVector tempvector;
+      tempvector.SetPxPyPzE(pxAK5PFNoPUJet[n],pyAK5PFNoPUJet[n],pzAK5PFNoPUJet[n],energyAK5PFNoPUJet[n]);
+      iBJets.push_back(n);
+      discBJets.push_back(disc);
+      BJets.push_back(tempvector);
+    }
+    
+
+    // bubble sort the b-jets by CSV b-tag discrimator values
+    flag = 1;
+    for(int i=0; (i < iBJets.size()) && flag; i++){
+	TLorentzVector tempvector;
+	int tempi;
+	float tempdisc;
+	flag = 0;
+	for (int j=0; j < (iBJets.size()-1); j++){
+	  if (discBJets.at(j+1) > discBJets.at(j)){
+	    tempvector  = BJets.at(j);
+	    BJets.at(j) = BJets.at(j+1);
+	    BJets.at(j+1) = tempvector;
+
+	    tempi = iBJets.at(j);
+	    iBJets.at(j) = iBJets.at(j+1);
+	    iBJets.at(j+1) = tempi;
+
+	    tempdisc = discBJets.at(j);
+	    discBJets.at(j) = discBJets.at(j+1);
+	    discBJets.at(j+1) = tempdisc;
+	    flag = 1;
+	  }
+	}
+    }
+
+    // New Razor Variables
+    // dummy values 
+    EB1 = -9999.;
+    EB2 = -9999.;
+    EL1 = -9999.;
+    EL2 = -9999.;
+    dPhiCM = -9999.;
+    gammaR = -9999.;
+    TopMass1 = -9999.;
+    TopMass2 = -9999.;
+    CosThetaB1 = -9999.;
+    CosThetaB2 = -9999.;
+    CosThetaL1 = -9999.;
+    CosThetaL2 = -9999.;
+    GluinoMass1 = -9999.;
+    GluinoMass2 = -9999.;
+    
+
+    if (DiLepton.size()>=2 && BJets.size()>=2){
+      //Start by using PF MET
+      TVector3 MET(pxPFMet[2], pyPFMet[2], 0.);
+	
+      //two leptons
+      TLorentzVector L1 = DiLepton[0];
+      TLorentzVector L2 = DiLepton[1];
+	
+      //and two b's
+      TLorentzVector B1, B2;
+      int iB1, iB2;
+      //first, we choose the hemisphere pairing of the b's and leptons by minimizing invariant masses
+
+      float smallestM2 = 9999999999.;
+      for (int i=0; i < BJets.size(); i++) {
+	TLorentzVector testB1 = BJets[i];
+	for (int j=i+1; j < BJets.size(); j++) {
+	  TLorentzVector testB2 = BJets[j];
+	  float M2 =  std::min( (B1+L1).M2() + (B2+L2).M2(), (B1+L2).M2() + (B2+L1).M2() );
+	  if (M2 <= smallestM2) {
+	    smallestM2 = M2;
+	    B1 = testB1;
+	    iB1 = iBJets[i];
+	    B2 = testB2;
+	    iB2 = iBJets[j];
+	  }
+	}
+      }
+
+      
+      for (int i=0; i < BJets.size(); i++) {
+	if (iBJets[i]!=iB1 && iBJets[i]!=iB2){
+	  otherJets.push_back(BJets[i]);
+	}
+      }
+
+      if( (B1+L1).M2() + (B2+L2).M2() > (B1+L2).M2() + (B2+L1).M2() ){
+	TLorentzVector temp = B1;
+	B1 = B2;
+	B2 = temp;
+      }	
+	
+      //We separate the objects into decay hemispheres
+      TLorentzVector H1 = (B1+L1);
+      TLorentzVector H2 = (B2+L2);
+		
+      // Now, we must perform longitudinal boost from lab frame to CMz frame
+      // in order to make procedure invariant under longitundinal boosts
+      TVector3 BL = H1.Vect()+H2.Vect();
+      BL.SetX(0.0);
+      BL.SetY(0.0);
+      BL = (1./(H1.E()+H2.E()))*BL;
+	
+      //Boost to CMz frame
+      B1.Boost(-BL);
+      L1.Boost(-BL);
+      B2.Boost(-BL);
+      L2.Boost(-BL);
+      H1.Boost(-BL);
+      H2.Boost(-BL);
+
+      //Now, we will perform a transverse boost from the CMz frame to our
+      //approximation of the CM rest frame
+    
+      shatR_bl = shatR(H1+H2,MET);
+      TVector3 betaTR = BetaTR(H1+H2,MET);
+
+      //Boost to ~CM frame
+      B1.Boost(-betaTR);
+      B2.Boost(-betaTR);
+      L1.Boost(-betaTR);
+      L2.Boost(-betaTR);
+      H1.Boost(-betaTR);
+      H2.Boost(-betaTR);
+
+      for (int i=0; i < otherJets.size(); i++) {
+	otherJets[i].Boost(-BL);
+	otherJets[i].Boost(-betaTR);
+      }
+
+    
+      //at this stage you can calculate a useful angle, the azimuthal angle between 
+      //the boost from the CMz to ~CM frame and the visible system of particles
+      dPhiCM = (B1+B2+L1+L2).Vect().DeltaPhi(betaTR);
+    
+      //Now, we must boost to each of the respective TR frames (or top rest frames in ttbar)
+      TVector3 vBETA = Boost_type1(H1,H2);
+      B1.Boost(-vBETA);
+      B2.Boost(vBETA);
+      L1.Boost(-vBETA);
+      L2.Boost(vBETA);
+    
+      //Useful variable is gamma associated with that boost, which corresponds to how far off threshold the ttbar event is
+      gammaR = 1./sqrt(1.-vBETA.Mag2());
+	
+      //In the respective top rest frames you can calculate the energy of the B's (sensitive to first mass splitting) and the helicity angle
+      //energies
+      EB1 = B1.E();
+      EB2 = B2.E();
+	
+      //calculate top helicity angles
+      CosThetaB1 = B1.Vect().Dot(vBETA)/(B1.P()*vBETA.Mag());
+      CosThetaB2 = B2.Vect().Dot(-vBETA)/(B2.P()*vBETA.Mag());
+		
+      //calculate top mass - energy of all objects in T-frame assuming massless neutrinos
+      TopMass1 = B1.E() + L1.E() + sqrt((B1+L1).Vect().Mag2());
+      TopMass2 = B2.E() + L2.E() + sqrt((B2+L2).Vect().Mag2());
+
+      TLorentzVector TopJet1, TopJet2;
+      TopJet1.SetXYZM(0.,0.,0.,TopMass1);
+      TopJet2.SetXYZM(0.,0.,0.,TopMass2);
+
+      // Boost back to CM frame
+      TopJet1.Boost(vBETA);
+      TopJet2.Boost(-vBETA);
+      // Now COMBINE JETS on all jets in CM frame
+      otherJets.push_back(TopJet1);
+      otherJets.push_back(TopJet2);
+      vector<TLorentzVector> CMHems  = CombineJets(otherJets);
+
+      if (CMHems.size()>=2){
+	TLorentzVector CMHem1 = CMHems[0];
+	TLorentzVector CMHem2 = CMHems[1];
+	GluinoMass1 = CMHem1.M();
+	GluinoMass2 = CMHem2.M();
+      }
+		
+      //Now, we must boost to each of the respective WR frames to evaluate the lepton energy
+      TVector3 vBeta1 = (-1./(L1.E()+sqrt((L1+B1).Vect().Mag2())))*B1.Vect();
+      TVector3 vBeta2 = (-1./(L2.E()+sqrt((L2+B2).Vect().Mag2())))*B2.Vect();
+      L1.Boost(-vBeta1);
+      L2.Boost(-vBeta2);
+      double mygamma1 = 1./sqrt(1.-vBeta1.Mag2());
+      double mygamma2 = 1./sqrt(1.-vBeta2.Mag2());
+	
+      //second mass splitting
+      EL1 = L1.E();
+      EL2 = L2.E();
+
+      //calculate W helicity angles
+      CosThetaL1 = L1.Vect().Dot(vBeta1)/(L1.P()*vBeta1.Mag());
+      CosThetaL2 = L2.Vect().Dot(vBeta2)/(L2.P()*vBeta2.Mag());
+    }
+
+    // Classic Razor Variables
     // dummy values                                          
     pTPFHem1 = -9999.;
     etaPFHem1 = -9999.;
@@ -553,29 +790,24 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     phiPFHem2 = -9999.;
     PFR = -99999.;
     MR = -99999.;
+    MR_pTcorr = -99999.;
     
     // hemispheres
-    int fjetsize = 9999;
-    double conesize = 0.5;
-    vector<Jet> fJet = FastJetAlgorithmForceTwo(PFJet,conesize,2.);
-    fjetsize = (int) fJet.size();
-    if (fjetsize!=2) cout << "FAILURE: fJet.size() = "  << fjetsize << endl;
-
      vector<TLorentzVector> tmpJet = CombineJets(PFJet);
-     vector<TLorentzVector> fastJet;
-     fastJet.push_back(fJet[0].Get4Vector());
-     fastJet.push_back(fJet[1].Get4Vector());
        
      if(tmpJet.size() >= 2) {
        TLorentzVector PFHem1 = tmpJet[0];
        TLorentzVector PFHem2 = tmpJet[1];
        // PFMET
-       TVector3 MET(pxPFMet[0], pyPFMet[0], 0.);
+       TVector3 MET(pxPFMet[2], pyPFMet[2], 0.);
        MRT = CalcMTR(PFHem1, PFHem2, MET);
        double variable = -999999.;
        double Rvariable = -999999.;
        variable = CalcGammaMRstar(PFHem1, PFHem2);
        if(variable >0) Rvariable = MRT/variable;
+
+       // *NEW* pT-corrected version of MR
+       MR_pTcorr = shatR(PFHem1+PFHem2,MET);
 	 
        // fill the R and hem part of the output tree
        pTPFHem1 = PFHem1.Pt();
@@ -589,29 +821,41 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
        MR = variable;
      }
 
-     // fast-hemispheres 
-     if(fastJet.size() >= 2) {
-       TLorentzVector FJHem1 = fastJet[0];
-       TLorentzVector FJHem2 = fastJet[1];
-       // PFMET
-       TVector3 MET(pxPFMet[0], pyPFMet[0], 0.);
-       FJMRT = CalcMTR(FJHem1, FJHem2, MET);
-       double variable = -999999.;
-       double Rvariable = -999999.;
-       variable = CalcGammaMRstar(FJHem1, FJHem2);
-       if(variable >0) Rvariable = MRT/variable;
+
+
+     // Classic Razor Variables with FastJet Hemispheres
+    // int fjetsize = 9999;
+    // double conesize = 0.5;
+    // vector<Jet> fJet = FastJetAlgorithmForceTwo(PFJet,conesize,2.);
+    // fjetsize = (int) fJet.size();
+    // if (fjetsize!=2) cout << "FAILURE: fJet.size() = "  << fjetsize << endl;
+    //  vector<TLorentzVector> fastJet;
+    //  fastJet.push_back(fJet[0].Get4Vector());
+    //  fastJet.push_back(fJet[1].Get4Vector());
+
+    //  // fast-hemispheres 
+    //  if(fastJet.size() >= 2) {
+    //    TLorentzVector FJHem1 = fastJet[0];
+    //    TLorentzVector FJHem2 = fastJet[1];
+    //    // PFMET
+    //    TVector3 MET(pxPFMet[2], pyPFMet[2], 0.);
+    //    FJMRT = CalcMTR(FJHem1, FJHem2, MET);
+    //    double variable = -999999.;
+    //    double Rvariable = -999999.;
+    //    variable = CalcGammaMRstar(FJHem1, FJHem2);
+    //    if(variable >0) Rvariable = MRT/variable;
 	 
-       // fill the R and hem part of the output tree
-       pTFJHem1 = FJHem1.Pt();
-       etaFJHem1 = FJHem1.Eta();
-       phiFJHem1 = FJHem1.Phi();
-       pTFJHem2 = FJHem2.Pt();
-       etaFJHem2 = FJHem2.Eta();
-       phiFJHem2 = FJHem2.Phi();
-       FJR = Rvariable;
-       FJRSQ = Rvariable*Rvariable;
-       FJMR = variable;
-     }
+    //    // fill the R and hem part of the output tree
+    //    pTFJHem1 = FJHem1.Pt();
+    //    etaFJHem1 = FJHem1.Eta();
+    //    phiFJHem1 = FJHem1.Phi();
+    //    pTFJHem2 = FJHem2.Pt();
+    //    etaFJHem2 = FJHem2.Eta();
+    //    phiFJHem2 = FJHem2.Phi();
+    //    FJR = Rvariable;
+    //    FJRSQ = Rvariable*Rvariable;
+    //    FJMR = variable;
+    //  }
 
      //Gen-Level
      pT1 = -999;
@@ -901,3 +1145,248 @@ vector<Jet> RazorMultiB::FastJetAlgorithmForceTwo(vector<TLorentzVector> InputCo
   return output;
 }
   
+
+TVector3 RazorMultiB::Boost_type1(TLorentzVector H1, TLorentzVector H2){
+	
+	TVector3 vBETA = (1./(H1.E()+H2.E()))*(H1.Vect()-H2.Vect());
+	
+	return vBETA;
+}
+
+TVector3 RazorMultiB::BetaTR(TLorentzVector TOT, TVector3 MET){
+	double myshatR = shatR(TOT,MET);
+	TVector3 BCM = TOT.Vect()+MET;
+	BCM.SetZ(0.0);
+	BCM = (1./(sqrt(4.*myshatR*myshatR+BCM.Dot(BCM))))*BCM;
+	
+	return BCM;
+}
+
+double RazorMultiB::shat3D(TLorentzVector TOT, TVector3 P){
+	double E = TOT.E();
+	double Pz = 0.0;
+	
+	float MR = sqrt(E*E-Pz*Pz);
+	
+	
+	TVector3 vI = P;
+	
+	TVector3 vpt = TOT.Vect();
+	
+	float MR2 = 2.*(MR*MR-vpt.Dot(vI)+MR*sqrt(MR*MR+vI.Dot(vI)-2.*vI.Dot(vpt)));
+	
+	return sqrt(MR2);
+	
+}	
+
+double RazorMultiB::shatR(TLorentzVector TOT, TVector3 MET){
+	double E = TOT.E();
+	double Pz = TOT.Pz();
+	
+	float MR = sqrt(E*E-Pz*Pz);
+	
+	
+	TVector3 vI = MET+TOT.Vect();
+	vI.SetZ(0.0);
+	
+	TVector3 vpt = TOT.Vect();
+	vpt.SetZ(0.0);
+	
+	float MR2 = 0.5*(MR*MR-vpt.Dot(vI)+MR*sqrt(MR*MR+vI.Dot(vI)-2.*vI.Dot(vpt)));
+	
+	return sqrt(MR2);
+	
+}
+
+
+
+std::vector<float> RazorMultiB::ParseEvent(){
+	
+  std::vector<std::string>::const_iterator c_begin = commentLHE->begin();
+  std::vector<std::string>::const_iterator c_end = commentLHE->end();
+    
+  float mg, mchi;
+  for( std::vector<std::string>::const_iterator cit=c_begin; cit!=c_end; ++cit) {
+    size_t found = (*cit).find("model");
+    if( found != std::string::npos)   {    
+      size_t foundLength = (*cit).size();
+      found = (*cit).find(" ");
+      std::string smaller = (*cit).substr(found+1,foundLength);
+      found = smaller.find("_");
+      smaller = smaller.substr(found+1,smaller.size());
+      //cout << smaller;
+	
+      std::istringstream iss(smaller);
+      iss >> mg;
+      iss.clear();
+      //cout << mg << endl;
+	
+      found = smaller.find("_");
+      smaller = smaller.substr(found+1,smaller.size());
+      iss.str(smaller);
+      iss >> mchi;
+      iss.clear();
+      //cout << mchi << endl;
+    }
+  }
+    
+  std::vector<float> parameterPoint;
+  parameterPoint.push_back(mg);
+  parameterPoint.push_back(mchi);
+}
+  
+ 
+
+
+bool RazorMultiB::goodJetID(int i){
+  ///////////////////////////////////
+  //Now, we do PFNoPU jets with PU corrections 
+  ///////////////////////////////////
+  TLorentzVector jet;
+  double px = pxAK5PFNoPUJet[i];
+  double py = pyAK5PFNoPUJet[i];
+  double pz = pzAK5PFNoPUJet[i];
+  double E = sqrt(px*px+py*py+pz*pz);
+  jet.SetPxPyPzE(px,py,pz,E);
+       
+  bool good_jet = false;
+  double EU = uncorrEnergyAK5PFNoPUJet[i];
+
+  double fHAD = (neutralHadronEnergyAK5PFNoPUJet[i]+chargedHadronEnergyAK5PFNoPUJet[i])/EU;
+
+  if(fHAD > 0.99){
+    good_jet = false;
+  }
+  else {
+    int nConstituents = chargedHadronMultiplicityAK5PFNoPUJet[i]+neutralHadronMultiplicityAK5PFNoPUJet[i]+photonMultiplicityAK5PFNoPUJet[i]+electronMultiplicityAK5PFNoPUJet[i]+muonMultiplicityAK5PFNoPUJet[i]+HFHadronMultiplicityAK5PFNoPUJet[i]+HFEMMultiplicityAK5PFNoPUJet[i];
+    int chargedMult = chargedHadronMultiplicityAK5PFNoPUJet[i]+electronMultiplicityAK5PFNoPUJet[i]+muonMultiplicityAK5PFNoPUJet[i];
+
+    float photonFrac = photonEnergyAK5PFNoPUJet[i]/EU;
+    float electronFrac = electronEnergyAK5PFNoPUJet[i]/EU;
+    float muonFrac = muonEnergyAK5PFNoPUJet[i]/EU;
+    float neutralHadFrac = neutralHadronEnergyAK5PFNoPUJet[i]/EU;
+    float chargedHadFrac = chargedHadronEnergyAK5PFNoPUJet[i]/EU;
+    float HFHadFrac = HFHadronEnergyAK5PFNoPUJet[i]/EU;
+    float HFEMFrac = HFEMEnergyAK5PFNoPUJet[i]/EU;
+
+    int photonMult = photonMultiplicityAK5PFNoPUJet[i];
+    int electronMult = electronMultiplicityAK5PFNoPUJet[i];
+    int muonMult = muonMultiplicityAK5PFNoPUJet[i];
+    int neutralHadMult = neutralHadronMultiplicityAK5PFNoPUJet[i];
+    int chargedHadMult = chargedHadronMultiplicityAK5PFNoPUJet[i];
+    int HFHadMult = HFHadronMultiplicityAK5PFNoPUJet[i];
+    int HFEMMult = HFEMMultiplicityAK5PFNoPUJet[i];
+
+    if((neutralHadFrac < 0.99) && (photonFrac < 0.99) && (nConstituents > 1)) {
+      //outside of tracker acceptance, these are the only requirementspf
+      if (fabs(jet.Eta())>=2.4) good_jet = true;
+      //inside of the tracker acceptance, there are extra requirements				     
+      else {
+	if ((chargedHadFrac > 0.0) && (chargedMult > 0) && (electronFrac < 0.99)) good_jet = true;
+      }
+    }
+  }
+  return good_jet;
+}
+
+
+bool RazorMultiB::FailFilters(){
+  bool FAIL = false;
+  /*
+    This is how METFlags is defined in Vecbos:
+    http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/HiggsAnalysis/HiggsToWW2e/src/CmsMetFiller.cc?revision=1.13&view=markup
+
+   *(privateData_->filterBits) = 
+   (eeBadScFilterFlag << 8) | (hcalLaserEventFilterFlag << 7) | (HBHENoiseFilterResultFlag << 6) | 
+   (isNotDeadEcalCluster << 5) | (trackerFailureFilterFlag << 4) | (CSCHaloFilterFlag << 3) | 
+   ( drDead << 2 ) | ( drBoundary << 1 ) | ECALTPFilterFlag;
+  */
+  //cout << METFlags << endl;
+
+  if((METFlags >> 0)%2 == 0) FAIL = true; //ecal dead cell tp
+  //if((METFlags >> 1)%2 == 0) FAIL = true; // dr boundary
+  //if((METFlags >> 2)%2 == 0) FAIL = true; // dr dead
+  if((METFlags >> 3)%2 == 0) FAIL = true; // csc hal
+  if((METFlags >> 4)%2 == 0) FAIL = true; // tracker failure
+  //if((METFlags >> 5)%2 == 0) FAIL = true; // ecal dead cluster
+  if((METFlags >> 6)%2 == 0) FAIL = true; // hbhe noise
+  if((METFlags >> 7)%2 == 0) FAIL = true; // hcal laser
+  if((METFlags >> 8)%2 == 0) FAIL = true; // bad ee sc
+  //if((METFlags >> 9)%2 == 0) FAIL = true; //ecal laser
+   
+  return FAIL;
+}
+
+
+struct RazorMultiB::EventIndex {
+	int RunNumber;
+	Long64_t EventNumber;
+	
+	EventIndex() : RunNumber(0), EventNumber(0) {}
+	
+	bool operator <(const EventIndex &other) const
+	{
+		if(RunNumber < other.RunNumber)
+			return true;
+		if(RunNumber > other.RunNumber)
+			return false;
+		
+		if(EventNumber < other.EventNumber)
+			return true;
+		if(EventNumber > other.EventNumber)
+			return false;
+		
+		return false;
+	}
+};
+
+
+void RazorMultiB::InitEventFlag(char *s_Event){
+  ifstream inputfile(s_Event);
+  
+  int RUN_NUMBER;
+  int LS_NUMBER;
+  Long64_t EVENT_NUMBER;
+  
+  EventIndex index;
+  
+  cout << "Reading bad event list" << endl;
+	
+  while(!inputfile.eof()){
+    inputfile >> RUN_NUMBER >> LS_NUMBER >> EVENT_NUMBER;
+    
+    index.RunNumber = RUN_NUMBER;
+    index.EventNumber = EVENT_NUMBER;
+    
+    if(index.RunNumber < 0 || index.EventNumber < 0)
+      continue;
+    
+    //Is this event/run-number combo alreading in the map?
+    if(EventCounts.find(index) == EventCounts.end()){ //no
+      EventCounts.insert(pair<EventIndex, int>(index, 1));
+    } else { //yes
+      EventCounts[index] = EventCounts[index] + 1;
+    }
+    index.RunNumber = -1;
+    index.EventNumber = -1;
+  }
+}
+
+
+bool RazorMultiB::isFlagged(){
+  EventIndex index;
+  index.EventNumber = eventNumber;
+  index.RunNumber = runNumber;
+  
+  if(EventCounts.find(index) == EventCounts.end()){ //yes
+    //cout << "Event not in list" << endl;
+    return false;
+  } else {
+    //cout << "Event IS in list" << endl;
+    return true;
+    if(EventCounts[index] == 1){
+      //cout << "Found the event - all is good in the world" << endl;
+      return true;
+    }
+  } 
+}

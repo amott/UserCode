@@ -718,7 +718,17 @@ int main(int argc, char* argv[]) {
 #endif
 
 #if Application == 28
-  RazorMultiB vecbos(theChain, "none", isData, isData);
+  string smsName = "none";
+  const int nModels = 8;
+  const char *models[nModels] = {"T1bbbb","T2bb","T2tt","T1tttt","T2bw","T1ttcc","T6bbHH","T6ttHH"};
+   
+  for(int i=0;i<nModels;i++){
+    if(strstr(inputFileName,models[i])){
+      smsName = string(models[i]);
+    }
+  }
+    
+  RazorMultiB vecbos(theChain, "none", isData, isData, smsName);
   vecbos.SetWeight(double(weight));
   vecbos.Loop(string(outFileName), start, stop);
 #endif
