@@ -168,6 +168,14 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   double CosThetaL2;
   double GluinoMass1;
   double GluinoMass2;
+  double VisHemMass1;
+  double VisHemMass2;
+  double TotalHemMass1;
+  double TotalHemMass2;
+  double TopHemMass1;
+  double TopHemMass2;
+  double MR1;
+  double MR2;
 
   
 
@@ -236,6 +244,14 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   outTree->Branch("TopMass2", &TopMass2, "TopMass2/D");
   outTree->Branch("GluinoMass1", &GluinoMass1, "GluinoMass1/D");
   outTree->Branch("GluinoMass2", &GluinoMass2, "GluinoMass2/D");
+  outTree->Branch("VisHemMass1", &VisHemMass1, "VisHemMass1/D");
+  outTree->Branch("VisHemMass2", &VisHemMass2, "VisHemMass2/D");
+  outTree->Branch("TotalHemMass1", &TotalHemMass1, "TotalHemMass1/D");
+ outTree->Branch("TotalHemMass2", &TotalHemMass2, "TotalHemMass2/D");
+ outTree->Branch("TopHemMass1", &TopHemMass1, "TopHemMass1/D");
+ outTree->Branch("TopHemMass2", &TopHemMass2, "TopHemMass2/D");
+ outTree->Branch("MR1", &MR1, "MR1/D");
+ outTree->Branch("MR2", &MR2, "MR2/D");
 
   //Gen-Level
   outTree->Branch("idMc1", &idMc1, "idMc1/I");
@@ -587,9 +603,12 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       float disc = combinedSecondaryVertexBJetTagsAK5PFNoPUJet[n];
       TLorentzVector tempvector;
       tempvector.SetPxPyPzE(pxAK5PFNoPUJet[n],pyAK5PFNoPUJet[n],pzAK5PFNoPUJet[n],energyAK5PFNoPUJet[n]);
-      iBJets.push_back(n);
-      discBJets.push_back(disc);
-      BJets.push_back(tempvector);
+      
+      if (disc > 0.244) {
+	iBJets.push_back(n);
+	discBJets.push_back(disc);
+	BJets.push_back(tempvector);
+      }
     }
     
 
@@ -631,9 +650,17 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     CosThetaB1 = -9999.;
     CosThetaB2 = -9999.;
     CosThetaL1 = -9999.;
-    CosThetaL2 = -9999.;
+    CosThetaL2 = -9999.;    
     GluinoMass1 = -9999.;
     GluinoMass2 = -9999.;
+    VisHemMass1 = -9999.;
+    VisHemMass2 = -9999.;
+    TotalHemMass1 = -9999.;
+    TotalHemMass2 = -9999.;
+    TopHemMass1 = -9999.;
+    TopHemMass2 = -9999.;
+    MR1 = -9999.;
+    MR2 = -9999.;
     
 
     if (DiLepton.size()>=2 && BJets.size()>=2){
@@ -666,9 +693,10 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       }
 
       
-      for (int i=0; i < BJets.size(); i++) {
-	if (iBJets[i]!=iB1 && iBJets[i]!=iB2){
-	  otherJets.push_back(BJets[i]);
+      for (int i=0; i < IsolatedPFJet.size(); i++) {
+	if (iIsolatedPFJet[i]!=iB1 && iIsolatedPFJet[i]!=iB2){
+	  otherJets.push_back(IsolatedPFJet[i]);
+	  iotherJets.push_back(iIsolatedPFJet[i]);
 	}
       }
 
@@ -677,10 +705,17 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
 	B1 = B2;
 	B2 = temp;
       }	
-	
-      //We separate the objects into decay hemispheres
-      TLorentzVector H1 = (B1+L1);
-      TLorentzVector H2 = (B2+L2);
+      
+      // Combine jets keeping the Tops (b+l) together and in separate hemispheres:
+       vector<TLorentzVector> Tops;
+       TLorentzVector Top1 = (B1+L1);
+       TLorentzVector Top2 = (B2+L2);
+       Tops.push_back(Top1);
+       Tops.push_back(Top2);
+
+       vector<TLorentzVector> H12  = CombineJetsTs(otherJets, Tops);
+       TLorentzVector H1 = H12[0];
+       TLorentzVector H2 = H12[1];
 		
       // Now, we must perform longitudinal boost from lab frame to CMz frame
       // in order to make procedure invariant under longitundinal boosts
@@ -689,21 +724,63 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       BL.SetY(0.0);
       BL = (1./(H1.E()+H2.E()))*BL;
 	
-      //Boost to CMz frame
+      // Boost to CMz frame
+      Top1.Boost(-BL);
+      Top2.Boost(-BL);
+      H1.Boost(-BL);
+      H2.Boost(-BL);
+
+      VisHemMass1 = H1.M();
+      VisHemMass2 = H2.M();
+    
+      //Now, we must boost to each of the respective hemisphere rest frames
+      TVector3 vBETA = Boost_type1(H1,H2);
+    
+      H1.Boost(-vBETA);
+      H2.Boost(vBETA);
+      Top1.Boost(-vBETA);
+      Top2.Boost(vBETA);
+
+      TLorentzVector N1, N2;
+      N1.SetXYZM(H1.X(),H1.Y(),H1.Z(),0.0);
+      N2.SetXYZM(H2.X(),H2.Y(),H2.Z(),0.0);
+
+      TotalHemMass1 = (H1+N1).M();
+      TotalHemMass2 = (H2+N2).M();
+
+      TopHemMass1 = (Top1+N1).M();
+      TopHemMass2 = (Top2+N1).M();
+      
+      MR1 = 2*H1.Vect().Mag();
+      MR2 = 2*H2.Vect().Mag();
+
+      // Rogan's Approach to fully leptonic ttbar
+
+      H1 = (B1+L1);
+      H2 = (B2+L2);
+
+      // Now, we must perform longitudinal boost from lab frame to CMz frame
+      // in order to make procedure invariant under longitundinal boosts
+      BL = H1.Vect()+H2.Vect();
+      BL.SetX(0.0);
+      BL.SetY(0.0);
+      BL = (1./(H1.E()+H2.E()))*BL;
+	
+      // Boost to CMz frame
       B1.Boost(-BL);
       L1.Boost(-BL);
       B2.Boost(-BL);
       L2.Boost(-BL);
-      H1.Boost(-BL);
-      H2.Boost(-BL);
 
-      //Now, we will perform a transverse boost from the CMz frame to our
-      //approximation of the CM rest frame
+      // Now, we will perform a transverse boost from the CMz frame to our
+      // approximation of the CM rest frame
+     
     
+
       shatR_bl = shatR(H1+H2,MET);
       TVector3 betaTR = BetaTR(H1+H2,MET);
 
-      //Boost to ~CM frame
+      // Boost to ~CM frame
       B1.Boost(-betaTR);
       B2.Boost(-betaTR);
       L1.Boost(-betaTR);
@@ -720,14 +797,17 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       //at this stage you can calculate a useful angle, the azimuthal angle between 
       //the boost from the CMz to ~CM frame and the visible system of particles
       dPhiCM = (B1+B2+L1+L2).Vect().DeltaPhi(betaTR);
-    
+
       //Now, we must boost to each of the respective TR frames (or top rest frames in ttbar)
-      TVector3 vBETA = Boost_type1(H1,H2);
+      vBETA = Boost_type1(H1,H2);
       B1.Boost(-vBETA);
       B2.Boost(vBETA);
       L1.Boost(-vBETA);
       L2.Boost(vBETA);
-    
+
+
+
+
       //Useful variable is gamma associated with that boost, which corresponds to how far off threshold the ttbar event is
       gammaR = 1./sqrt(1.-vBETA.Mag2());
 	
@@ -1390,3 +1470,69 @@ bool RazorMultiB::isFlagged(){
     }
   } 
 }
+
+
+
+vector<TLorentzVector> RazorMultiB::CombineJetsTs(vector<TLorentzVector> myjets, vector<TLorentzVector> Ts){
+  
+  vector<TLorentzVector> mynewjets;
+  TLorentzVector j1, j2;
+  bool foundGood = false;
+  
+  int N_comb = 1;
+  for(int i = 0; i < myjets.size(); i++){
+    N_comb *= 2;
+  }
+  
+  double M_min = 9999999999.0;
+  int j_count;
+  for(int i = 1; i < N_comb-1; i++){
+    TLorentzVector j_temp1, j_temp2;
+    int itemp = i;
+    j_count = N_comb/2;
+    int count = 0;
+    while(j_count > 0){
+      if(itemp/j_count == 1){
+	j_temp1 += myjets[count];
+      } else {
+	j_temp2 += myjets[count];
+      }
+      itemp -= j_count*(itemp/j_count);
+      j_count /= 2;
+      count++;
+    }    
+
+    
+
+    double M_temp = std::min((j_temp1 + Ts[0]).M2()+(j_temp2 + Ts[1]).M2() , (j_temp1 + Ts[1]).M2()+(j_temp2 + Ts[0]).M2() ) ;
+    // smallest mass
+    if (M_temp < M_min){
+      M_min = M_temp;
+      if ((j_temp1 + Ts[0]).M2()+(j_temp2 + Ts[1]).M2() == M_temp ){
+	j1 = j_temp1 + Ts[0];
+	j2 = j_temp2 + Ts[1];  
+      }
+      else{ 
+      j1 = j_temp1 + Ts[1];
+      j2 = j_temp2 + Ts[0];
+      }
+    }
+  }
+
+  // set masses to 0
+  // j1.SetPtEtaPhiM(j1.Pt(),j1.Eta(),j1.Phi(),0.0);
+  // j2.SetPtEtaPhiM(j2.Pt(),j2.Eta(),j2.Phi(),0.0);
+  
+  if(j2.Pt() > j1.Pt()){
+    TLorentzVector temp = j1;
+    j1 = j2;
+    j2 = temp;
+  }
+  
+  mynewjets.push_back(j1);
+  mynewjets.push_back(j2);
+  return mynewjets;  
+}
+
+
+

@@ -29,6 +29,7 @@ public:
   void SetWeight(double);
   double _weight;
   vector<Jet> FastJetAlgorithmForceTwo(vector<TLorentzVector> InputCollection, double Rparam=0.5, double thePtMin=1.);
+  vector<TLorentzVector> CombineJetsTs(vector<TLorentzVector> myjets, vector<TLorentzVector> Ts);
   double shat3D(TLorentzVector TOT, TVector3 P);
   TVector3 Boost_type1(TLorentzVector H1, TLorentzVector H2);
   TVector3 BetaTR(TLorentzVector TOT, TVector3 MET);
@@ -38,6 +39,7 @@ public:
   bool FailFilters();
   bool isFlagged();
   void InitEventFlag(char *s_Event);
+
 
 private:
   bool _isSMS;
