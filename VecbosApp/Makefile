@@ -235,7 +235,7 @@ $(OUTLIB)RazorMultiB.o: $(SRCDIR)RazorMultiB.cc $(OUTLIB)Vecbos.o
 $(OUTLIB)RazorDiMuB.o: $(SRCDIR)RazorDiMuB.cc $(OUTLIB)Vecbos.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)RazorDiMuB.o $<
 
-$(OUTLIB)RazorDMAnalysis.o: $(SRCDIR)RazorDMAnalysis.cc $(OUTLIB)Vecbos.o
+$(OUTLIB)RazorDMAnalysis.o: $(SRCDIR)RazorDMAnalysis_pfJets.cc $(OUTLIB)Vecbos.o
 	$(CXX) $(CXXFLAGS) -c -I$(INCLUDEDIR) -o $(OUTLIB)RazorDMAnalysis.o $<
 
 $(OUTLIB)MonoJet.o: $(SRCDIR)MonoJet.cc $(OUTLIB)Vecbos.o

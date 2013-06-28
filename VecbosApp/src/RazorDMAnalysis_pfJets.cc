@@ -560,23 +560,8 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     
     // jet ID                                                                 
     if (N_pfJets <= 0 )  continue;// If any Jet is bad (see loop before) event is rejected
-    //std::cout << "debug -2" << std::endl;
-        
-    //std::cout << "debug 0" << std::endl;
-
-
-    bool IsoPF = false;
-    for(int kk = 0; kk < nPFCand; kk++){
-      if( ILV( kk ) < 0.15 ){
-	std::cout << "\n ILV: " << ILV( kk ) << std::endl;
-	IsoPF = true;
-	break;
-      }
-    }
     
-    if(IsoPF) continue;
     
-    //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
     /////////////////////Create Muon Collection///////////////////
     //////////////////////////////////////////////////////////////
@@ -764,19 +749,42 @@ void RazorDMAnalysis::Loop(string outFileName, int start, int stop) {
     // Electron VETO
     if(iEleTight.size()>0) continue;
 
-    //std::cout << "debug 1" << std::endl;
+    
     // TAU VETO
     
-    if (iTauTight.size()>0) continue;//removed after a bug was found in the tau ID
+    //if (iTauTight.size()>0) continue;//removed after a bug was found in the tau ID
 
-    //std::cout << "debug 2" << std::endl;
-    //This will give the number of events that pass until this point but not necesarily was recorded
-    //This is important!! so "Npassed_LepVeto" and  "Npassed_2Jet" and the total number of recorded events
-    //can be different. Ok (this is kind of arbitrary because it depends on the order it was done (probably problem is here))
+    //////////////////////////////////////////////                                                                      
+    //////////Indirect Lepton Veto (taus)/////////                                                                      
+    //////////////////////////////////////////////  
+    bool IsoPF = false;
+    for(int kk = 0; kk < nPFCand; kk++){
+      TLorentzVector pfCand4V(pxPFCand[kk], pyPFCand[kk], pzPFCand[kk], energyPFCand[kk]);
+      bool isMuon = false;
+      for (std::vector<TLorentzVector>::iterator Mu_it = MuLoose.begin(); Mu_it != MuLoose.end(); ++Mu_it){
+	
+        if ( (*Mu_it).Pt() < 15. ) continue;
+	
+        if( (*Mu_it).DeltaR( pfCand4V ) <= 0.3){
+	  //std::cout << "Mu Energy: " << (*Mu_it).E() << " pfCand En: " << pfCand4V.E() << std::endl;
+	  isMuon = true;
+          break;//out of the muon iterator loop
+        }
+      }
+      
+      if( ILV( kk ) < 0.15 && isMuon == false){
+        IsoPF = true;
+        break;//out of the PFCand loop. This means we found an isolated tau or electron 
+      }
+    }
+    
+    if(IsoPF)continue;
+    
+    
     Npassed_LepVeto += weightII;//Record how many of th
-
+    
     //cout << "NBTAG IS " << nBtag << endl;
-
+    
     // BOX NUMBER
     BOX_NUM = -99;
     if(iMuLoose.size() == 0){

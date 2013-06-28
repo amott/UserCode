@@ -11,8 +11,14 @@ if len(sys.argv) < 4:
     sys.exit(1)
 process = sys.argv[1].split("/")[1]
 dataset = sys.argv[1].split("/")[-1].replace(".list","")
-isData = False
+
+isData = False#False Means MC
+
+##########Data##############
 #isData = True
+#JSON = sys.argv[4]
+############################
+
 inputlist =  sys.argv[1]
 output = dataset
 # choose among cmt3 8nm 1nh 8nh 1nd 1nw 
@@ -63,14 +69,20 @@ for ijob in range(ijobmax):
 
     # prepare the script to run
     outputname = process+"/"+output+"/src/submit_"+str(ijob)+".src"
+    print "OUTPUTFILE: ", outputname
     outputfile = open(outputname,'w')
     outputfile.write('#!/bin/bash\n')
-    outputfile.write("cd /afs/cern.ch/user/m/mpierini/scratch0/CMSSW_4_2_0/src; eval `scramv1 run -sh`\n")
+    outputfile.write("cd /afs/cern.ch/work/c/cpena/scratch_DM/CMSSW_5_2_3/src; eval `scramv1 run -sh`\n")
     outputfile.write('cd '+pwd+'\n')
-    if isData: outputfile.write('./VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_"+str(ijob)+".root --isData\n")  
-    else: outputfile.write('./VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_"+str(ijob)+".root \n")
+    if isData:
+        outputfile.write('./VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_"+str(ijob)+".root --isData -json="+JSON+"\n")
+        print './VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_"+str(ijob)+".root --isData -json="+JSON+"\n"
+    else:
+        outputfile.write('./VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_testMC_"+str(ijob)+".root \n")
+        print './VecbosApp '+inputfilename+" "+process+"/"+output+"/out/"+output+"_testMc_"+str(ijob)+".root \n"
     outputfile.close
     os.system("echo bsub -q "+queue+" -o /dev/null -e /dev/null source "+pwd+"/"+outputname)
-    os.system("sleep 10; bsub -q "+queue+" -o /dev/null -e /dev/null source "+pwd+"/"+outputname)
+    os.system("sleep .1; bsub -q "+queue+" -o /dev/null -e /dev/null source "+pwd+"/"+outputname)
+    #os.system("sleep 1; bsub -q "+queue+" source "+pwd+"/"+outputname)
     ijob = ijob+1
     continue

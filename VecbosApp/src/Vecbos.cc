@@ -2932,9 +2932,9 @@ bool Vecbos::isLooseElectron(int iEle){
 }
 
 double Vecbos::ILV(int iPFCand){
-  double pfIso03 = ChargedIso03PFCand[iPFCand] + NeutralIso03PFCand[iPFCand] + PhotonIso03PFCand[iPFCand];
+  double pfIso03 = NeutralIso03PFCand[iPFCand] + PhotonIso03PFCand[iPFCand] - 0.5*SumPUPtR03PFCand[iPFCand];
   double PT = pzPFCand[iPFCand]/sinh(etaPFCand[iPFCand]);
-  return (pfIso03 - 0.5*max(SumPUPtR03PFCand[iPFCand], 0.0))/PT;
+  return ( ChargedIso03PFCand[iPFCand] + max(pfIso03, 0.0) )/PT;
 }
 
 
