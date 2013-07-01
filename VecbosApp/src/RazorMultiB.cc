@@ -50,7 +50,7 @@ RazorMultiB::RazorMultiB(TTree *tree, string jsonFile, bool goodRunLS, bool isDa
   _isData = isData;
   _weight=1.0;
   _isSMS = false;
-  if (smsName!="none") _isSMS = false;
+  if (smsName!="none") _isSMS = true;
 
   //To read good run list!
   if (goodRunLS && isData) {
@@ -104,7 +104,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   int    nBtag_medium;
   int    nBtag_tight;
   double W=_weight;
-  double mg, mchi;
+  float mg, mchi;
   int    BOX_NUM;
   int    ss;
   int    nPV;
@@ -176,8 +176,20 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   double TopHemMass2;
   double MR1;
   double MR2;
-
+  //here are the ones including trasverse masses
+  double TotalHemMass1Trans;
+  double TotalHemMass2Trans;
+  double TopHemMass1Trans;
+  double TopHemMass2Trans;
+  double MR1Trans;
+  double MR2Trans;
   
+  //	
+  double MetMag;  	
+  double HT;
+  double MHT_x;
+  double MHT_y;
+  double MHT;  
 
   // prepare the output tree
   TTree* outTree = new TTree("outTree", "outTree");
@@ -210,8 +222,8 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   outTree->Branch("nBtag_tight", &nBtag_tight, "nBtag_tight/I");
   outTree->Branch("nBtag_TCHPT", &nBtag_TCHPT, "nBtag_TCHPT/I");
   outTree->Branch("W", &W, "W/D");
-  outTree->Branch("mg", &mg, "mg/D");
-  outTree->Branch("mchi", &mchi, "mchi/D");
+  outTree->Branch("mg", &mg, "mg/F");
+  outTree->Branch("mchi", &mchi, "mchi/F");
   outTree->Branch("nPV", &nPV, "nPV/I");
 
   // fast-hemispheres
@@ -252,6 +264,18 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
  outTree->Branch("TopHemMass2", &TopHemMass2, "TopHemMass2/D");
  outTree->Branch("MR1", &MR1, "MR1/D");
  outTree->Branch("MR2", &MR2, "MR2/D");
+	outTree->Branch("TotalHemMass1Trans", &TotalHemMass1Trans, "TotalHemMass1Trans/D");
+	outTree->Branch("TotalHemMass2Trans", &TotalHemMass2Trans, "TotalHemMass2Trans/D");
+	outTree->Branch("TopHemMass1Trans", &TopHemMass1Trans, "TopHemMass1Trans/D");
+	outTree->Branch("TopHemMass2Trans", &TopHemMass2Trans, "TopHemMass2Trans/D");
+	outTree->Branch("MR1Trans", &MR1Trans, "MR1Trans/D");
+	outTree->Branch("MR2Trans", &MR2Trans, "MR2Trans/D");
+ outTree->Branch("MetMag", &MetMag, "MetMag/D");
+ outTree->Branch("HT", &HT, "HT/D");
+ outTree->Branch("MHT", &MHT, "MHT/D");
+ outTree->Branch("MHT_x", &MHT_x, "MHT_x/D");
+ outTree->Branch("MHT_y", &MHT_y, "MHT_y/D");
+ 
 
   //Gen-Level
   outTree->Branch("idMc1", &idMc1, "idMc1/I");
@@ -306,7 +330,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     
   Long64_t nbytes = 0;
   Long64_t nb = 0;
-  cout << "Number of entries = " << stop << endl;
+  cout << "Number of entries= " << stop << endl;
   for (Long64_t jentry=start;  jentry<stop;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
@@ -639,6 +663,11 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
 
     // New Razor Variables
     // dummy values 
+    HT = -9999.;
+    MHT_x = -9999.;
+    MHT_y = -9999.;
+    MHT = -9999.;
+    MetMag = -9999.;
     EB1 = -9999.;
     EB2 = -9999.;
     EL1 = -9999.;
@@ -663,10 +692,36 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
     MR2 = -9999.;
     
 
+    //dummy var
+    double thisjet_x;
+    double thisjet_y;
+    thisjet_x = 0;
+    thisjet_y = 0;
+
+
     if (DiLepton.size()>=2 && BJets.size()>=2){
       //Start by using PF MET
       TVector3 MET(pxPFMet[2], pyPFMet[2], 0.);
+      MetMag = MET.Mag();      
+      
+      HT =0.; 
+      MHT_x = 0.;
+      MHT_y = 0.;
+     
+
+     TLorentzVector thisjet;
+
+
+      for (int i=0; i < IsolatedPFJet.size(); i++) {
 	
+        thisjet = IsolatedPFJet[i];
+	
+	HT += sqrt(thisjet.X() * thisjet.X() + thisjet.Y() * thisjet.Y());
+        MHT_x += thisjet.X();
+        MHT_y += thisjet.Y();
+	}	      
+      MHT = sqrt(MHT_x * MHT_x + MHT_y * MHT_y);
+ 	
       //two leptons
       TLorentzVector L1 = DiLepton[0];
       TLorentzVector L2 = DiLepton[1];
@@ -754,7 +809,118 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
       MR1 = 2*H1.Vect().Mag();
       MR2 = 2*H2.Vect().Mag();
 
-      // Rogan's Approach to fully leptonic ttbar
+      
+		
+		
+  // REDO ABOVE SECTION, INCLUDE TRANSVERSE BOOST AS WELL THOUGH
+	
+		// Combine jets keeping the Tops (b+l) together and in separate hemispheres:
+		//vector<TLorentzVector> Tops;
+		Top1 = (B1+L1);
+		Top2 = (B2+L2);
+		Tops.push_back(Top1);
+		Tops.push_back(Top2);
+		
+		H12  = CombineJetsTs(otherJets, Tops);
+		H1 = H12[0];
+		H2 = H12[1];
+		
+		
+		
+		// Now, we must perform longitudinal boost from lab frame to CMz frame
+		// in order to make procedure invariant under longitundinal boosts
+		BL = H1.Vect()+H2.Vect();
+		TVector3 BTr = H1.Vect() + H2.Vect();
+		BL.SetX(0.0);
+		BL.SetY(0.0);
+		BL = (1./(H1.E()+H2.E()))*BL;
+		
+		// Boost to CMz frame
+		Top1.Boost(-BL);
+		Top2.Boost(-BL);
+		H1.Boost(-BL);
+		H2.Boost(-BL);
+		
+		// Transverse Boosts go here
+		
+		BTr.SetZ(0.0);
+		Top1.Boost(-BTr);
+		Top2.Boost(-BTr);
+		H1.Boost(-BTr);
+		H2.Boost(-BTr);
+		//
+		
+		
+		//continue as before
+		//TVector3 vBETA = Boost_type1(H1,H2);
+		
+		H1.Boost(-vBETA);
+		H2.Boost(vBETA);
+		Top1.Boost(-vBETA);
+		Top2.Boost(vBETA);
+		
+		N1, N2;
+		N1.SetXYZM(H1.X(),H1.Y(),H1.Z(),0.0);
+		N2.SetXYZM(H2.X(),H2.Y(),H2.Z(),0.0);
+		
+		TotalHemMass1Trans = (H1+N1).M();
+		TotalHemMass2Trans = (H2+N2).M();
+		
+		TopHemMass1Trans = (Top1+N1).M();
+		TopHemMass2Trans = (Top2+N1).M();
+		
+		MR1Trans = 2*H1.Vect().Mag();
+		MR2Trans = 2*H2.Vect().Mag();
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	// Rogan's Approach to fully leptonic ttbar
 
       H1 = (B1+L1);
       H2 = (B2+L2);
@@ -1303,6 +1469,7 @@ std::vector<float> RazorMultiB::ParseEvent(){
 	
       found = smaller.find("_");
       smaller = smaller.substr(found+1,smaller.size());
+            
       iss.str(smaller);
       iss >> mchi;
       iss.clear();
@@ -1313,6 +1480,7 @@ std::vector<float> RazorMultiB::ParseEvent(){
   std::vector<float> parameterPoint;
   parameterPoint.push_back(mg);
   parameterPoint.push_back(mchi);
+  return parameterPoint;
 }
   
  
