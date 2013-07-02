@@ -815,13 +815,14 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
   // REDO ABOVE SECTION, INCLUDE TRANSVERSE BOOST AS WELL THOUGH
 	
 		// Combine jets keeping the Tops (b+l) together and in separate hemispheres:
-		//vector<TLorentzVector> Tops;
+		vector<TLorentzVector> TopsTrans;
 		Top1 = (B1+L1);
 		Top2 = (B2+L2);
-		Tops.push_back(Top1);
-		Tops.push_back(Top2);
+
+		TopsTrans.push_back(Top1);
+		TopsTrans.push_back(Top2);
 		
-		H12  = CombineJetsTs(otherJets, Tops);
+		H12  = CombineJetsTs(otherJets, TopsTrans);
 		H1 = H12[0];
 		H2 = H12[1];
 		
@@ -834,7 +835,7 @@ void RazorMultiB::Loop(string outFileName, int start, int stop) {
 		BL.SetX(0.0);
 		BL.SetY(0.0);
 		BL = (1./(H1.E()+H2.E()))*BL;
-		
+		BTr = (1./(H1.E()+H2.E()))*BTr;
 		// Boost to CMz frame
 		Top1.Boost(-BL);
 		Top2.Boost(-BL);
